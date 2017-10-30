@@ -2,7 +2,7 @@
 import visa
 import numpy as np
 import logging
-from analysis_simulations.libs.tools import toolbox
+from analysis.libs.tools import toolbox
 
 
 class RS_SMBV100A():

@@ -24,7 +24,7 @@ settings['cristian-mint'] = {
 	}
 settings['cristian-PC'] = {
 	'description': 'Cristian - Thinkpad',
-	'folder': "C:/Users/cristian/Research/bonato-lab/",	
+	'folder': "C:/Users/cristian/Research/QPL-code/",	
 }	
 settings['HWPC0526-EPS'] = {
 	'description': 'Cristian - office pc',
