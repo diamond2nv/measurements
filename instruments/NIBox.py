@@ -11,6 +11,7 @@ import PYDAQmx as daq
 import numpy as np
 from ctypes import *
 
+
 class Trigger(daq.Task):
     """
     Creates trigger counter task to determine counter timing.
@@ -33,6 +34,7 @@ class Trigger(daq.Task):
         n = c_char_p(" ")
         self.GetCOPulseTerm("/Weetabix/ctr"+self.ctr, n, 20)
         return n.value
+
 
 class InputCounter(daq.Task):
     """
@@ -60,6 +62,38 @@ class InputCounter(daq.Task):
         self.data = np.zeros((10000,),dtype=np.uint32)
         self.ReadCounterU32(10000, 10., self.data, 10000, None, None)
         return self.data
+
+
+class TrigSender(daq.Task):
+    def __init__(self, channel):
+        daq.Task.__init__(self)
+        self.CreateDOChan(channel,"",daq.DAQmx_Val_ChanPerLine)
+        dataDown = py.array([0], dtype=py.uint8)
+        self.WriteDigitalLines(1, 1, 10.0, daq.DAQmx_Val_GroupByChannel, dataDown, None, None)
+
+    def emit(self):
+        """
+        Emits a 1 ms pulse on the digital output
+        """
+        dataUp = py.array([1], dtype=py.uint8)
+        dataDown = py.array([0], dtype=py.uint8)
+        self.WriteDigitalLines(1, 1, 10.0, daq.DAQmx_Val_GroupByChannel, dataUp, None, None)
+        self.WriteDigitalLines(1, 1, 10.0, daq.DAQmx_Val_GroupByChannel, dataDown, None, None)
+
+
+class TrigReceiver(daq.Task):
+    def __init__(self, channel):
+        daq.Task.__init__(self)
+        self.CreateDIChan(channel,"",daq.DAQmx_Val_ChanPerLine)
+
+    def listen(self):
+        """
+        Measures the current state of the digital input (one sample)
+        """
+        data = py.array([0], dtype=py.uint8)
+        self.ReadDigitalLines(1, 10.0, daq.DAQmx_Val_GroupByChannel, data, 1, None, None, None)
+        return data[0]
+
 
 class NIBoxCounter():
     """
@@ -124,3 +158,97 @@ class NIBoxCounter():
         """Gets counts in integration time."""
         data = self.Ctr.read_counts()
         return data[-1]
+
+
+class NIBoxSpec():
+    """
+    A class to use the NI box's digital I/O to trigger the spectrometer.
+
+    Args:
+        i_ch (str): Name of the input digital line on the NI box.
+        o_ch (str): Name of the output digital line on the NI box.
+
+    """
+    def __init__(self, i_ch, o_ch):
+        self.i_ch = i_ch
+        self.o_ch = o_ch
+        self.Sender = TrigSender(self.o_ch)
+        self.Listener = TrigReceiver(self.i_ch)
+
+    def start(self):
+        """Starts Sender and Listener tasks."""
+        self.Sender.StartTask()
+        self.Listener.StartTask()
+
+    def stop(self):
+        """Stops Sender and Listener tasks."""
+        self.Listener.StopTask()
+        self.Sender.StopTask()
+
+    def clear(self):
+        """Clears Sender and Listener tasks. They must be reinitialised to be used again."""
+        self.Sender.ClearTask()
+        self.Listener.ClearTask()
+
+    def set_i_ch(self, i_ch):
+        """
+        Sets the input channel.
+
+        Args:
+            i_ch (str): Name of the input channel.
+        """
+        self.i_ch = i_ch
+        self.Listener.ClearTask()
+        self.Listener = TrigReceiver(self.i_ch)
+
+    def set_o_ch(self, o_ch):
+        """
+        Sets the output channel.
+
+        Args:
+            i_ch (str): Name of the output channel.
+        """
+        self.o_ch = o_ch
+        self.Sender.ClearTask()
+        self.Sender = TrigSender(self.o_ch)
+
+    def emit(self):
+        """Sends a pulse from the output channel."""
+        self.Sender.emit()
+
+    def listen(self):
+        """Checks the value of the input channel."""
+        self.Listener.listen()
+
+    def emit_wait(self, timeout=None):
+        """
+        Sends an output pulse, then waits for an input pulse.
+
+        Args:
+            timeout (int, optional): Specifies a timout time in seconds for
+                waiting.  If not specified, waits indefinitely.
+
+        Returns:
+            echo (int): 1 if an input pulse is measured within timeout,
+                0 otherwise.
+        """
+        self.Sender.emit()
+        echo = 0
+        if timeout:
+            now = time.time()
+            end = now + timeout
+            while echo == 0 and time.time() <= end:
+                echo = self.Listener.listen()
+        else:
+            while echo == 0:
+                echo = self.Listener.listen()
+        return echo
+
+# INCOMPLETE HEREAFTER
+class NIBoxVoltage():
+    """
+    A class to use the NI Box's analogue input/output to read and write voltages.
+    """
+    def __init__(self, a_o, a_i=None):
+        self.a_o = a_o
+        self.a_i = a_i
