@@ -658,7 +658,7 @@ class StreamController ():
 					if (power>0):
 						power = 1
 				a.add_laser_pulse (laser=laser, duration=duration, power=power, 
-											delay=delay, channel = ch, name = None)
+											delay=delay, channel = ch, name = name)
 				if ch not in self._channels_in_use:
 					self._channels_in_use.append(ch)
 				setattr (self, 'sect'+str(idx), a)
@@ -761,6 +761,12 @@ class StreamController ():
 		'''
 
 		self._sweep_reps = n
+
+	def print_sections (self):
+		print 'Sections'
+		print '--------'
+		for i, section in enumerate(self._section_names):
+			print i, ' -- ', section
 
 	def set_sweep_parameter (self, section, pulse_name, parameter, sweep_array):
 
