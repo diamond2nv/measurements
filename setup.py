@@ -30,6 +30,11 @@ settings['HWPC0526-EPS'] = {
 	'description': 'Cristian - office pc',
 	'folder': "H:/Research/bonato-lab/",
 	}
+settings['QPL-Compy'] = {
+	'description': 'Bay 2 - small pc',
+	'folder': "C:/Users/QPL/Desktop/LabSharedPrograms",
+	}
+
 
 print 'Loaded settings for: ', settings[hostpc]['description']
 folder = settings[hostpc]['folder']
@@ -39,17 +44,6 @@ folder = folder + '/measurements/'
 sys.path.append (folder)
 os.chdir (folder)
 
-import matplotlib as mpl
-from matplotlib import pyplot as plt
-from matplotlib.colors import ListedColormap
-mpl.rc('xtick', labelsize=18) 
-mpl.rc('ytick', labelsize=18)
 
-try:
-	_viridis_data = np.load (folder+'/viridis_cmp.npy')
-	viridis = ListedColormap(_viridis_data, name='viridis')
-	plt.register_cmap(name='viridis', cmap=viridis)
-except:
-	pass
 
 
