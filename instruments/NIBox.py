@@ -137,7 +137,7 @@ class NIBoxCounter():
             port (str): Name of input port on NI box, in form "PFI#"
         """
         self.Ctr.StopTask()
-        self.Ctr.SetCICountEdgesTerm("/Weetabix/ctr"+self.ctr, "/Weetabix/"+port)
+        self.Ctr.SetCICountEdgesTerm("/Weetabix/ctr"+self.Ctr.ctr, "/Weetabix/"+port)
         self.Ctr.in_port = port
 
     def set_dt(self, dt):
