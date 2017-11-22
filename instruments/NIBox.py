@@ -7,7 +7,7 @@ A module to set up the DAQmx tasks to run the NI box ("Weetabix") in various mod
 Currently only the counting mode works - class NIBoxCounter.
 """
 
-import PYDAQmx as daq
+import PyDAQmx as daq
 import numpy as np
 from ctypes import *
 

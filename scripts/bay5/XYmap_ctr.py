@@ -12,11 +12,11 @@ import pylab as py
 import time
 import datetime
 import os.path
-from measurement.instruments.pylonWeetabixTrigger import trigSender, trigReceiver, voltOut
-from measurement.instruments.KeithleyMultimeter import KeithleyMultimeter
+from measurements.instruments.pylonWeetabixTrigger import trigSender, trigReceiver, voltOut
+from measurements.instruments.KeithleyMultimeter import KeithleyMultimeter
 #from starlightRead import StarlightCCD
 from visa import VisaIOError
-from measurement.instruments import NIBox 
+from measurements.instruments import NIBox 
 
 def secondsInHMS(nbOfSeconds):
     
