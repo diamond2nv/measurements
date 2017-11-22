@@ -79,10 +79,12 @@ class AttocubeNI (ScannerCtrl):
         self.smooth_step = 1
         self.smooth_delay = 0.05
 
+        self.conversion_factor = conversion_factor
+
+
     def initialize (self)
 		self.scanners_volt_drive_X = voltOut(chX)
 		self.scanners_volt_drive_Y = voltOut(chY)
-		self.conversion_factor = conversion_factor
 
 	def moveX (self, value):
 		self.scanners_volt_drive_X.write(conversion_factor * value)
@@ -211,7 +213,6 @@ class XYScan ():
                 hoursR, minutesR, secondsR = secondsInHMS(remainingTime)
 
                 print 'Elapsed time: {:.0f} h {:.0f} min {:.0f} s\tRemaining time: {:.0f} h {:.0f} min {:.0f} s'.format(hoursE, minutesE, secondsE, hoursR, minutesR, secondsR)
-
 
 	def run_scan (self):
 

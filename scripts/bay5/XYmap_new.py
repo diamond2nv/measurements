@@ -3,9 +3,6 @@
 Created on Tue Jun 21 09:23:52 2016
 
 @author: raphael proux, cristian bonato
-
-
-VERSION WITH SCANNER CONTROLLER BEING USED WITH DC INPUT VOLTAGE (NISmallBox)
 """
 
 import pylab as py
@@ -17,7 +14,6 @@ from measurements.instruments.KeithleyMultimeter import KeithleyMultimeter
 #from starlightRead import StarlightCCD
 from visa import VisaIOError
 from measurements.instruments import NIBox 
-
 from measurements.libs import mapper 
 
 
