@@ -182,12 +182,6 @@ class XYScan ():
 		self.delayBetweenPoints = 1
 		self.delayBetweenRows = 0.5
 
-	def set_detection (self, value):
-		if (value=='spectro'):
-			self._spectro = True
-		elif (value == 'APD'):
-			self._ctr = True
-
     def set_delays (self, between_points, between_rows):
         self.delayBetweenPoints = between_points
         self.delayBetweenRows = between_rows     
@@ -224,6 +218,7 @@ class XYScan ():
         try:
             
             self._detector.initialize()
+            self._scanner.initialize()
 
             startTime = 0
             firstPoint = True

@@ -5,6 +5,10 @@
 A module to set up the DAQmx tasks to run the NI box ("Weetabix") in various modes.
 
 Currently only the counting mode works - class NIBoxCounter.
+
+
+NOTE (R. Proux):   this library is NEWER than the pylonWeetabixTrigger.py library but does not have its features.
+                   It should be planned to incorporate pylonWeetabixTrigger.py functions here in a consistent manner.
 """
 
 import PyDAQmx as daq
