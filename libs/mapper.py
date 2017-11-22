@@ -1,18 +1,27 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Wed Nov 22 09:23:52 2017
+
+@author: cristian bonato
+"""
+
 import pylab as py
 import time
-#import sys
 import datetime
 import os.path
-from AttocubeANC300 import AttocubeANC300
-from measurement.instruments.pylonWeetabixTrigger import trigSender, trigReceiver, voltOut
-from Keithley import Keithley
+#from measurements.instruments.AttocubeANC300 import AttocubeANC300
+from measurements.instruments.pylonWeetabixTrigger import trigSender, trigReceiver, voltOut
+from measurements.instruments.KeithleyMultimeter import KeithleyMultimeter
+#from measurements.instruments.Keithley import Keithley
+#from measurements.instruments.LockIn7265GPIB import LockIn7265
+from measurements.instruments import NIBox
 
-class SpectroCtrl ():
+class DetectorCtrl ():
 
 	def __init__(self, work_folder):
 		self._wfolder = work_folder
 
-	def init_spectro (self):
+	def initialize (self):
 		pass
 
 	def readout (self):
@@ -27,7 +36,7 @@ class SpectroCtrl ():
 	def first_point (self):
 		pass
 
-class Scanner ():
+class ScannerCtrl ():
 
 	def __init__(self):
 		pass
@@ -44,12 +53,12 @@ class Scanner ():
 	def getY (self):
 		pass
 
-	def goSmoothlyToPos(self, xPos, yPos, smoothStep=1., smoothDelay=SMOOTH_DELAY):
+	def goSmoothlyToPos(self, xPos, yPos):
 		# go smoothly to a position
 		currentX = self.getX()
 		currentY = self.getY()
-		xSmoothNbOfSteps = int(abs(py.floor((currentX - xPos) / float(smoothStep))) + 1)
-		ySmoothNbOfSteps = int(abs(py.floor((currentY - yPos) / float(smoothStep))) + 1)
+		xSmoothNbOfSteps = int(abs(py.floor((currentX - xPos) / float(self.smooth_step))) + 1)
+		ySmoothNbOfSteps = int(abs(py.floor((currentY - yPos) / float(self.smooth_step))) + 1)
 		totalSmoothNbOfSteps = max((xSmoothNbOfSteps, ySmoothNbOfSteps))
 		xSmoothPositions = py.append(py.linspace(currentX, xPos, xSmoothNbOfSteps), 
 						py.zeros(totalSmoothNbOfSteps - xSmoothNbOfSteps) + xPos)
@@ -59,13 +68,20 @@ class Scanner ():
 	    for x, y in zip(xSmoothPositions, ySmoothPositions):
 	        self.moveX(x)
 	        self.moveY(y)
-	        time.sleep(smoothDelay)
+	        time.sleep(self.smooth_delay)
 
-class AttocubeNI (Scanner):
+class AttocubeNI (ScannerCtrl):
 
-	def __init__ (self, chX = 'ao0', chY = 'ao1', conversion_factor=1/15.):
-		self.scanners_volt_drive_X = voltOut("/Weetabix/"+chX)
-		self.scanners_volt_drive_Y = voltOut("/Weetabix/"+chY)
+	def __init__ (self, chX = '/Weetabix/ao0', chY = '/Weetabix/ao1', conversion_factor=1/15.):
+        self._chX = chX
+        self._chY = chY
+
+        self.smooth_step = 1
+        self.smooth_delay = 0.05
+
+    def initialize (self)
+		self.scanners_volt_drive_X = voltOut(chX)
+		self.scanners_volt_drive_Y = voltOut(chY)
 		self.conversion_factor = conversion_factor
 
 	def moveX (self, value):
@@ -74,14 +90,20 @@ class AttocubeNI (Scanner):
 	def moveY (self, value):
 		self.scanners_volt_drive_Y.write(conversion_factor * value)
 
+    def close(self):
+        self.scanners_volt_drive_X.StopTask()
+        self.scanners_volt_drive_Y.StopTask()
 
-class PylonNICtrl (SpectroCtrl):
+
+class PylonNICtrl (DetectorCtrl):
 
 	def __init__(self, work_folder, sender_port="/Weetabix/port1/line3",
 						 receiver_port = "/Weetabix/port1/line2"):
 		self._wfolder = work_folder
 		self._sender_port = sender_port
 		self._receiver_port = receiver_port
+
+    def initialize (self):
 		self.senderTask = trigSender(self._sender_port)
 		self.senderTask.StartTask()
         self.receiverTask = trigReceiver(self._receiver_port)
@@ -94,8 +116,15 @@ class PylonNICtrl (SpectroCtrl):
 
     def readout (self):
     	self.senderTask.emit()
+        return 0
 
-class LockinCtrl (SpectroCtrl):
+    def close(self):
+        self.senderTask.StopTask()
+        self.receiverTask.StopTask()
+
+
+class LockinCtrl (DetectorCtrl):
+
 	def __init__(self, work_folder, lockinVisaAddress):
 		self._wfolder = work_folder
 		self._lockin = LockIn7265(lockinVisaAddress)
@@ -114,8 +143,30 @@ class LockinCtrl (SpectroCtrl):
 
     def readout (self):
     	self.lockin.sendPulse()
+        return 0
+
+    def close(self):
+        self.lockin.close()
 
 
+class APDCounterCtrl (DetectorCtrl):
+
+    def __init__(self, work_folder, ctr_port):
+        self._wfolder = work_folder
+        self._ctr_port = ctr_port
+
+    def initialize (self):
+        self._ctr = NIBox.NIBoxCounter(dt=ctr_time_ms)
+        self._ctr.set_port (ctr_port)
+        self._ctr.start()
+
+    def readout (self):
+        c = self._ctr.get_counts ()
+        return c
+
+    def close (self):
+        self._ctr.stop()
+        self._ctr.clear()
 
 
 class XYScan ():
@@ -134,6 +185,10 @@ class XYScan ():
 			self._spectro = True
 		elif (value == 'APD'):
 			self._ctr = True
+
+    def set_delays (self, between_points, between_rows):
+        self.delayBetweenPoints = between_points
+        self.delayBetweenRows = between_rows     
 
 	def set_range (self, xLim, xStep, yLim, yStep):
 
@@ -165,6 +220,9 @@ class XYScan ():
 	def run_scan (self):
 
         try:
+            
+            self._detector.initialize()
+
             startTime = 0
             firstPoint = True
 
@@ -179,11 +237,11 @@ class XYScan ():
                     print '{}/{} \t{:.1f} \t{:.1f}'.format(currentIndex, 
                                     self.xNbOfSteps*self.yNbOfSteps, x, y)
         
-                    # For first point wait for a reaction (when acquisition is launched in WinSpec)
+                    # For first point may wait for a reaction 
+                    # (when acquisition is launched in WinSpec)
                     while firstPoint:
                         self._detector.first_point()
 
-                    # elapsed time?
                     self.print_elapsed_time()
 
                     # delay between rows
@@ -212,19 +270,12 @@ class XYScan ():
                     self._scanner.moveX(x)
                     time.sleep(SMOOTH_DELAY)          
 
-                # go smoothly to start position
-                if backToZero:
-                    goSmoothlyToPos(xPos=0, yPos=0, SxAxis=SxAxis, SyAxis=SyAxis)
+            # go smoothly to start position
+            if backToZero:
+                self._scanner.goSmoothlyToPos(xPos=0, yPos=0)
         except:
             raise
 
         finally:
             self._scanner.close()
             self._detector.close()
-
-
-
-
-
-		
-
