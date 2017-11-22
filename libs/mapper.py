@@ -102,6 +102,7 @@ class PylonNICtrl (DetectorCtrl):
 		self._wfolder = work_folder
 		self._sender_port = sender_port
 		self._receiver_port = receiver_port
+        self.delay_after_readout = 0.
 
     def initialize (self):
 		self.senderTask = trigSender(self._sender_port)
@@ -128,6 +129,7 @@ class LockinCtrl (DetectorCtrl):
 	def __init__(self, work_folder, lockinVisaAddress):
 		self._wfolder = work_folder
 		self._lockin = LockIn7265(lockinVisaAddress)
+        self.delay_after_readout = 0.5
 
 	def first_point (self):
 		self.lockin.sendPulse()
@@ -246,11 +248,11 @@ class XYScan ():
 
                     # delay between rows
                     if firstInRow:
-                        time.sleep(delayBetweenRows)
+                        time.sleep(self.delayBetweenRows)
                         firstInRow = False
                 
                     # delay between points
-                    time.sleep(delayBetweenPoints)
+                    time.sleep(self.delayBetweenPoints)
                 
                     # trigger exposure
                     if firstPoint:
@@ -258,7 +260,7 @@ class XYScan ():
                     else:
                         self._detector.readout()            
                     
-                    time.sleep(0.5)
+                    time.sleep(self._detector.delay_after_readout)
                 
                     #powerInVolts.append(voltmeter.read())
                     
