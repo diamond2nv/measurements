@@ -183,15 +183,17 @@ class APDCounterCtrl (DetectorCtrl):
 
 class XYScan ():
 
-    def __init__(self, scanner = None, detector = None):
+    def __init__(self, scanner = None, detector = None, voltmeter = None):
         self._scanner = scanner
         self._detector = detector
+        self._voltmeter = voltmeter
 
         self.delayBetweenPoints = 1
         self.delayBetweenRows = 0.5
 
         self._back_to_zero = False
 
+        # Check what kind of detector is used (spectrometer or apd)
         if (isinstance (detector, PylonNICtrl) or isinstance (detector, LockinCtrl)):
             self.detector_type = 'spectro'
         elif (isinstance (detector, APDCounterCtrl)):
