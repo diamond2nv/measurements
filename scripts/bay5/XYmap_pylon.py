@@ -9,15 +9,9 @@ import pylab as py
 import time
 import datetime
 import os.path
-from measurements.instruments.pylonWeetabixTrigger import trigSender, trigReceiver, voltOut
-from measurements.instruments.KeithleyMultimeter import KeithleyMultimeter
-#from starlightRead import StarlightCCD
-from visa import VisaIOError
-from measurements.instruments import NIBox 
 from measurements.libs import mapper 
 
-
-SMOOTH_DELAY = 0.05  # delay between steps for smooth piezo movements
+reload (mapper)
 
 #######################
 #     Parameters      #
@@ -26,10 +20,10 @@ delayBetweenPoints = 1
 delayBetweenRows = 0.5
 
 xLims = (0, 2)
-xStep = 0.5
+xStep = 1
 
 yLims = (0, 2)
-yStep = 0.5
+yStep = 1
 
 #voltsDirectory = r'C:\Users\ted\Desktop\temporary_meas'
 #realPosDirectory = r'C:\Users\ted\Desktop\temporary_meas'
@@ -44,17 +38,21 @@ ctr_port = 'fpi0'
 
 #######################
 # instruments
-attoCtrl = mapper.AttocubeNI (chX = '/Weetabix/ao0', chY = '/Weetabix/ao0')
+attoCtrl = mapper.AttocubeNI (chX = '/Weetabix/ao0', chY = '/Weetabix/ao1')
 spectroCtrl = mapper.PylonNICtrl (sender_port="/Weetabix/port1/line3",
-                         receiver_port = "/Weetabix/port1/line2")
+                         receiver_port = "/Weetabix/port1/line2",
+                         work_folder = r"C:\Users\ted\Desktop\temporary_meas")
 
 d = datetime.datetime.now()
-voltsFilePath = os.path.join(voltsDirectory, 'powerInVolts_{:%Y-%m-%d_%H-%M-%S}.txt'.format(d))
-realPosFilePath = os.path.join(realPosDirectory, 'realPos_{:%Y-%m-%d_%H-%M-%S}.txt'.format(d))
+#voltsFilePath = os.path.join(voltsDirectory, 'powerInVolts_{:%Y-%m-%d_%H-%M-%S}.txt'.format(d))
+#realPosFilePath = os.path.join(realPosDirectory, 'realPos_{:%Y-%m-%d_%H-%M-%S}.txt'.format(d))
 
 # Scanning program
-XYscan = mapper.XYscan(scanner = attoCtrl, detector = spectroCtrl)
-XYscan.set_range (xLim=xLim, xStep=xStep, yLim=yLim, yStep=yStep)
+XYscan = mapper.XYScan(scanner = attoCtrl, detector = spectroCtrl)
+XYscan.set_range (xLims=xLims, xStep=xStep, yLims=yLims, yStep=yStep)
 XYscan.set_delays (between_points = delayBetweenPoints, between_rows = delayBetweenRows)
+XYscan.restore_back_to_zero()
 XYscan.run_scan()
+
+
 

@@ -16,6 +16,8 @@ from measurements.instruments.KeithleyMultimeter import KeithleyMultimeter
 #from measurements.instruments.LockIn7265GPIB import LockIn7265
 from measurements.instruments import NIBox
 
+reload (NIBox)
+
 class DetectorCtrl ():
 
 	def __init__(self, work_folder):
@@ -55,67 +57,79 @@ class ScannerCtrl ():
 
 	def goSmoothlyToPos(self, xPos, yPos):
 		# go smoothly to a position
-		currentX = self.getX()
-		currentY = self.getY()
-		xSmoothNbOfSteps = int(abs(py.floor((currentX - xPos) / float(self.smooth_step))) + 1)
-		ySmoothNbOfSteps = int(abs(py.floor((currentY - yPos) / float(self.smooth_step))) + 1)
-		totalSmoothNbOfSteps = max((xSmoothNbOfSteps, ySmoothNbOfSteps))
-		xSmoothPositions = py.append(py.linspace(currentX, xPos, xSmoothNbOfSteps), 
-						py.zeros(totalSmoothNbOfSteps - xSmoothNbOfSteps) + xPos)
-		ySmoothPositions = py.append(py.linspace(currentY, yPos, ySmoothNbOfSteps),
-						py.zeros(totalSmoothNbOfSteps - ySmoothNbOfSteps) + yPos)
-
-	    for x, y in zip(xSmoothPositions, ySmoothPositions):
-	        self.moveX(x)
-	        self.moveY(y)
-	        time.sleep(self.smooth_delay)
+		pass
 
 class AttocubeNI (ScannerCtrl):
 
-	def __init__ (self, chX = '/Weetabix/ao0', chY = '/Weetabix/ao1', conversion_factor=1/15.):
+    def __init__ (self, chX = '/Weetabix/ao0', chY = '/Weetabix/ao1', conversion_factor=1/15.):
         self._chX = chX
         self._chY = chY
+        self.conversion_factor = conversion_factor
 
         self.smooth_step = 1
         self.smooth_delay = 0.05
 
-        self.conversion_factor = conversion_factor
+        self._currX = 0
+        self._currY = 0
 
+    def initialize (self):
+        self.scanners_volt_drive_X = voltOut(self._chX)
+        self.scanners_volt_drive_Y = voltOut(self._chY)
 
-    def initialize (self)
-		self.scanners_volt_drive_X = voltOut(chX)
-		self.scanners_volt_drive_Y = voltOut(chY)
+    def moveX (self, value):
+        self.scanners_volt_drive_X.write(self.conversion_factor * value)
+        self._currX = value
 
-	def moveX (self, value):
-		self.scanners_volt_drive_X.write(conversion_factor * value)
-
-	def moveY (self, value):
-		self.scanners_volt_drive_Y.write(conversion_factor * value)
+    def moveY (self, value):
+        self.scanners_volt_drive_Y.write(self.conversion_factor * value)
+        self._currY = value
 
     def close(self):
         self.scanners_volt_drive_X.StopTask()
         self.scanners_volt_drive_Y.StopTask()
 
+    def getX (self):
+        return self._currX
+
+    def getY (self):
+        return self._currY
+
+    def goSmoothlyToPos(self, xPos, yPos):
+        # go smoothly to a position
+        currX = self.getX()
+        currY = self.getY()
+
+        xSmooth_nr_steps = int(abs(py.floor((currX - xPos) / float(self.smooth_step))) + 1)
+        ySmooth_nr_steps = int(abs(py.floor((currY - yPos) / float(self.smooth_step))) + 1)
+
+        totalSmoothNbOfSteps = max((xSmooth_nr_steps, ySmooth_nr_steps))
+        xSmoothPositions = py.append(py.linspace(currX, xPos, xSmooth_nr_steps), py.zeros(totalSmoothNbOfSteps - xSmooth_nr_steps) + xPos)
+        ySmoothPositions = py.append(py.linspace(currY, yPos, ySmooth_nr_steps), py.zeros(totalSmoothNbOfSteps - ySmooth_nr_steps) + yPos)
+
+        for x, y in zip(xSmoothPositions, xSmoothPositions):
+            self.moveX(x)
+            self.moveY(y)
+            time.sleep(self.smooth_delay)
+
 
 class PylonNICtrl (DetectorCtrl):
 
-	def __init__(self, work_folder, sender_port="/Weetabix/port1/line3",
-						 receiver_port = "/Weetabix/port1/line2"):
-		self._wfolder = work_folder
-		self._sender_port = sender_port
-		self._receiver_port = receiver_port
+    def __init__(self, work_folder, sender_port="/Weetabix/port1/line3", receiver_port = "/Weetabix/port1/line2"):
+        self._wfolder = work_folder
+        self._sender_port = sender_port
+        self._receiver_port = receiver_port
         self.delay_after_readout = 0.
 
     def initialize (self):
-		self.senderTask = trigSender(self._sender_port)
-		self.senderTask.StartTask()
+        self.senderTask = trigSender(self._sender_port)
+        self.senderTask.StartTask()
         self.receiverTask = trigReceiver(self._receiver_port)
         self.receiverTask.StartTask()
 
     def wait_for_ready (self):
-    	CCDready = 0
-    	while CCDready == 0:
-    		CCDready = self.receiverTask.listen()
+        CCDready = 0
+        while CCDready == 0:
+            CCDready = self.receiverTask.listen()
 
     def readout (self):
     	self.senderTask.emit()
@@ -125,28 +139,28 @@ class PylonNICtrl (DetectorCtrl):
         self.senderTask.StopTask()
         self.receiverTask.StopTask()
 
-
 class LockinCtrl (DetectorCtrl):
 
-	def __init__(self, work_folder, lockinVisaAddress):
-		self._wfolder = work_folder
-		self._lockin = LockIn7265(lockinVisaAddress)
+    def __init__(self, work_folder, lockinVisaAddress):
+        self._wfolder = work_folder
+        self._lockin = LockIn7265(lockinVisaAddress)
         self.delay_after_readout = 0.5
 
-	def first_point (self):
-		self.lockin.sendPulse()
-		time.sleep(0.1)
-		if lockin.readADCdigital():
-			break
+    def first_point (self):
+        while True:
+            self.lockin.sendPulse()
+            time.sleep(0.1)
+            if lockin.readADCdigital():
+                break
 
     def wait_for_ready (self):
-    	while True:
-    		if not lockin.readADCdigital():
-    			break
-    		time.sleep(0.1)
+        while True:
+            if not lockin.readADCdigital():
+                break
+            time.sleep(0.1)
 
     def readout (self):
-    	self.lockin.sendPulse()
+        self.lockin.sendPulse()
         return 0
 
     def close(self):
@@ -172,37 +186,39 @@ class APDCounterCtrl (DetectorCtrl):
         self._ctr.stop()
         self._ctr.clear()
 
-
 class XYScan ():
 
-	def __init__(self, scanner = None, detector = None):
-		self._scanner = scanner
-		self._detector = detector
-		self._spectro = None
-		self._ctr = None
+    def __init__(self, scanner = None, detector = None):
+        self._scanner = scanner
+        self._detector = detector
 
-		self.delayBetweenPoints = 1
-		self.delayBetweenRows = 0.5
+        self.delayBetweenPoints = 1
+        self.delayBetweenRows = 0.5
+
+        self._back_to_zero = False
 
     def set_delays (self, between_points, between_rows):
         self.delayBetweenPoints = between_points
-        self.delayBetweenRows = between_rows     
+        self.delayBetweenRows = between_rows
 
-	def set_range (self, xLim, xStep, yLim, yStep):
+    def restore_back_to_zero(self):
+        self._back_to_zero = True
 
-		self.xNbOfSteps = int(abs(py.floor((float(xLims[1]) - float(xLims[0])) / float(xStep))) + 1)
-		self.xPositions = py.linspace(xLims[0], xLims[1], xNbOfSteps)
-		self.yNbOfSteps = int(abs(py.floor((float(yLims[1]) - float(yLims[0])) / float(yStep))) + 1)
-		self.yPositions = py.linspace(yLims[0], yLims[1], yNbOfSteps)
-		self.totalNbOfSteps = self.xNbOfSteps * self.yNbOfSteps		
+    def set_range (self, xLims, xStep, yLims, yStep):
 
-	def secondsInHMS(self, nbOfSeconds):
-		hours = py.floor(nbOfSeconds / 3600)
-		minutes = py.floor(nbOfSeconds % 3600) / 60
-		seconds = nbOfSeconds - minutes*60 - hours*3600
-		return hours, minutes, seconds
+        self.xNbOfSteps = int(abs(py.floor((float(xLims[1]) - float(xLims[0])) / float(xStep))) + 1)
+        self.xPositions = py.linspace(xLims[0], xLims[1], self.xNbOfSteps)
+        self.yNbOfSteps = int(abs(py.floor((float(yLims[1]) - float(yLims[0])) / float(yStep))) + 1)
+        self.yPositions = py.linspace(yLims[0], yLims[1], self.yNbOfSteps)
+        self.totalNbOfSteps = self.xNbOfSteps * self.yNbOfSteps
 
-    def print_elapsed_time (self):
+    def secondsInHMS(self, nbOfSeconds):
+        hours = py.floor(nbOfSeconds / 3600)
+        minutes = py.floor(nbOfSeconds % 3600) / 60
+        seconds = nbOfSeconds - minutes*60 - hours*3600
+        return hours, minutes, seconds
+
+    def print_elapsed_time (self, startTime, currentIndex):
         if startTime == 0:
             startTime = time.time()
             if currentIndex % 20 == 0:
@@ -213,63 +229,65 @@ class XYScan ():
                 hoursR, minutesR, secondsR = secondsInHMS(remainingTime)
 
                 print 'Elapsed time: {:.0f} h {:.0f} min {:.0f} s\tRemaining time: {:.0f} h {:.0f} min {:.0f} s'.format(hoursE, minutesE, secondsE, hoursR, minutesR, secondsR)
+        return startTime
 
-	def run_scan (self):
+    def run_scan (self):
 
         try:
-            
             self._detector.initialize()
             self._scanner.initialize()
 
             startTime = 0
             firstPoint = True
+            idx = 0
 
             for y in self.yPositions:
                 firstInRow = True
                 for x in self.xPositions:
-                    currentIndex = currentIndex + 1
+                    idx += 1
                     self._scanner.moveX(x)
                     self._scanner.moveY(y)
-             
+
                     # display update
-                    print '{}/{} \t{:.1f} \t{:.1f}'.format(currentIndex, 
+                    print '{}/{} \t{:.1f} \t{:.1f}'.format(idx, 
                                     self.xNbOfSteps*self.yNbOfSteps, x, y)
-        
+
                     # For first point may wait for a reaction 
                     # (when acquisition is launched in WinSpec)
-                    while firstPoint:
+                    if firstPoint:
                         self._detector.first_point()
+                        firstPoint = False
 
-                    self.print_elapsed_time()
+                    startTime = self.print_elapsed_time(startTime = startTime, currentIndex = idx)
 
                     # delay between rows
                     if firstInRow:
                         time.sleep(self.delayBetweenRows)
                         firstInRow = False
-                
+
                     # delay between points
                     time.sleep(self.delayBetweenPoints)
-                
+
                     # trigger exposure
                     if firstPoint:
                         firstPoint = False
                     else:
-                        self._detector.readout()            
-                    
+                        self._detector.readout()
+
                     time.sleep(self._detector.delay_after_readout)
-                
+
                     #powerInVolts.append(voltmeter.read())
-                    
+
                     # wait for CCD 'NOT SCAN' signal
                     self._detector.wait_for_ready()
 
                 # move back to 0 smoothly
-                for x in xPositions[::-1]:
+                for x in self.xPositions[::-1]:
                     self._scanner.moveX(x)
-                    time.sleep(SMOOTH_DELAY)          
+                    time.sleep(self._scanner.smooth_delay)          
 
             # go smoothly to start position
-            if backToZero:
+            if self._back_to_zero:
                 self._scanner.goSmoothlyToPos(xPos=0, yPos=0)
         except:
             raise
