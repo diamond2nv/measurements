@@ -40,24 +40,36 @@ class DetectorCtrl ():
 
 class ScannerCtrl ():
 
-	def __init__(self):
-		pass
+    def __init__(self):
+        pass
 
-	def moveX (self, value):
-		pass
+    def moveX (self, value):
+        pass
 
-	def moveY (self, value):
-		pass
+    def moveY (self, value):
+        pass
 
-	def getX (self):
-		pass
+    def getX (self):
+        pass
 
-	def getY (self):
-		pass
+    def getY (self):
+        pass
 
-	def goSmoothlyToPos(self, xPos, yPos):
-		# go smoothly to a position
-		pass
+    def goSmoothlyToPos(self, xPos, yPos):
+        currX = self.getX()
+        currY = self.getY()
+
+        xSmooth_nr_steps = int(abs(py.floor((currX - xPos) / float(self.smooth_step))) + 1)
+        ySmooth_nr_steps = int(abs(py.floor((currY - yPos) / float(self.smooth_step))) + 1)
+
+        totalSmoothNbOfSteps = max((xSmooth_nr_steps, ySmooth_nr_steps))
+        xSmoothPositions = py.append(py.linspace(currX, xPos, xSmooth_nr_steps), py.zeros(totalSmoothNbOfSteps - xSmooth_nr_steps) + xPos)
+        ySmoothPositions = py.append(py.linspace(currY, yPos, ySmooth_nr_steps), py.zeros(totalSmoothNbOfSteps - ySmooth_nr_steps) + yPos)
+
+        for x, y in zip(xSmoothPositions, xSmoothPositions):
+            self.moveX(x)
+            self.moveY(y)
+            time.sleep(self.smooth_delay)
 
 class AttocubeNI (ScannerCtrl):
 
@@ -93,23 +105,6 @@ class AttocubeNI (ScannerCtrl):
 
     def getY (self):
         return self._currY
-
-    def goSmoothlyToPos(self, xPos, yPos):
-        # go smoothly to a position
-        currX = self.getX()
-        currY = self.getY()
-
-        xSmooth_nr_steps = int(abs(py.floor((currX - xPos) / float(self.smooth_step))) + 1)
-        ySmooth_nr_steps = int(abs(py.floor((currY - yPos) / float(self.smooth_step))) + 1)
-
-        totalSmoothNbOfSteps = max((xSmooth_nr_steps, ySmooth_nr_steps))
-        xSmoothPositions = py.append(py.linspace(currX, xPos, xSmooth_nr_steps), py.zeros(totalSmoothNbOfSteps - xSmooth_nr_steps) + xPos)
-        ySmoothPositions = py.append(py.linspace(currY, yPos, ySmooth_nr_steps), py.zeros(totalSmoothNbOfSteps - ySmooth_nr_steps) + yPos)
-
-        for x, y in zip(xSmoothPositions, xSmoothPositions):
-            self.moveX(x)
-            self.moveY(y)
-            time.sleep(self.smooth_delay)
 
 
 class PylonNICtrl (DetectorCtrl):
@@ -197,6 +192,13 @@ class XYScan ():
 
         self._back_to_zero = False
 
+        if (isinstance (detector, PylonNICtrl) or isinstance (detector, LockinCtrl)):
+            self.detector_type = 'spectro'
+        elif (isinstance (detector, APDCounterCtrl)):
+            self.detector_type = 'apd'
+        else:
+            self.detector_type = 'unknown'
+
     def set_delays (self, between_points, between_rows):
         self.delayBetweenPoints = between_points
         self.delayBetweenRows = between_rows
@@ -211,6 +213,9 @@ class XYScan ():
         self.yNbOfSteps = int(abs(py.floor((float(yLims[1]) - float(yLims[0])) / float(yStep))) + 1)
         self.yPositions = py.linspace(yLims[0], yLims[1], self.yNbOfSteps)
         self.totalNbOfSteps = self.xNbOfSteps * self.yNbOfSteps
+
+        if (self.detector_type=='apd'):
+            self.counts = py.zeros (self.xNbOfSteps, self.yNbOfSteps)
 
     def secondsInHMS(self, nbOfSeconds):
         hours = py.floor(nbOfSeconds / 3600)
@@ -241,9 +246,11 @@ class XYScan ():
             firstPoint = True
             idx = 0
 
-            for y in self.yPositions:
+            for id_y in range(self.yNbOfSteps): 
+                y = self.yPositions[id_y]
                 firstInRow = True
-                for x in self.xPositions:
+                for id_x in range(self.xNbOfSteps):
+                    x = self.xPositions[id_x]
                     idx += 1
                     self._scanner.moveX(x)
                     self._scanner.moveY(y)
@@ -272,7 +279,9 @@ class XYScan ():
                     if firstPoint:
                         firstPoint = False
                     else:
-                        self._detector.readout()
+                        c = self._detector.readout()
+                        if (self.detector_type=='apd'):
+                            self.counts[id_x, id_y] = c
 
                     time.sleep(self._detector.delay_after_readout)
 
