@@ -219,6 +219,9 @@ class XYScan ():
         if (self.detector_type=='apd'):
             self.counts = py.zeros (self.xNbOfSteps, self.yNbOfSteps)
 
+        if (self._voltmeter):
+            self.powerInVolts = py.zeros (self.xNbOfSteps, self.yNbOfSteps)
+
     def secondsInHMS(self, nbOfSeconds):
         hours = py.floor(nbOfSeconds / 3600)
         minutes = py.floor(nbOfSeconds % 3600) / 60
@@ -284,6 +287,9 @@ class XYScan ():
                         c = self._detector.readout()
                         if (self.detector_type=='apd'):
                             self.counts[id_x, id_y] = c
+                        if (self._voltmeter):
+                            self.powerInVolts[id_x, id_y] = self._voltmeter.read()
+
 
                     time.sleep(self._detector.delay_after_readout)
 
@@ -306,3 +312,5 @@ class XYScan ():
         finally:
             self._scanner.close()
             self._detector.close()
+            if (self._voltmeter):
+                self._voltmeter.close()
