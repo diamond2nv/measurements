@@ -358,6 +358,16 @@ class XYScan ():
         d_obj = DO.DataObjectHDF5()
         d_obj.save_object_to_file (self, file_name)
         print ("File saved")
+        
+    def plot_counts (self):
+        
+        if (self.detector_type == 'apd'):
+            py.figure(figsize=(10,10))
+            py.pcolor (self.counts)
+            py.show()
+        else:
+            print ("No counts available.. use APD")
+
 
 
 
