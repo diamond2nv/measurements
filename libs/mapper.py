@@ -15,6 +15,7 @@ from measurements.instruments.KeithleyMultimeter import KeithleyMultimeter
 #from measurements.instruments.Keithley import Keithley
 #from measurements.instruments.LockIn7265GPIB import LockIn7265
 from measurements.instruments import NIBox
+from tools import data_object as DO 
 
 reload (NIBox)
 
@@ -30,9 +31,6 @@ class DetectorCtrl ():
 		pass
 
 	def wait_for_ready (self):
-		pass
-
-	def test_for_ready (self):
 		pass
 
 	def first_point (self):
@@ -314,3 +312,13 @@ class XYScan ():
             self._detector.close()
             if (self._voltmeter):
                 self._voltmeter.close()
+
+    def save_to_hdf5 (self, file_name=None):
+
+        d_obj = DO.DataObjectHDF5()
+        d_obj.save_object_to_file (self, file_name)
+        print ("File saved")
+
+
+
+
