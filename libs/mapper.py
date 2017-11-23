@@ -104,6 +104,41 @@ class AttocubeNI (ScannerCtrl):
     def getY (self):
         return self._currY
 
+class AttocubeVISA (ScannerCtrl):
+
+    def __init__ (self, chX = '/Weetabix/ao0', chY = '/Weetabix/ao1', conversion_factor=1/15.):
+        self._chX = chX
+        self._chY = chY
+        self.conversion_factor = conversion_factor
+
+        self.smooth_step = 1
+        self.smooth_delay = 0.05
+
+        self._currX = 0
+        self._currY = 0
+
+    def initialize (self):
+        self.scanners_volt_drive_X = voltOut(self._chX)
+        self.scanners_volt_drive_Y = voltOut(self._chY)
+
+    def moveX (self, value):
+        self.scanners_volt_drive_X.write(self.conversion_factor * value)
+        self._currX = value
+
+    def moveY (self, value):
+        self.scanners_volt_drive_Y.write(self.conversion_factor * value)
+        self._currY = value
+
+    def close(self):
+        self.scanners_volt_drive_X.StopTask()
+        self.scanners_volt_drive_Y.StopTask()
+
+    def getX (self):
+        return self._currX
+
+    def getY (self):
+        return self._currY
+
 
 class PylonNICtrl (DetectorCtrl):
 
@@ -165,18 +200,23 @@ class APDCounterCtrl (DetectorCtrl):
     def __init__(self, work_folder, ctr_port):
         self._wfolder = work_folder
         self._ctr_port = ctr_port
+        self.delay_after_readout = 0.
+        
+    def set_integration_time_ms (self, t):
+        self._ctr_time_ms = t
 
     def initialize (self):
-        self._ctr = NIBox.NIBoxCounter(dt=ctr_time_ms)
-        self._ctr.set_port (ctr_port)
-        self._ctr.start()
+        self._ctr = NIBox.NIBoxCounter(dt=self._ctr_time_ms)
+        self._ctr.set_port (self._ctr_port)
 
     def readout (self):
+        self._ctr.start()
         c = self._ctr.get_counts ()
+        self._ctr.stop()
+
         return c
 
     def close (self):
-        self._ctr.stop()
         self._ctr.clear()
 
 class XYScan ():
@@ -215,10 +255,10 @@ class XYScan ():
         self.totalNbOfSteps = self.xNbOfSteps * self.yNbOfSteps
 
         if (self.detector_type=='apd'):
-            self.counts = py.zeros (self.xNbOfSteps, self.yNbOfSteps)
+            self.counts = py.zeros ([self.xNbOfSteps, self.yNbOfSteps])
 
         if (self._voltmeter):
-            self.powerInVolts = py.zeros (self.xNbOfSteps, self.yNbOfSteps)
+            self.powerInVolts = py.zeros ([self.xNbOfSteps, self.yNbOfSteps])
 
     def secondsInHMS(self, nbOfSeconds):
         hours = py.floor(nbOfSeconds / 3600)

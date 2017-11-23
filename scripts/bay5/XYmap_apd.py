@@ -33,24 +33,26 @@ toDC_drive_voltage = 1./15
 
 # APD counter integration time (ms)
 ctr_time_ms = 1000
-ctr_port = 'fpi0'
+ctr_port = 'pfi0'
 
 #######################
 # instruments
 attoCtrl = mapper.AttocubeNI (chX = '/Weetabix/ao0', chY = '/Weetabix/ao1')
 apdCtrl = mapper.APDCounterCtrl (ctr_port = ctr_port,
                          work_folder = r"C:\Users\ted\Desktop\temporary_meas")
+apdCtrl.set_integration_time_ms(ctr_time_ms)
 
 d = datetime.datetime.now()
 #voltsFilePath = os.path.join(voltsDirectory, 'powerInVolts_{:%Y-%m-%d_%H-%M-%S}.txt'.format(d))
 #realPosFilePath = os.path.join(realPosDirectory, 'realPos_{:%Y-%m-%d_%H-%M-%S}.txt'.format(d))
 
 # Scanning program
-XYscan = mapper.XYScan(scanner = attoCtrl, detector = spectroCtrl)
+XYscan = mapper.XYScan(scanner = attoCtrl, detector = apdCtrl)
 XYscan.set_range (xLims=xLims, xStep=xStep, yLims=yLims, yStep=yStep)
 XYscan.set_delays (between_points = delayBetweenPoints, between_rows = delayBetweenRows)
 XYscan.restore_back_to_zero()
 XYscan.run_scan()
+XYscan.save_to_hdf5(file_name='c:/test')
 
 
 
