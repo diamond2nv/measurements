@@ -52,7 +52,7 @@ XYscan.set_range (xLims=xLims, xStep=xStep, yLims=yLims, yStep=yStep)
 XYscan.set_delays (between_points = delayBetweenPoints, between_rows = delayBetweenRows)
 XYscan.restore_back_to_zero()
 XYscan.run_scan()
-XYscan.save_to_hdf5(file_name='c:/test')
-
+#XYscan.save_to_hdf5(file_name=r'C:\Users\ted\Desktop\measurements\test5.hdf5')
+XYscan.plot_counts()
 
 
