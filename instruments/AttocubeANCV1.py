@@ -5,6 +5,8 @@ Created on Tue Jul 05 16:08:51 2016
 @author: ted and raphael
 
 This library offers classes and functions to control remotely ANC300 and older ANC150 controllers (possibly others not tested).
+
+!!!!   SUPERSEDES THE OLD AttocubeANC300.py LIBRARY   !!!!
 """
 import visa
 import re
@@ -147,8 +149,11 @@ class AttocubeANC():
             if int(visaError.error_code) == -1073807330:  # baud_rate not supported, try default (can happen with ANC300)
                 try:
                     self.ANC = rm.open_resource(visaResourceId)
+                    print(self.ANC)
                 except:
                     raise
+            else:
+                raise
         self.isANC300 = self.determineANC300()
         self.lastOrderSent = 'NO ORDER'
     
@@ -316,31 +321,32 @@ class AttocubeANC():
         
 if __name__ == '__main__':
     # if you want to use this you should update the functions names and parameters (it has changed)
-    with AttocubeANC(r'ASRL13::INSTR') as ANC150:
-        logVar = ''
-        ANC150.scanMode(1)
-        with open('LOG.txt', 'w') as logFile:
-            for i in range(500000):
-                if i % 1000 == 0:
-                    print i, 'loops'
-                while True:
-                    try:
-                        echo = ANC150.setOffset(25,1)
-                        if echo[0] != u'> setv 1 10922':
-                            curOffset = ANC150.getOffset(1)
-                            tempLog = 'PROBLEM AT LOOP {}\n'.format(i) + \
-                                      'echo {}    offset {}\n'.format(echo[0], curOffset) + \
-                                      'Sent order was {}'.format(ANC150.lastOrderSent)
-                            print tempLog
-                            logFile.write(tempLog + '\n')
-                    except (visa.VisaIOError, ANCError) as error:
-                        tempLog = 'PROBLEM AT LOOP {}\n'.format(i) + \
-                                  str(error) + '\n' + \
-                                  'Sent order was {}\n'.format(ANC150.toto)
-                        print tempLog
-                        logFile.write(tempLog + '\n')
-                    else:
-                        break
+    with AttocubeANC(r'ASRL11::INSTR') as ANC150:
+        pass
+#        logVar = ''
+#        ANC150.scanMode(1)
+#        with open('LOG.txt', 'w') as logFile:
+#            for i in range(500000):
+#                if i % 1000 == 0:
+#                    print i, 'loops'
+#                while True:
+#                    try:
+#                        echo = ANC150.setOffset(25,1)
+#                        if echo[0] != u'> setv 1 10922':
+#                            curOffset = ANC150.getOffset(1)
+#                            tempLog = 'PROBLEM AT LOOP {}\n'.format(i) + \
+#                                      'echo {}    offset {}\n'.format(echo[0], curOffset) + \
+#                                      'Sent order was {}'.format(ANC150.lastOrderSent)
+#                            print tempLog
+#                            logFile.write(tempLog + '\n')
+#                    except (visa.VisaIOError, ANCError) as error:
+#                        tempLog = 'PROBLEM AT LOOP {}\n'.format(i) + \
+#                                  str(error) + '\n' + \
+#                                  'Sent order was {}\n'.format(ANC150.toto)
+#                        print tempLog
+#                        logFile.write(tempLog + '\n')
+#                    else:
+#                        break
         
 #        
 #        ANC150.scanMode(1)

@@ -57,5 +57,5 @@ if __name__ == "__main__":
             value += dev.read()
         endTime = time.time()
     value /= numberOfTries
-    print (endTime - startTime) / numberOfTries, 's'
-    print 'mean value: {}'.format(value)
+    print((endTime - startTime) / numberOfTries, 's')
+    print('mean value: {}'.format(value))
