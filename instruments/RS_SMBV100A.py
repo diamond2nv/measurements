@@ -2,7 +2,7 @@
 import visa
 import numpy as np
 import logging
-from analysis.libs.tools import toolbox
+from tools import toolbox_delft as toolbox
 
 
 class RS_SMBV100A():

@@ -12,7 +12,7 @@ import logging
 from tinyrpc.protocols.jsonrpc import JSONRPCProtocol
 from tinyrpc.transports.http import HttpPostClientTransport
 from tinyrpc import RPCClient
-from analysis.libs.tools import toolbox
+from tools import toolbox_delft as toolbox
 
 # binary and base64 conversion
 import struct
