@@ -306,17 +306,21 @@ class StreamerSequence ():
 		sweep_array		[array]		array of sweep values 
 		'''
 
+		print "Pulse names: ", self._pulse_names
 		if pulse_name in self._pulse_names:
 			if (len(sweep_array) == self.nr_repetitions):
 				self._sweep_pulses.append (pulse_name)
 				self._sweep_par.append(parameter)
 				self._sweep_dict[pulse_name] = sweep_array
 			else:
-				print "Length of sweep_array should be: ", self.nr_repetitions
+				print "Length of sweep_array should be: ", self.nr_repetitions, "instead of ", len (sweep_array)
 		else:
 			print "Pulse ", pulse_name, " does not exist."
 
 	def calculate_repetition_dictionary (self):
+
+		print "Nr reps:", self.nr_repetitions
+		print "Sweep pars:", self._sweep_par
 
 		if ((self.nr_repetitions > 0) and (len (self._sweep_par)>0)):
 
@@ -335,6 +339,11 @@ class StreamerSequence ():
 
 				for r in np.arange (self.nr_repetitions):
 					self._sequence_dict ['rep'+str(r)][str(ind)][prop] = self._sweep_dict[pname][r]
+		
+
+			print "######### Repetition dictionary ########"
+			print self._sequence_dict
+
 		else:
 			print "Nothing to sweep."
 

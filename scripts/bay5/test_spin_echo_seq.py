@@ -15,6 +15,8 @@ reload (SM)
 
 def spin_echo_sequence (time, verbose = False):
 
+	N = 5
+
 	s = seq.StreamerSequence()
 	s.add_pulse (duration = 100, amplitude = 1, phase = 0)
 	s.add_wait (duration = time)
@@ -23,10 +25,17 @@ def spin_echo_sequence (time, verbose = False):
 	s.add_pulse (duration = 100, amplitude = 1, phase = 45)
 	s.set_pmod ('on')
 	
+	#s.calculate_IQ_sequence()
+	s.set_sequence_repetitions (N)
+	s.set_sweep_parameter (pulse_name='W0', parameter='duration', sweep_array = np.linspace (50, 1000, N))
+	s.set_sweep_parameter (pulse_name='W1', parameter='duration', sweep_array = np.linspace (50, 1000, N))
+
+	s.calculate_repetition_dictionary()
 	s.calculate_IQ_sequence()
-	if verbose:
-		s.print_sequence()
-		s.print_IQ()
+
+	#if verbose:
+	#	s.print_sequence()
+	#	s.print_IQ()
 
 	return s
 
@@ -43,8 +52,10 @@ def test_odmr(sequence):
 	                                             power = 0.5, delay = 0)
 
 	strCtrl.generate_ctrl_stream()
-	strCtrl.view_stream()
+	#strCtrl.view_stream()
+
+	return strCtrl
 	
 #test_repeated_sweep()
 s = spin_echo_sequence(time = 1500, verbose = True)
-test_odmr (sequence = s)
+strCtrl = test_odmr (sequence = s)

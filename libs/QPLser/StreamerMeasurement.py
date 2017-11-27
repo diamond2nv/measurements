@@ -706,14 +706,21 @@ class StreamController ():
 		else:
 			print "Invalid streamer sequence!"
 
-		if section in self._section_names:
-			idx = self._sections.index(section)
-			a = getattr (self, 'sect'+str(idx))
-			a = a.add_rf_sequence (sequence = sequence, pmod = pulse_mod)
-			setattr (self, 'sect'+str(i), a)
-		else: 
-			self.logging.warning ('Unknown section!')
-			return None	
+		if ((self._sweep_reps == sequence.nr_repetitions) or (self._sweep_reps<2)):
+			if section in self._section_names:
+				idx = self._section_names.index(section)
+				a = getattr (self, 'sect'+str(idx))
+				a.add_rf_sequence (sequence = sequence, pulse_mod = pulse_mod)
+				setattr (self, 'sect'+str(idx), a)
+			else: 
+				self.logging.warning ('Unknown section!')
+				return None	
+
+			if (self._sweep_reps<2):
+				self._sweep_reps = sequence.nr_repetitions
+
+		else:
+			print "Number of repetions in the sequence must be equal to the number of repetitions for the stream!!"
 
 	def set_AWG_wait_time (self, duration):
 		self._awg_wait_time = duration
