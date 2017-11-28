@@ -34,13 +34,39 @@ class Stream ():
 
 	def clean_void_channels (self):
 		self._update_timers()
+
 		ind = np.where(self.dig_timers<1)
-		print 
-		for i in ind:
-			self.dig_outputs['D'+str(i)] = []
+		if (len(ind[0])>0):
+			for i in ind:
+				self.dig_outputs['D'+str(i)] = []
+
 		ind = np.where(self.anlg_timers<1)
-		for i in ind:
-			self.anlg_outputs['A'+str(i)] = []
+		if (len(ind[0])>0):
+			for i in ind:
+				self.anlg_outputs['A'+str(i)] = []
+
+	def clean_stream (self):
+		#self._update_timers()
+		#self.clean_void_channels()
+
+		for dch in np.arange(8):
+			curr_ch = self.dig_outputs['D'+str(dch)]
+			N = len(curr_ch)-2
+			i = 0
+			new_ch = []
+			while (i<N):
+				if (curr_ch[i][0] == curr_ch[i+1][0]):
+					new_ch.append([curr_ch[i][0], curr_ch[i][1] + curr_ch[i+1][1]])
+				else:
+					new_ch.append (curr_ch[i])
+					#if (i==N-1):
+					#	new_ch.append (curr_ch[i+1])
+				i += 1
+
+			self.dig_outputs['D'+str(dch)] = new_ch
+
+
+
 
 	def add_dig_pulse (self, duration, channel):
 		'''
@@ -378,14 +404,14 @@ class Stream ():
 		
 		curr_offset = 0
 		tick_pos = []
+
 		for ch in self.ch_list:
 			y = np.zeros(d)
 			i = 0
-
 			if (ch[0] == 'D'):
 				for j in self.dig_outputs[ch]:
 					y[i:i+int(j[1])] = 0.5*int(j[0])*np.ones(int(j[1]))
-					i = i + j[1]
+					i = i + int(j[1])
 
 				plt.plot (1e-3*np.arange (d), y+curr_offset*np.ones(len(y)), linewidth = 5, color = self.color_list[c])
 				plt.fill_between (1e-3*np.arange (d), curr_offset, y+curr_offset*np.ones(len(y)), color = self.color_list[c], alpha=0.2)
@@ -397,7 +423,7 @@ class Stream ():
 			elif (ch[0] == 'A'):
 				for j in self.anlg_outputs[ch]:
 					y[i:i+int(j[1])] = j[0]*np.ones(int(j[1]))
-					i = i + j[1]
+					i = i + int(j[1])
 				curr_offset += 0.25*offset
 				plt.plot (1e-3*np.arange (d), 0.75*y+curr_offset*np.ones(len(y)), linewidth = 5, color = self.color_list[c])
 				plt.plot (1e-3*np.arange (d), curr_offset*np.ones(len(y)), '--', linewidth = 2, color = 'gray')
@@ -415,9 +441,12 @@ class Stream ():
 		for label in (ax.get_xticklabels() + ax.get_yticklabels()):
 			#label.set_fontname('Arial')
 			label.set_fontsize(20)
-		if self.xaxis:
-			plt.xlim ([1e-3*self.xaxis[0], 1e-3*self.xaxis[1]])
-		plt.xlabel ('time (us)', fontsize = 20)
+		try:
+			if self.xaxis:
+				plt.xlim ([1e-3*self.xaxis[0], 1e-3*self.xaxis[1]])
+				plt.xlabel ('time (us)', fontsize = 20)
+		except:
+			pass
 		plt.ion()
 		plt.show()
 
@@ -516,13 +545,6 @@ class StreamSection ():
 		based on the pulses added to the sequence
 		"""
 
-		# How can we take care of sweep parameters in repetitions?
-		# I think he best way may be to have a list of pulse names in a dictionary
-		# and use that for a 'one-shot' replacement, like we do for the sequence
-		# It may be faster to do that at Stream level, though, not at section level
-
-		# But, at first, let's see how bad it is if we do it at a 'Section' level
-
 		stream = Stream ()
 		
 		# Lasers
@@ -557,25 +579,22 @@ class StreamSection ():
 			#				channel = d['channel'])		
 
 		if self._has_sequence:
-			for i in np.arange(len(self._curr_seq_I)):
+			for i in np.arange(self._rf_sequence.get_nr_pulses()):
 				stream.add_pulse (channel = self._rf_I_chan, 
-							duration = self._curr_seq_I [str(i)]['duration'],
-							amplitude = self._curr_seq_I [str(i)]['amplitude'])
+							duration = self._curr_seq_I ['duration'][i],
+							amplitude = self._curr_seq_I ['amplitude'][i])
 				stream.add_pulse (channel = self._rf_Q_chan, 
-							duration = self._curr_seq_Q [str(i)]['duration'],
-							amplitude = self._curr_seq_Q [str(i)]['amplitude'])
+							duration = self._curr_seq_Q ['duration'][i],
+							amplitude = self._curr_seq_Q ['amplitude'][i])
 				stream.add_pulse (channel = self._rf_PM_chan, 
-							duration = self._curr_seq_PM [str(i)]['duration'],
-							amplitude = self._curr_seq_PM [str(i)]['amplitude'])
+							duration = self._curr_seq_PM ['duration'][i],
+							amplitude = self._curr_seq_PM ['amplitude'][i])
 
 
 		# at the end, I need to fill wait time to make the length of all channels equal
 		stream.fill_wait_time ('all')
 		self.stream_duration = stream.get_max_time()
 
-		#radio_frequency sequence
-		#if self._streamer_seq:
-		#	self._upload_rf_sequence(delay = t)
 		return stream
 
 	def generate_stream (self):
@@ -601,14 +620,16 @@ class StreamSection ():
 					self._curr_seq_I = self._rf_sequence._iq_pm_sequence_sweep['rep'+str(i)+'_I']
 					self._curr_seq_Q = self._rf_sequence._iq_pm_sequence_sweep['rep'+str(i)+'_Q']
 					self._curr_seq_PM = self._rf_sequence._iq_pm_sequence_sweep['rep'+str(i)+'_PM']
-					print "Added _curr_seq_I"
-					print self._curr_seq_I
 				s = self._generate()
 				self.stream_dict [str(i)] = s
 		else:
+			if self._has_sequence:
+				self._curr_seq_I = self._rf_sequence._iq_pm_sequence_sweep['rep0_I']
+				self._curr_seq_Q = self._rf_sequence._iq_pm_sequence_sweep['rep0_Q']
+				self._curr_seq_PM = self._rf_sequence._iq_pm_sequence_sweep['rep0_PM']
+
 			s = self._generate ()
-			self.stream = s
-					
+			self.stream = s					
 
 
 class StreamController ():
@@ -626,6 +647,7 @@ class StreamController ():
 		self.triggers = []
 		self.laser_pulses = {}
 		self.rf_sequence = None
+		self._has_sequence = False
 		self.ps_seq = None 
 		self._cfg = cfg_file.config
 		self._streamer_channels = self._cfg['streamer_channels']
@@ -746,6 +768,7 @@ class StreamController ():
 						Q_chan = self._streamer_channels['Q_channel'],
 						PM_chan = self._streamer_channels['PM_channel'])
 				setattr (self, 'sect'+str(idx), a)
+				self._has_sequence = True
 			else: 
 				self.logging.warning ('Unknown section!')
 				return None	
@@ -758,40 +781,6 @@ class StreamController ():
 
 	def set_AWG_wait_time (self, duration):
 		self._awg_wait_time = duration
-
-	def _upload_rf_sequence(self, delay = 0):
-
-		# for the moment we have a for loop that converts from a dictionary
-		# to the format required for the streamer
-		# However, this may be too slow if we have many pulses and we may want to avoid it
-		# and already format the sequence properly in libs.StreamerSequence.StreamerSequence
-		# as a list of lists [ampl, duration]
-		
-		self.ps_seq.add_analog (duration = delay, 
-								amplitude = 0, 
-								channel = self._anlg_ch['I_channel'])
-
-		self.ps_seq.add_analog (duration = delay, 
-								amplitude = 0, 
-								channel = self._anlg_ch['Q_channel'])
-
-		self.ps_seq.add_digital (duration = delay, 
-								value = 0, 
-								channel = self._dig_ch['PM_channel'])
-
-		for i in np.arange(self.rf_sequence.get_nr_pulses()):
-			#update I waveform
-			self.ps_seq.add_analog (duration = int(self.rf_sequence._Ichan['duration'][i]), 
-								amplitude = self.rf_sequence._Ichan['amplitude'][i], 
-								channel = self._anlg_ch['I_channel'])
-			#update Q waveform
-			self.ps_seq.add_analog (duration = int(self.rf_sequence._Qchan['duration'][i]), 
-								amplitude = self.rf_sequence._Qchan['amplitude'][i], 
-								channel = self._anlg_ch['Q_channel'])
-			#update PM channel
-			self.ps_seq.add_digital (duration = int(self.rf_sequence._PMchan['duration'][i]), 
-								value = int(self.rf_sequence._PMchan['amplitude'][i]), 
-								channel = self._dig_ch['PM_channel'])
 
 	def set_sweep_repetitions (self, n):
 
@@ -808,7 +797,6 @@ class StreamController ():
 			a = getattr (self, 'sect'+str(idx))
 			a.set_nr_reps (n)
 			setattr (self, 'sect'+str(idx), a)
-
 
 	def print_sections (self):
 		print 'Sections'
@@ -882,6 +870,14 @@ class StreamController ():
 				stream.concatenate (secStr)
 
 			stream.clean_void_channels()
+			
+			# CLEAN STREAM is not working, yet
+			#print "Before cleaning"
+			#stream.print_channels()
+			#stream.clean_stream()
+			#print "After cleaning"
+			#stream.print_channels()
+
 			self._stream_dict ['rep_'+str(n)] = stream
 			self._max_t.append(stream.get_max_time())
 
@@ -917,16 +913,14 @@ class StreamController ():
 			colors.append (c[idx])
 			idx = idx+1
 
-		'''
-		if self._streamer_seq:
-			labels.append ('A'+str(self._anlg_ch['I_channel']))
-			labels.append ('A'+str(self._anlg_ch['Q_channel']))
-			labels.append ('D'+str(self._dig_ch['PM_channel']))
+		if self._has_sequence:
+			labels.append (self._streamer_channels['I_channel'])
+			labels.append (self._streamer_channels['Q_channel'])
+			labels.append (self._streamer_channels['PM_channel'])
 
-			channels.extend (['A'+str(self._anlg_ch['I_channel']), 'A'+str(self._anlg_ch['Q_channel']), 
-						'D'+str(self._dig_ch['PM_channel'])])
+			channels.extend ([self._streamer_channels['I_channel'], 
+				self._streamer_channels['Q_channel'], self._streamer_channels['PM_channel']])
 			colors.extend (['crimson', 'orangered', 'darkred'])
-		'''
 
 		if scale_equal:
 			xaxis = [0, max(self._max_t)]

@@ -25,13 +25,12 @@ def spin_echo_sequence (time, verbose = False):
 	s.add_pulse (duration = 100, amplitude = 1, phase = 45)
 	s.set_pmod ('on')
 	
-	#s.calculate_IQ_sequence()
-	s.set_sequence_repetitions (N)
-	s.set_sweep_parameter (pulse_name='W0', parameter='duration', sweep_array = np.linspace (50, 1000, N))
-	s.set_sweep_parameter (pulse_name='W1', parameter='duration', sweep_array = np.linspace (50, 1000, N))
+	#s.set_sequence_repetitions (N)
+	#s.set_sweep_parameter (pulse_name='W0', parameter='duration', sweep_array = np.linspace (50, 1000, N))
+	#s.set_sweep_parameter (pulse_name='W1', parameter='duration', sweep_array = np.linspace (50, 1000, N))
 
-	s.calculate_repetition_dictionary()
-	s.calculate_IQ_sequence()
+	#s.calculate_repetition_dictionary()
+	s.calculateIQ()
 
 	#if verbose:
 	#	s.print_sequence()
@@ -58,5 +57,5 @@ def test_odmr(sequence):
 	
 #test_repeated_sweep()
 s = spin_echo_sequence(time = 1500, verbose = True)
-print "I calculated the sequence!!!"
-strCtrl = test_odmr (sequence = s)
+#print "I calculated the sequence!!!"
+#strCtrl = test_odmr (sequence = s)

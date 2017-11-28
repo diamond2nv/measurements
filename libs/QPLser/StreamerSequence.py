@@ -16,7 +16,7 @@ class StreamerSequence ():
 		self._iq = False
 		self._pmod = False
 
-		self.nr_repetitions = None
+		self.nr_repetitions = 1
 		self._sweep_pulses = []
 		self._sweep_par = []
 		self._sweep_dict = {}
@@ -131,7 +131,6 @@ class StreamerSequence ():
 
 		T = [['', 'type', 'dur', 'ampl', 'phase'], ['------', '------', '------', '------', '------']]
 
-		print '******** Sequence '+rep_str+'********'
 		for i in np.arange(self._ctr):
 			a = seq_dict[str(i)]
 			if (a['type'] == 'pulse'):
@@ -263,7 +262,7 @@ class StreamerSequence ():
 		return PMchan
 
 
-	def calculate_IQ_sequence (self, offset = 10):
+	def _calculate_IQ_sequence (self, offset = 10):
 		'''
 		Calculates the IQ (and PM) channels for the current pulse sequence (including all repetitions, if relevant)
 		'''
@@ -292,8 +291,8 @@ class StreamerSequence ():
 
 		Input: n [int]
 		'''
-
-		self.nr_repetitions = n
+		if (n>1):
+			self.nr_repetitions = n
 
 	def set_sweep_parameter (self, pulse_name, parameter, sweep_array):
 
@@ -317,12 +316,9 @@ class StreamerSequence ():
 		else:
 			print "Pulse ", pulse_name, " does not exist."
 
-	def calculate_repetition_dictionary (self):
+	def calculateIQ (self):
 
-		print "Nr reps:", self.nr_repetitions
-		print "Sweep pars:", self._sweep_par
-
-		if ((self.nr_repetitions > 0) and (len (self._sweep_par)>0)):
+		if ((self.nr_repetitions > 0)):
 
 			# deep-copy of nr_repetitions copy of self._seq dictionary 
 			for r in np.arange (self.nr_repetitions):
@@ -340,9 +336,7 @@ class StreamerSequence ():
 				for r in np.arange (self.nr_repetitions):
 					self._sequence_dict ['rep'+str(r)][str(ind)][prop] = self._sweep_dict[pname][r]
 		
-
-			print "######### Repetition dictionary ########"
-			print self._sequence_dict
+			self._calculate_IQ_sequence()
 
 		else:
 			print "Nothing to sweep."
