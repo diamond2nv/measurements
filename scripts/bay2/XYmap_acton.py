@@ -36,8 +36,8 @@ voltsDirectory = r'C:\Users\QPL\Desktop\temp_measurements'
 #######################
 # instruments
 attoCtrl = mscan.AttocubeVISA(VISA_address=r'ASRL11::INSTR', axisX=2, axisY=1)
-spectroCtrl = mdet.ActonNICtrl(sender_port="/SmallNIbox/port1/line3",
-                               receiver_port="/SmallNIbox/port1/line2")
+spectroCtrl = mdet.ActonNICtrl(sender_port="/Weetabix/port2/line0",
+                               receiver_port="/Weetabix/port2/line4")
 voltmeterCtrl = mdet.VoltmeterCtrl(VISA_address=r'GPIB0::13::INSTR')
 
 d = datetime.datetime.now()
