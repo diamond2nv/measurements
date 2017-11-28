@@ -24,6 +24,9 @@ class Stream ():
 		self.ext_plot_settings = False
 
 	def concatenate (self, stream):
+		"""
+		Concatenates stream to self
+		"""
 
 		for i in np.arange(8):
 			self.dig_outputs ['D'+str(i)] = self.dig_outputs ['D'+str(i)] + stream.dig_outputs ['D'+str(i)]
@@ -33,6 +36,7 @@ class Stream ():
 
 
 	def clean_void_channels (self):
+
 		self._update_timers()
 
 		ind = np.where(self.dig_timers<1)
@@ -46,6 +50,11 @@ class Stream ():
 				self.anlg_outputs['A'+str(i)] = []
 
 	def clean_stream (self):
+
+		"""
+		In each channel, merges consecutive elements with the same amplitude.
+		For example [0, 200], [0, 100] is replace by [0, 300]		
+		"""
 
 		for dch in np.arange(8):
 			curr_ch = self.dig_outputs['D'+str(dch)]
@@ -95,6 +104,10 @@ class Stream ():
 		"""
 		adds wait time on one of the 8 digital channels (0..7)
 		Duration in ns
+
+		Input:
+		duration [ns]
+		channel ['D0'...'D7']
 		"""
 		if (duration>0):
 			go_on = True
@@ -114,6 +127,14 @@ class Stream ():
 					self.logger.warning ('Specified channel does not exist!')
 
 	def add_analog (self, duration, amplitude, channel):
+		"""
+		adds analog pulse on one of the 2 analog channels ('A0', 'A1')
+
+		Input:
+		duration [ns]
+		channel ['A0', 'A1']
+		amplitude [float, between -1 and +1]
+		"""
 
 		if (duration>0):
 			go_on = True
@@ -132,6 +153,15 @@ class Stream ():
 				self.logger.warning ('Specified channel does not exist!')
 
 	def add_pulse (self, duration, channel, amplitude = 1):
+		"""
+		adds pulse, either digital or analog, depending on the specified channel ('A#' or 'D#')
+
+		Input:
+		duration [ns]
+		channel ['A0', 'A1', 'D0', ..., 'D7']
+		amplitude [float, between -1 and +1]: if the channel is digital, the amplitude is
+				digitized (0/1) with a threshold of 0.5
+		"""
 
 		if (duration>0):
 			pulse_type = channel[0]
@@ -457,6 +487,18 @@ class Stream ():
 class StreamSection ():
 
 	def __init__ (self, name, idx, cfg):
+		"""
+		[summary]
+		Defines a Section of a Stream. A Section is a self-contained portion of a Stream.
+		The start of all pulses in a Section is defined relative to the start of the Section
+
+		Input:
+		name
+		idx
+		cfg
+		
+		"""
+
 		self.name = name
 		self.idx = idx
 		self._cfg = cfg
@@ -477,6 +519,7 @@ class StreamSection ():
 		self._rf_sequence = None
 		self._pmod = False
 		self._has_sequence = False
+		self._sequence_sweep = False
 
 		# variables to store sweep parameters for laser and triggers
 		self._section_sweep = False #only turned to True if there is any pulse to sweep
@@ -526,6 +569,11 @@ class StreamSection ():
 		self._rf_I_chan = I_chan
 		self._rf_Q_chan = Q_chan
 		self._rf_PM_chan = PM_chan
+
+		if (sequence.nr_repetitions>1):
+			self._sequence_sweep = True
+			self._nr_repetitions = sequence.nr_repetitions
+			self._section_sweep = True
 
 	def print_pulses (self):
 
@@ -590,8 +638,6 @@ class StreamSection ():
 							duration = self._curr_seq_PM ['duration'][i],
 							amplitude = self._curr_seq_PM ['amplitude'][i])
 
-
-		# at the end, I need to fill wait time to make the length of all channels equal
 		stream.fill_wait_time ('all')
 		self.stream_duration = stream.get_max_time()
 
@@ -602,12 +648,9 @@ class StreamSection ():
 		'''
 		Generates stream for the Section. If sweeping, then the stream is stored in a dictionary [stream_dict],
 		otherwise in a variable [stream]
-
-		Input
-		n 		[int]		number of repetitions
 		'''
 
-		if self._section_sweep:
+		if (self._section_sweep):
 			self.stream_dict = {}
 			for i in np.arange(self._nr_repetitions):
 				for lpname in self._sweep_laser_pulses:
