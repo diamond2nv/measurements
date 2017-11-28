@@ -463,6 +463,7 @@ class XYScan ():
         d_obj = DO.DataObjectHDF5()
         d_obj.save_object_to_file (self, file_name)
         print ("File saved")
+        
     def plot_counts (self):
         
         if (self.detector_type == 'apd'):

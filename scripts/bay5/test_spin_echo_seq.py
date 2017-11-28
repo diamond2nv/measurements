@@ -1,10 +1,10 @@
 
 from measurements.instruments import PulseStreamer82 as psLib
 from measurements.instruments import RS_SMBV100A as rfLib
-import logging
 from measurements.libs.QPLser import ODMR_streamer as streamer_odmr
 from measurements.libs.QPLser import StreamerSequence as seq
 from measurements.libs.QPLser import StreamerMeasurement as SM
+import logging
 
 reload(streamer_odmr)
 reload(psLib)
@@ -52,10 +52,11 @@ def test_odmr(sequence):
 	                                             power = 0.5, delay = 0)
 
 	strCtrl.generate_ctrl_stream()
-	#strCtrl.view_stream()
+	strCtrl.view_stream()
 
 	return strCtrl
 	
 #test_repeated_sweep()
 s = spin_echo_sequence(time = 1500, verbose = True)
+print "I calculated the sequence!!!"
 strCtrl = test_odmr (sequence = s)

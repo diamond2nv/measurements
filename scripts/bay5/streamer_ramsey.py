@@ -54,8 +54,11 @@ def test_repeated_sweep():
 	#strCtrl._stream_dict['rep_1'].plot_channels()
 	#strCtrl._stream_dict['rep_2'].plot_channels()
 	strCtrl.view_stream()
+
+	return strCtrl
+
 	
-test_repeated_sweep()
+strCtrl = test_repeated_sweep()
 
 
 

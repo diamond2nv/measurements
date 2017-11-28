@@ -112,7 +112,10 @@ class Stream ():
 			ch = int(channel[1])
 
 			if (pulse_type == 'D'):
-				self.add_dig_pulse (duration = duration, channel = ch)
+				if (amplitude>0.5):
+					self.add_dig_pulse (duration = duration, channel = ch)
+				else:
+					self.add_wait_pulse (duration = duration, channel = ch)					
 			elif (pulse_type == 'A'):
 				self.add_analog (duration = duration, amplitude = amplitude, channel = ch)
 			else:
@@ -444,6 +447,7 @@ class StreamSection ():
 		# attach sequence (StreamerSequence)
 		self._rf_sequence = None
 		self._pmod = False
+		self._has_sequence = False
 
 		# variables to store sweep parameters for laser and triggers
 		self._section_sweep = False #only turned to True if there is any pulse to sweep
@@ -470,6 +474,7 @@ class StreamSection ():
 				'power':	power,
 				'delay':	delay,
 				'channel':	channel,
+				'sweep':	False,
 		}
 
 	def add_trigger_pulse (self, delay, channel, to):
@@ -481,11 +486,17 @@ class StreamSection ():
 				'delay':		delay,
 				'channel':		channel,
 				'destination':	to,
+				'sweep':		False,
 		}
 
-	def add_rf_sequence (self, sequence, pulse_mod = False):
+	def add_rf_sequence (self, sequence, delay, I_chan, Q_chan, PM_chan, pulse_mod):
 		self._rf_sequence = sequence
 		self._pmod = pulse_mod
+		self._has_sequence = True
+		self._rf_delay = delay
+		self._rf_I_chan = I_chan
+		self._rf_Q_chan = Q_chan
+		self._rf_PM_chan = PM_chan
 
 	def print_pulses (self):
 
@@ -496,6 +507,9 @@ class StreamSection ():
 	def return_pulse_names (self):
 		return self._laser_pulse_names, self._trg_pulse_names
 
+	def set_nr_reps (self, n):
+		self._nr_repetitions = n
+
 	def _generate (self):
 		"""
 		Generates a control pulse-stream for the section, 
@@ -503,7 +517,7 @@ class StreamSection ():
 		"""
 
 		# How can we take care of sweep parameters in repetitions?
-		# I thinkt he best way may be to have a list of pulse names in a dictionary
+		# I think he best way may be to have a list of pulse names in a dictionary
 		# and use that for a 'one-shot' replacement, like we do for the sequence
 		# It may be faster to do that at Stream level, though, not at section level
 
@@ -541,7 +555,19 @@ class StreamSection ():
 							channel = d['channel'])
 			#stream.add_wait_pulse (duration = self._cfg['trigger']['wait_after'], 
 			#				channel = d['channel'])		
-		# I need to decide how to upload the sequence and where to target the repetitions (alter)
+
+		if self._has_sequence:
+			for i in np.arange(len(self._curr_seq_I)):
+				stream.add_pulse (channel = self._rf_I_chan, 
+							duration = self._curr_seq_I [str(i)]['duration'],
+							amplitude = self._curr_seq_I [str(i)]['amplitude'])
+				stream.add_pulse (channel = self._rf_Q_chan, 
+							duration = self._curr_seq_Q [str(i)]['duration'],
+							amplitude = self._curr_seq_Q [str(i)]['amplitude'])
+				stream.add_pulse (channel = self._rf_PM_chan, 
+							duration = self._curr_seq_PM [str(i)]['duration'],
+							amplitude = self._curr_seq_PM [str(i)]['amplitude'])
+
 
 		# at the end, I need to fill wait time to make the length of all channels equal
 		stream.fill_wait_time ('all')
@@ -552,7 +578,7 @@ class StreamSection ():
 		#	self._upload_rf_sequence(delay = t)
 		return stream
 
-	def generate_stream (self, n):
+	def generate_stream (self):
 
 		'''
 		Generates stream for the Section. If sweeping, then the stream is stored in a dictionary [stream_dict],
@@ -562,16 +588,21 @@ class StreamSection ():
 		n 		[int]		number of repetitions
 		'''
 
-		print self._sweep_laser_dict
 		if self._section_sweep:
 			self.stream_dict = {}
-			for i in np.arange(n):
+			for i in np.arange(self._nr_repetitions):
 				for lpname in self._sweep_laser_pulses:
 					idx = self._sweep_laser_pulses.index(lpname)
 					self._laser_dict[lpname][self._sweep_laser_par[idx]] = self._sweep_laser_dict[lpname][i]
 				for tpname in self._sweep_trg_pulses:
 					idx = self._sweep_trg_pulses.index(tpname)
-					self._trg_dict[lpname][self._sweep_trg_par[idx]] = self._sweep_trg_dict[tpname][i]
+					self._trg_dict[tpname][self._sweep_trg_par[idx]] = self._sweep_trg_dict[tpname][i]
+				if self._has_sequence:
+					self._curr_seq_I = self._rf_sequence._iq_pm_sequence_sweep['rep'+str(i)+'_I']
+					self._curr_seq_Q = self._rf_sequence._iq_pm_sequence_sweep['rep'+str(i)+'_Q']
+					self._curr_seq_PM = self._rf_sequence._iq_pm_sequence_sweep['rep'+str(i)+'_PM']
+					print "Added _curr_seq_I"
+					print self._curr_seq_I
 				s = self._generate()
 				self.stream_dict [str(i)] = s
 		else:
@@ -700,7 +731,7 @@ class StreamController ():
 			print 'Unknown trigger name. Please make sure a channel for '+trg_name+' is defined in config file.'
 
 
-	def add_rf_sequence (self, sequence, section, pulse_mod = False):
+	def add_rf_sequence (self, sequence, section, delay = 0., pulse_mod = False):
 		if (sequence.__class__.__name__ == 'StreamerSequence'):		
 			self.rf_sequence = sequence
 		else:
@@ -710,7 +741,10 @@ class StreamController ():
 			if section in self._section_names:
 				idx = self._section_names.index(section)
 				a = getattr (self, 'sect'+str(idx))
-				a.add_rf_sequence (sequence = sequence, pulse_mod = pulse_mod)
+				a.add_rf_sequence (sequence = sequence, pulse_mod = pulse_mod, 
+						delay = delay, I_chan = self._streamer_channels['I_channel'],
+						Q_chan = self._streamer_channels['Q_channel'],
+						PM_chan = self._streamer_channels['PM_channel'])
 				setattr (self, 'sect'+str(idx), a)
 			else: 
 				self.logging.warning ('Unknown section!')
@@ -769,6 +803,13 @@ class StreamController ():
 
 		self._sweep_reps = n
 
+		for section in self._section_names:
+			idx = self._section_names.index(section)
+			a = getattr (self, 'sect'+str(idx))
+			a.set_nr_reps (n)
+			setattr (self, 'sect'+str(idx), a)
+
+
 	def print_sections (self):
 		print 'Sections'
 		print '--------'
@@ -798,12 +839,14 @@ class StreamController ():
 						a._section_sweep = True
 						a._sweep_laser_pulses.append (pulse_name)
 						a._sweep_laser_par.append(parameter)
-						a._sweep_laser_dict[pulse_name] = sweep_array			
+						a._sweep_laser_dict[pulse_name] = sweep_array
+						a._laser_dict [pulse_name]['sweep'] = True			
 				elif pulse_name in trgp:
 						a._section_sweep = True
 						a._sweep_trg_pulses.append (pulse_name)
 						a._sweep_trg_par.append(parameter)
 						a._sweep_trg_dict[pulse_name] = sweep_array			
+						a._trg_dict [pulse_name]['sweep'] = True			
 				else:
 					print "Pulse ", pulse_name, ' unknown!'
 				setattr (self, 'sect'+str(idx), a)
@@ -824,7 +867,7 @@ class StreamController ():
 		for i in np.arange(len(self._section_names)):
 			print " ****** Stream Section ", i, " ("+self._section_names[i]+")"
 			x = getattr (self, 'sect'+str(i))
-			x.generate_stream (self._sweep_reps)
+			x.generate_stream ()
 
 		self._stream_dict = {}
 		self._max_t = []
