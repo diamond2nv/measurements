@@ -46,24 +46,24 @@ class Stream ():
 				self.anlg_outputs['A'+str(i)] = []
 
 	def clean_stream (self):
-		#self._update_timers()
-		#self.clean_void_channels()
 
 		for dch in np.arange(8):
 			curr_ch = self.dig_outputs['D'+str(dch)]
-			N = len(curr_ch)-2
+			N = len(curr_ch)-1
 			i = 0
 			new_ch = []
 			while (i<N):
 				if (curr_ch[i][0] == curr_ch[i+1][0]):
-					new_ch.append([curr_ch[i][0], curr_ch[i][1] + curr_ch[i+1][1]])
+					new_dur = curr_ch[i][1] + curr_ch[i+1][1]
+					new_ampl = curr_ch[i][0]
+					del curr_ch[i]
+					del curr_ch[i]
+					curr_ch.insert (i, [new_ampl, new_dur])
+					N = len(curr_ch)-1
 				else:
-					new_ch.append (curr_ch[i])
-					#if (i==N-1):
-					#	new_ch.append (curr_ch[i+1])
-				i += 1
+					i += 1
 
-			self.dig_outputs['D'+str(dch)] = new_ch
+			self.dig_outputs['D'+str(dch)] = curr_ch
 
 
 
@@ -870,13 +870,7 @@ class StreamController ():
 				stream.concatenate (secStr)
 
 			stream.clean_void_channels()
-			
-			# CLEAN STREAM is not working, yet
-			#print "Before cleaning"
-			#stream.print_channels()
-			#stream.clean_stream()
-			#print "After cleaning"
-			#stream.print_channels()
+			stream.clean_stream()
 
 			self._stream_dict ['rep_'+str(n)] = stream
 			self._max_t.append(stream.get_max_time())
