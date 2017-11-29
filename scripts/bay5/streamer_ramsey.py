@@ -3,7 +3,7 @@ from measurements.instruments import PulseStreamer82 as psLib
 from measurements.instruments import RS_SMBV100A as rfLib
 import logging
 from measurements.libs.QPLser import ODMR_streamer as streamer_odmr
-from measurements.libs.QPLser import StreamerSequence as seq
+from measurements.libs.QPLser import Sequence as seq
 from measurements.libs.QPLser import StreamerMeasurement as SM
 
 reload(streamer_odmr)
@@ -14,7 +14,7 @@ reload (SM)
 
 
 def spin_echo_sequence ():
-	s = seq.StreamerSequence()
+	s = seq.SequenceIQ()
 	s.add_pulse (duration = 100, amplitude = 1, phase = 0)
 	s.add_wait (duration = 500)
 	s.add_pulse (duration = 200, amplitude = 1, phase = 0)

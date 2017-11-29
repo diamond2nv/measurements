@@ -1,8 +1,14 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Wed Nov 22 09:23:52 2017
+
+@author: cristian bonato
+"""
 
 import numpy as np
 import tabulate as tb
 
-class StreamerSequence ():
+class Sequence ():
 
 	def __init__(self):
 		self._seq = {}
@@ -10,10 +16,6 @@ class StreamerSequence ():
 		self._wait_ctr = 0
 		self._ctr = 0
 		self._pulse_names = []
-		self._Ichan = None
-		self._Qchan = None
-		self._PMchan = None
-		self._iq = False
 		self._pmod = False
 
 		self.nr_repetitions = 1
@@ -21,8 +23,6 @@ class StreamerSequence ():
 		self._sweep_par = []
 		self._sweep_dict = {}
 		self._sequence_dict = {}
-
-		self._iq_pm_sequence_sweep ={}
 
 
 	def add_pulse (self, duration, amplitude, phase, name = None):
@@ -93,7 +93,8 @@ class StreamerSequence ():
 	def repeat_segment (self, first, last, nr_repetitions):
 
 		'''
-		Adds (nr_repetitions) repetitions of the element (pulses nad wait time) between (first) and (last)
+		Adds (nr_repetitions) repetitions of the element (pulses and wait time)
+		between (first) and (last)
 
 		Input:
 		nr_repetitions: int
@@ -140,6 +141,28 @@ class StreamerSequence ():
 
 		print tb.tabulate(T, stralign='center')
 
+
+class SequenceIQ (Sequence):
+
+	def __init__(self):
+		self._seq = {}
+		self._pulse_ctr = 0
+		self._wait_ctr = 0
+		self._ctr = 0
+		self._pulse_names = []
+		self._Ichan = None
+		self._Qchan = None
+		self._PMchan = None
+		self._iq = False
+		self._pmod = False
+
+		self.nr_repetitions = 1
+		self._sweep_pulses = []
+		self._sweep_par = []
+		self._sweep_dict = {}
+		self._sequence_dict = {}
+
+		self._iq_pm_sequence_sweep ={}
 
 	def _print_iq (self, r):
 

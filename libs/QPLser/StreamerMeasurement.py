@@ -1,3 +1,9 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Wed Nov 22 09:23:52 2017
+
+@author: cristian bonato
+"""
 
 import numpy as np
 import matplotlib.pyplot as plt

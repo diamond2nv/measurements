@@ -2,7 +2,7 @@
 from measurements.instruments import PulseStreamer82 as psLib
 from measurements.instruments import RS_SMBV100A as rfLib
 from measurements.libs.QPLser import ODMR_streamer as streamer_odmr
-from measurements.libs.QPLser import StreamerSequence as seq
+from measurements.libs.QPLser import Sequence as seq
 from measurements.libs.QPLser import StreamerMeasurement as SM
 import logging
 
@@ -17,7 +17,7 @@ def spin_echo_sequence (time, verbose = False):
 
 	N = 5
 
-	s = seq.StreamerSequence()
+	s = seq.SequenceIQ()
 	s.add_pulse (duration = 100, amplitude = 1, phase = 0)
 	s.add_wait (duration = time)
 	s.add_pulse (duration = 200, amplitude = 1, phase = 0)
@@ -29,13 +29,7 @@ def spin_echo_sequence (time, verbose = False):
 	s.set_sweep_parameter (pulse_name='W0', parameter='duration', sweep_array = np.linspace (50, 1000, N))
 	s.set_sweep_parameter (pulse_name='W1', parameter='duration', sweep_array = np.linspace (50, 1000, N))
 
-	#s.calculate_repetition_dictionary()
 	s.calculateIQ()
-
-	#if verbose:
-	#	s.print_sequence()
-	#	s.print_IQ()
-
 	return s
 
 
