@@ -32,7 +32,7 @@
     <string>SAVE view</string>
    </property>
   </widget>
-  <widget class="QGraphicsView" name="plot">
+  <widget class="QGraphicsView" name="plot_canvas">
    <property name="geometry">
     <rect>
      <x>10</x>
@@ -42,7 +42,7 @@
     </rect>
    </property>
   </widget>
-  <widget class="QLineEdit" name="lineEdit_fileName">
+  <widget class="QLineEdit" name="lineEdit_fileTag">
    <property name="geometry">
     <rect>
      <x>940</x>
@@ -71,7 +71,7 @@
     <string>file tag:</string>
    </property>
   </widget>
-  <widget class="QSpinBox" name="sb_nr_steps_finelaser">
+  <widget class="QSpinBox" name="sb_rep_nr">
    <property name="geometry">
     <rect>
      <x>100</x>
@@ -81,7 +81,7 @@
     </rect>
    </property>
   </widget>
-  <widget class="QLabel" name="label_maxV__finelaser">
+  <widget class="QLabel" name="label_view_time">
    <property name="geometry">
     <rect>
      <x>540</x>
@@ -100,7 +100,7 @@
     <string>View time interval</string>
    </property>
   </widget>
-  <widget class="QLabel" name="label_nr_steps_finelaser">
+  <widget class="QLabel" name="label_repNr">
    <property name="geometry">
     <rect>
      <x>30</x>
@@ -119,7 +119,7 @@
     <string>Rep nr</string>
    </property>
   </widget>
-  <widget class="QDoubleSpinBox" name="dsb_maxV_finelaser">
+  <widget class="QDoubleSpinBox" name="dsb_view_time">
    <property name="geometry">
     <rect>
      <x>541</x>
@@ -129,7 +129,7 @@
     </rect>
    </property>
   </widget>
-  <widget class="QScrollBar" name="horizontalScrollBar">
+  <widget class="QScrollBar" name="Hscrollbar">
    <property name="geometry">
     <rect>
      <x>10</x>
@@ -145,7 +145,7 @@
     <enum>Qt::Horizontal</enum>
    </property>
   </widget>
-  <widget class="QCheckBox" name="cb_autostop_2">
+  <widget class="QCheckBox" name="cb_D0">
    <property name="geometry">
     <rect>
      <x>30</x>
@@ -164,7 +164,7 @@
     <string>D0</string>
    </property>
   </widget>
-  <widget class="QCheckBox" name="cb_autostop_3">
+  <widget class="QCheckBox" name="cb_D1">
    <property name="geometry">
     <rect>
      <x>30</x>
@@ -183,7 +183,7 @@
     <string>D1</string>
    </property>
   </widget>
-  <widget class="QCheckBox" name="cb_autostop_4">
+  <widget class="QCheckBox" name="cb_D3">
    <property name="geometry">
     <rect>
      <x>90</x>
@@ -202,7 +202,7 @@
     <string>D3</string>
    </property>
   </widget>
-  <widget class="QCheckBox" name="cb_autostop_5">
+  <widget class="QCheckBox" name="cb_D2">
    <property name="geometry">
     <rect>
      <x>90</x>
@@ -221,7 +221,7 @@
     <string>D2</string>
    </property>
   </widget>
-  <widget class="QCheckBox" name="cb_autostop_6">
+  <widget class="QCheckBox" name="cb_D5">
    <property name="geometry">
     <rect>
      <x>150</x>
@@ -240,7 +240,7 @@
     <string>D5</string>
    </property>
   </widget>
-  <widget class="QCheckBox" name="cb_autostop_7">
+  <widget class="QCheckBox" name="cb_D4">
    <property name="geometry">
     <rect>
      <x>150</x>
@@ -259,7 +259,7 @@
     <string>D4</string>
    </property>
   </widget>
-  <widget class="QCheckBox" name="cb_autostop_8">
+  <widget class="QCheckBox" name="cb_D7">
    <property name="geometry">
     <rect>
      <x>210</x>
@@ -278,7 +278,7 @@
     <string>D7</string>
    </property>
   </widget>
-  <widget class="QCheckBox" name="cb_autostop_9">
+  <widget class="QCheckBox" name="cb_D6">
    <property name="geometry">
     <rect>
      <x>210</x>
@@ -297,7 +297,7 @@
     <string>D6</string>
    </property>
   </widget>
-  <widget class="QCheckBox" name="cb_autostop_10">
+  <widget class="QCheckBox" name="cb_A1">
    <property name="geometry">
     <rect>
      <x>300</x>
@@ -316,7 +316,7 @@
     <string>A1</string>
    </property>
   </widget>
-  <widget class="QCheckBox" name="cb_autostop_11">
+  <widget class="QCheckBox" name="cb_A0">
    <property name="geometry">
     <rect>
      <x>300</x>
@@ -335,7 +335,7 @@
     <string>A0</string>
    </property>
   </widget>
-  <widget class="QComboBox" name="comboBox">
+  <widget class="QComboBox" name="comboBox_units">
    <property name="geometry">
     <rect>
      <x>630</x>

@@ -9,9 +9,13 @@ import numpy as np
 import matplotlib.pyplot as plt
 import logging
 import copy
+import sys
 
 from measurements.libs.config import odmr_config as cfg_file
+from PyQt5 import QtCore, QtGui, QtWidgets
+from measurements.libs.QPLser import QPLseViewer
 reload (cfg_file)
+reload (QPLseViewer)
 
 class Stream ():
 
@@ -924,16 +928,8 @@ class StreamController ():
 			self._stream_dict ['rep_'+str(n)] = stream
 			self._max_t.append(stream.get_max_time())
 
+	def _plot_settings (self, repetitions):
 
-	def view_stream (self, repetitions = 'all', scale_equal = True):
-
-		if (repetitions == 'all'):
-			repetitions = np.arange(self._sweep_reps)
-		elif (len(repetitions) == 1):
-			repetitions = [repetitions]
-
-		#Define colors and labels for the plots
-		#We use: blue (laser pulses), gray (triggers), red (RF drive pulses)
 		channels = []
 		labels = []
 		colors = []
@@ -963,12 +959,35 @@ class StreamController ():
 
 			channels.extend ([self._streamer_channels['I_channel'], 
 				self._streamer_channels['Q_channel'], self._streamer_channels['PM_channel']])
-			colors.extend (['crimson', 'orangered', 'darkred'])
+			colors.extend (['crimson', 'orangered', 'darkred'])	
 
-		if scale_equal:
-			xaxis = [0, max(self._max_t)]
-		else:
-			xaxis = None
+		return channels, labels, colors
+
+
+	def view (self):
+		channels, labels, colors = self._plot_settings (np.arange(self._sweep_reps))
+		self._stream_dict ['plot-channels'] = channels
+		self._stream_dict ['plot-colors'] = colors
+		self._stream_dict ['plot-labels'] = labels
+
+		qApp=QtWidgets.QApplication.instance() 
+		if not qApp: 
+		    qApp = QtWidgets.QApplication(sys.argv)
+
+		gui = QPLseViewer.QPLviewGUI (stream_dict = self._stream_dict)
+		gui.setWindowTitle('QPLseViewer')
+		gui.show()
+		sys.exit(qApp.exec_())
+
+
+	def view_stream_inline (self, repetitions = 'all', scale_equal = True):
+
+		if (repetitions == 'all'):
+			repetitions = np.arange(self._sweep_reps)
+		elif (len(repetitions) == 1):
+			repetitions = [repetitions]
+
+		channels, labels, colors - self._plot_settings(repetitions)
 		for n in repetitions:
 			self._stream_dict ['rep_'+str(n)].set_plot (channels=channels, labels=labels, colors=colors, xaxis=xaxis)
 			self._stream_dict ['rep_'+str(n)].plot_channels()
