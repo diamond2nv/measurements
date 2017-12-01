@@ -7,6 +7,40 @@
 # WARNING! All changes made in this file will be lost!
 
 from PyQt5 import QtCore, QtGui, QtWidgets
+import numpy as np
+import h5py
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+from matplotlib.figure import Figure
+
+class MyMplCanvas(FigureCanvas):
+    """Ultimately, this is a QWidget (as well as a FigureCanvasAgg, etc.)."""
+
+    def __init__(self, parent=None, width=5, height=4, dpi=100):
+        fig = Figure(figsize=(width, height), dpi=dpi)
+        self.axes = fig.add_subplot(111)
+
+        self.compute_initial_figure()
+
+        FigureCanvas.__init__(self, fig)
+        self.setParent(parent)
+
+        FigureCanvas.setSizePolicy(self,
+                                   QtWidgets.QSizePolicy.Expanding,
+                                   QtWidgets.QSizePolicy.Expanding)
+        FigureCanvas.updateGeometry(self)
+
+    def compute_initial_figure(self):
+        pass
+
+
+class MyStaticMplCanvas(MyMplCanvas):
+    """Simple canvas with a sine plot."""
+
+    def compute_initial_figure(self):
+        t = np.arange(0.0, 3.0, 0.01)
+        s = np.sin(2*np.pi*t)
+        self.axes.plot(t, s)
+
 
 class Ui_Panel(object):
     def setupUi(self, Panel):
@@ -19,9 +53,11 @@ class Ui_Panel(object):
         font.setPointSize(11)
         self.button_save.setFont(font)
         self.button_save.setObjectName("button_save")
-        self.plot_canvas = QtWidgets.QGraphicsView(Panel)
+        self.plot_canvas = QtWidgets.QVBoxLayout(Panel)
         self.plot_canvas.setGeometry(QtCore.QRect(10, 10, 1131, 561))
         self.plot_canvas.setObjectName("plot_canvas")
+        self.sc = MyStaticMplCanvas(self.plot_canvas, width=5, height=4, dpi=100)
+
         self.lineEdit_fileTag = QtWidgets.QLineEdit(Panel)
         self.lineEdit_fileTag.setGeometry(QtCore.QRect(940, 710, 181, 20))
         self.lineEdit_fileTag.setObjectName("lineEdit_fileTag")

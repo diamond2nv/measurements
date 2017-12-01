@@ -3,11 +3,14 @@ import os, sys, time
 from datetime import datetime
 import random
 import pylab as plt
+import numpy as np
 import h5py
-
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+from matplotlib.figure import Figure
 from PyQt5 import QtCore, QtGui, QtWidgets
 from measurements.libs.QPLser import ui_QPLseViewer as uM
 reload (uM)
+
 
 class QPLviewGUI(QtWidgets.QMainWindow):
     def __init__(self, stream_dict):
@@ -57,6 +60,10 @@ class QPLviewGUI(QtWidgets.QMainWindow):
         self._ch_view = []
         self._t = 1
         self._time_units = 1
+        self._total_reps = self._stream_dict['nr_reps']
+        self._curr_rep = 1
+
+        self.ui.sb_rep_nr.setValue(1)
 
         '''
         #JPE piezo-scan

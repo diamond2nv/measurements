@@ -911,6 +911,7 @@ class StreamController ():
 			x.generate_stream ()
 
 		self._stream_dict = {}
+		self._stream_dict['nr_reps'] = self._sweep_reps
 		self._max_t = []
 		for n in np.arange(self._sweep_reps):
 			stream = Stream()
