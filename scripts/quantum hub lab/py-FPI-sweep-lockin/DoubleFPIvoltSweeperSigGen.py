@@ -4,14 +4,14 @@ Created on Wed Nov 30 15:42:15 2016
 
 @author: Ralph N E Malein
 
-Uses Lockin 7265 DAC 1 to control bias voltage on sample
-Sweeps voltage from start to finish values, then reads APD / SNSPD
+Uses signal generator to control FPI, then reads APD / SNSPD using Swabian
+
+Currently saves every scan as individual file.  Would make more sense to 
+save either as different lines in files or as datasets in HDF5 file
 
 """
 
 import PyDAQmx as daq
-from LockIn7265 import LockIn7265
-from AgilentMultimeter import AgilentMultimeter
 from NIBox import TrigReceiver
 import pylab as pl
 import time
@@ -21,55 +21,15 @@ import sys
 from ctypes import *
 import pyqtgraph as pg
 import os.path
-import picoHarp as ph
 import re
 from TimeTagger import createTimeTagger, Counter
-
-# VISA_LOCKIN_ADDRESS = r'GPIB0::12::INSTR'
-#
-# class Trigger(daq.Task):
-#     def __init__(self, ctr, freq):
-#         daq.Task.__init__(self)
-#         self.ctr = str(ctr)
-#         self.freq = freq
-#
-#         self.CreateCOPulseChanFreq("/Weetabix/ctr"+self.ctr, "trigger_"+self.ctr,
-#                                    daq.DAQmx_Val_Hz, daq.DAQmx_Val_Low, 0,
-#                                    self.freq, 0.5)
-#         self.CfgImplicitTiming(daq.DAQmx_Val_ContSamps, 1000)
-#
-#
-#     def get_term(self):
-#         n = c_char_p(" ")
-#         self.GetCOPulseTerm("/Weetabix/ctr"+self.ctr, n, 20)
-#         return n.value
-#
-#
-# class InputCounter(daq.Task):
-#     def __init__(self, gate_term, ctr="1"):
-#         daq.Task.__init__(self)
-#         self.ctr = str(ctr)
-#         self.data = pl.zeros((10,),dtype=pl.uint32)
-#         self.CreateCICountEdgesChan("Weetabix/ctr"+self.ctr, "ctr"+self.ctr,
-#                                     daq.DAQmx_Val_Rising, 0,
-#                                     daq.DAQmx_Val_CountUp)
-#         self.CfgSampClkTiming(gate_term, 10000, daq.DAQmx_Val_Rising,
-#                               daq.DAQmx_Val_ContSamps, 10000)
-#         self.SetCICountEdgesTerm("/Weetabix/ctr"+self.ctr, "/Weetabix/PFI1")
-#
-#
-#     def read_counts(self):
-#         self.StopTask()
-#         self.data = pl.zeros((10000,),dtype=pl.uint32)
-#         self.ReadCounterU32(10000, 10., self.data, 10000, None, None)
-#         return self.data
 
 class MapWindow(QtGui.QWidget):
     def __init__(self, app):
         super(MapWindow, self).__init__()
         self.app = app
 
-        self.f = 40
+        self.f = 40 # in Hz
         self.no_of_steps = 100
 
         self.nb_of_scans = 0
@@ -276,12 +236,9 @@ class MapWindow(QtGui.QWidget):
         try:
             while True:
                 if self.stopScans == True or (self.nb_of_scans > 0 and counts >= self.nb_of_scans):
-        #                print 'stopscans', self.stopScans, '   nb_of_scans', self.nb_of_scans, '   counts', counts
                     self.running = False
                 if self.gotdata or self.running == False:  # one last check for data if running = False
                     curPointIndex = len(self.buff1) - 1
-    #                   print curPointIndex,'/',len(self.data) - 1
-    #                   print self.runThread.isAlive()
                     self.data1[0:curPointIndex+1] = pl.array(self.buff1)
                     self.data2[0:curPointIndex+1] = pl.array(self.buff2)
                     self.buff1 = []
@@ -319,37 +276,38 @@ class MapWindow(QtGui.QWidget):
     def SW_run(self):
         """Runs in own thread - reads data via Swabian box"""
         self.tag.setTriggerLevel(0, 0.1)
-        self.tag.setTriggerLevel(1, 0.1)
-        sweep_t = 1./(self.f)
-        pixel_t = sweep_t/float(self.no_of_steps)
+        self.tag.setTriggerLevel(1, 0.1) # allows Swabian to read SNSPD counts
+        sweep_t = 1./(self.f) # time for full sweep in s
+        pixel_t = sweep_t/float(self.no_of_steps) # time for each pixel of sweep in s
         times = pl.arange(1, self.no_of_steps)
         self.ctr = Counter(self.tag, [0,1],  int(pixel_t*1e12) , int(self.no_of_steps))
-        self.ctr.stop()
-        self.ctr.clear()
-        self.ctr.start()
+        self.ctr.clear() # clear buffer
         try:
 
             # go smoothly to start position
             self.updateStatusScanField('Please wait, synchronising...')
-            self.tag.sync()
-            self.synchro.wait()
+            self.tag.sync() # clears all tags from timetagger before sync call
+            self.synchro.wait() # wait for sync pulse to be 1
             self.updateStatusScanField('Scanning...')
             while self.running:
-                self.tag.sync()
-                self.synchro.wait()
-                data = self.ctr.getData()                
-                self.synchro.clear()
+                self.tag.sync() # flush again
+                self.synchro.wait() # wait for start of sync pulse
+                self.ctr.clear() # clear buffer, start to be filled with data
+                self.synchro.wait() # wait for next sync pulse
+                data = self.ctr.getData() # read data from buffer     
+                self.synchro.clear() # clear event
                 for i in times:
                     self.buff1.append(sum(data[0][int(-i-1):int(-i)]))
-                    self.buff2.append(sum(data[1][int(-i-1):int(-i)]))
+                    self.buff2.append(sum(data[1][int(-i-1):int(-i)])) 
                 self.ctr.clear()
                 self.gotdata = True
                 while self.gotdata:
-                    pass
+                    pass # wait for plotting
         finally:
             pass
 
     def SW_init(self):
+        """Initialises Swabian counter and NIBox for sync pulse measurement"""
         self.listener = TrigReceiver('/Weetabix/port1/line0')
         self.tag = createTimeTagger()
         self.tag.setTriggerLevel(0, 0.1)
@@ -357,6 +315,7 @@ class MapWindow(QtGui.QWidget):
         self.tag.autoCalibration()
         
     def sync_run(self):
+        """Runs in own thread - reads state of sync pulse and sets event synchro when sync is first measured = 1"""
         while True:
             while self.listener.listen() == 0:
                 pass
