@@ -12,7 +12,6 @@ reload (rfLib)
 reload (seq)
 reload (SM)
 
-
 def spin_echo_sequence ():
 	s = seq.SequenceIQ()
 	s.add_pulse (duration = 100, amplitude = 1, phase = 0)
@@ -21,6 +20,7 @@ def spin_echo_sequence ():
 	s.add_wait (duration = 500)
 	s.add_pulse (duration = 100, amplitude = 1, phase = 45)
 	s.set_pmod ('on')
+	s.print_sequence()
 
 	#s.set_sequence_repetitions(10)
 	#s.set_sweep_parameter ('P3', 'phase', np.linspace (0,90,10))
