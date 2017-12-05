@@ -16,6 +16,9 @@ class QPLviewGUI(QtWidgets.QMainWindow):
     def __init__(self, stream_dict):
 
         QtWidgets.QWidget.__init__(self)
+        self.setAttribute(QtCore.Qt.WA_DeleteOnClose)
+        self.setWindowTitle("application main window")
+
         #self.setAttribute(QtCore.Qt.WA_DeleteOnClose)
         #self.setWindowTitle("Laser-Piezo Scan Interface")
         self.ui = uM.Ui_Panel()
@@ -64,6 +67,9 @@ class QPLviewGUI(QtWidgets.QMainWindow):
         self._curr_rep = 1
 
         self.ui.sb_rep_nr.setValue(1)
+
+        self.ui.canvas.axes.plot (np.linspace (1,100,100), np.linspace (1,100,100), linewidth=4)
+        self.ui.canvas.draw()
 
         '''
         #JPE piezo-scan

@@ -9,10 +9,11 @@
 from PyQt5 import QtCore, QtGui, QtWidgets
 import numpy as np
 import h5py
-from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as Canvas
 from matplotlib.figure import Figure
+import random
 
-class MyMplCanvas(FigureCanvas):
+class MyMplCanvas(Canvas):
     """Ultimately, this is a QWidget (as well as a FigureCanvasAgg, etc.)."""
 
     def __init__(self, parent=None, width=5, height=4, dpi=100):
@@ -21,13 +22,13 @@ class MyMplCanvas(FigureCanvas):
 
         self.compute_initial_figure()
 
-        FigureCanvas.__init__(self, fig)
+        Canvas.__init__(self, fig)
         self.setParent(parent)
 
-        FigureCanvas.setSizePolicy(self,
+        Canvas.setSizePolicy(self,
                                    QtWidgets.QSizePolicy.Expanding,
                                    QtWidgets.QSizePolicy.Expanding)
-        FigureCanvas.updateGeometry(self)
+        Canvas.updateGeometry(self)
 
     def compute_initial_figure(self):
         pass
@@ -39,8 +40,34 @@ class MyStaticMplCanvas(MyMplCanvas):
     def compute_initial_figure(self):
         t = np.arange(0.0, 3.0, 0.01)
         s = np.sin(2*np.pi*t)
-        self.axes.plot(t, s)
+        self.axes.plot(t, s, color='RoyalBlue')
 
+class MyDynamicMplCanvas(MyMplCanvas):
+    """A canvas that updates itself every second with a new plot."""
+
+    def __init__(self, *args, **kwargs):
+        MyMplCanvas.__init__(self, *args, **kwargs)
+        timer = QtCore.QTimer(self)
+        timer.timeout.connect(self.update_figure)
+        timer.start(1000)
+
+    def compute_initial_figure(self):
+        self.axes.plot([0, 1, 2, 3], [1, 2, 0, 4], 'r')
+
+    def update_figure(self):
+        # Build a list of 4 random integers between 0 and 10 (both inclusive)
+        l = [random.randint(0, 10) for i in range(4)]
+        self.axes.cla()
+        self.axes.plot([0, 1, 2, 3], l, 'r')
+        self.draw()
+        
+class MplCanvas(Canvas):
+    def __init__(self):
+        self.fig = Figure()
+        self.ax = self.fig.add_subplot(111)
+        Canvas.__init__(self, self.fig)
+        Canvas.setSizePolicy(self, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
+        Canvas.updateGeometry(self)
 
 class Ui_Panel(object):
     def setupUi(self, Panel):
@@ -53,10 +80,11 @@ class Ui_Panel(object):
         font.setPointSize(11)
         self.button_save.setFont(font)
         self.button_save.setObjectName("button_save")
-        self.plot_canvas = QtWidgets.QVBoxLayout(Panel)
-        self.plot_canvas.setGeometry(QtCore.QRect(10, 10, 1131, 561))
-        self.plot_canvas.setObjectName("plot_canvas")
-        self.sc = MyStaticMplCanvas(self.plot_canvas, width=5, height=4, dpi=100)
+        self.vbl = QtWidgets.QVBoxLayout(Panel)
+        #self.vbl.setGeometry(QtCore.QRect(10, 10, 1131, 561))
+        #self.vbl.setObjectName("plot_canvas")
+        self.canvas = MyDynamicMplCanvas(Panel, width=5, height=4, dpi=100)
+        self.vbl.addWidget (self.canvas)
 
         self.lineEdit_fileTag = QtWidgets.QLineEdit(Panel)
         self.lineEdit_fileTag.setGeometry(QtCore.QRect(940, 710, 181, 20))
