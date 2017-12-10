@@ -86,7 +86,6 @@ class QPLviewGUI(QtWidgets.QMainWindow):
         self.w = w
         self.h = h
         self.ui.canvas.resize_canvas (w=w, h=h)
-        print "Resize event: let's resize the canvas! ", w, h
 
     def manage_tasks (self):
         pass

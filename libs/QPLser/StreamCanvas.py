@@ -74,7 +74,7 @@ class StreamCanvas(MplCanvas):
             c = self._pdict[ch]['color']
 
             if (ch[0] == 'D'):
-                self.axes.plot (t, y+curr_offset*np.ones(len(y)), linewidth = 5, color = c)
+                self.axes.plot (t, y+curr_offset*np.ones(len(y)), linewidth = 3, color = c)
                 self.axes.fill_between (t, curr_offset, y+curr_offset*np.ones(len(y)), color = c, alpha=0.2)
                 tick_pos.append (curr_offset)
                 self.axes.plot (t, curr_offset*np.ones(len(y)), '--', linewidth = 2, color = 'gray')
@@ -82,7 +82,7 @@ class StreamCanvas(MplCanvas):
                 curr_offset += 0.5*offset
             elif (ch[0] == 'A'):
                 curr_offset += 0.25*offset
-                self.axes.plot (t, 0.75*y+curr_offset*np.ones(len(y)), linewidth = 5, color = c)
+                self.axes.plot (t, 0.75*y+curr_offset*np.ones(len(y)), linewidth = 3, color = c)
                 self.axes.plot (t, curr_offset*np.ones(len(y)), '--', linewidth = 2, color = 'gray')
                 tick_pos.append (curr_offset)
                 self.axes.plot (t, (-0.75+curr_offset)*np.ones(len(y)), ':', linewidth = 1, color = 'r')
@@ -107,8 +107,7 @@ class StreamCanvas(MplCanvas):
         self._w_inches = w/float(self._dpi)
         self._h_inches = h/float(self._dpi)
         self.fig.set_size_inches (self._w_inches, self._h_inches)
-        self.draw()
-        print "Canvas resized!", self._w_inches, self._h_inches
+        self.update_figure()
 
 
 class TestCanvas(MplCanvas):
