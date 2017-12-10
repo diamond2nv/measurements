@@ -24,7 +24,6 @@ class QPLviewGUI(QtWidgets.QMainWindow):
         self.ui = uM.Ui_Panel()
         self.ui.setupUi(self)
         self._stream_dict = stream_dict
-
         #self.ui.plot_canvas.setSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Expanding)
 
         #SETTINGS EVENTS
@@ -68,69 +67,26 @@ class QPLviewGUI(QtWidgets.QMainWindow):
 
         self.ui.sb_rep_nr.setValue(1)
 
-        self.ui.canvas.axes.plot (np.linspace (1,100,100), np.linspace (1,100,100), linewidth=4)
-        self.ui.canvas.draw()
-
-        '''
-        #JPE piezo-scan
-        self.ui.dsb_minV_pzscan.setValue(1.00)
-        self.set_minV_pzscan(1.00)
-        self.ui.dsb_maxV_pzscan.setValue(2.00)
-        self.set_maxV_pzscan(2.00)
-        self.ui.sb_nr_steps_pzscan.setValue(999)
-        self.set_nr_steps_pzscan(999)
-        #general
-        self._running_task = None
-        self._scan_mngr.averaging_samples = 1
-        self.ui.sb_avg.setValue(1)
-        self._scan_mngr.autosave = False
-        self._scan_mngr.autostop = False
-        #fine laser scan
-        self.ui.dsb_minV_finelaser.setValue(-3)
-        self._scan_mngr.minV_finelaser = -3
-        self.ui.dsb_maxV_finelaser.setValue(3)
-        self._scan_mngr.maxV_finelaser = 3
-        self.ui.sb_nr_steps_finelaser.setValue(100)
-        self._scan_mngr.nr_steps_finelaser = 100
-        self.ui.sb_wait_cycles.setValue(1)
-        self.set_wait_cycles(1)
-        #long range laser scan
-        self.ui.sb_fine_tuning_steps_LRscan.setValue(100)
-        self._scan_mngr.nr_steps_lr_scan = 100
-        self.ui.dsb_min_lambda.setValue (637.0)
-        self.set_min_lambda(637.0)
-        self.ui.dsb_max_lambda.setValue (637.1)
-        self.set_max_lambda(637.1)
-        self.ui.sb_nr_calib_pts.setValue(1)
-        self.set_nr_calib_pts(1)
-        self.coarse_wavelength_step = 0.1 
-        #sweep montana sync delays
-        self.ui.sb_mindelay_msync.setValue(0)
-        self.set_min_msyncdelay (0)
-        self.ui.sb_maxdelay_msync.setValue(1000)
-        self.set_max_msyncdelay (1000)
-        self.ui.sb_nr_steps_msyncdelay.setValue(11)
-        self.set_nr_steps_msyncdelay(11)
-
-        #others
-        self._scan_mngr.file_tag = ''
-        self._2D_scan_is_active = False
-        self._use_sync = False
-        self.ui.sb_nr_scans_msync.setValue(1)
-        self.set_nr_scans_msync(1)
-        self.ui.sb_delay_msync.setValue(0)
-        self.set_delay_msync(0)
-        self.ui.sb_nr_repetitions.setValue(1)
-        self.set_nr_repetitions(1)
-
-        '''
+        self.ui.canvas._colors = self._stream_dict['plot-colors']
+        self.ui.canvas._channels = self._stream_dict['plot-channels']
+        self.ui.canvas._labels = self._stream_dict['plot-labels']
+        self.ui.canvas.upload_stream (stream = self._stream_dict['rep_0'])
+        self.ui.canvas.update_figure()
 
         #TIMER:
-        self.refresh_time = 100
-        self.timer = QtCore.QTimer(self)
-        self.timer.timeout.connect(self.manage_tasks)
-        self.timer.start(self.refresh_time)
+        #self.refresh_time = 100
+        #self.timer = QtCore.QTimer(self)
+        #self.timer.timeout.connect(self.manage_tasks)
+        #self.timer.start(self.refresh_time)
 
+    def resizeEvent( self, event ):
+        QtWidgets.QWidget.resizeEvent (self, event )
+        w = event.size().width()
+        h = event.size().height()
+        self.w = w
+        self.h = h
+        self.ui.canvas.resize_canvas (w=w, h=h)
+        print "Resize event: let's resize the canvas! ", w, h
 
     def manage_tasks (self):
         pass
@@ -174,8 +130,9 @@ class QPLviewGUI(QtWidgets.QMainWindow):
     
     def _set_rep_nr (self, n):
         self._rep_nr = n
-        print "Rep nr: ", self._rep_nr
-
+        self.ui.canvas.upload_stream (self._stream_dict['rep_'+str(n)])
+        self.ui.canvas.update_figure()
+        
     def _set_view_time (self, t):
         self._t = t
         self.time_window = self._t*self._time_units
@@ -192,7 +149,6 @@ class QPLviewGUI(QtWidgets.QMainWindow):
             self._time_units = 1e9
 
         self.time_window = self._t*self._time_units
-
 
     def fileQuit(self):
         self.close()

@@ -84,9 +84,6 @@ class Stream ():
 
 			self.dig_outputs['D'+str(dch)] = curr_ch
 
-
-
-
 	def add_dig_pulse (self, duration, channel):
 		'''
 		adds a pulse on one of the 8 digital channels (0..7)
@@ -413,7 +410,105 @@ class Stream ():
 		self.color_list = colors
 		self.xaxis = xaxis
 
+	def get_plot_dict (self):
+		self._update_timers()
+		act_dig_ch, act_anlg_ch = self.get_active_channels()
+
+		if not(self.ext_plot_settings):
+			self.ch_list = []
+			colormap = plt.get_cmap('YlGnBu')
+			color_list_D = [colormap(k) for k in np.linspace(0.4, 1, len(act_dig_ch))]
+			for i in act_dig_ch:
+				self.ch_list.append ('D'+str(i))
+			colormap = plt.get_cmap('YlOrRd')
+			color_list_A = [colormap(k) for k in np.linspace(0.6, 0.8, len(act_anlg_ch))]
+			for i in act_anlg_ch:
+				self.ch_list.append ('A'+str(i))
+			self.labels_list = self.ch_list
+			self.color_list = color_list_D + color_list_A			
+
+
+		print self.ch_list
+		d = int(self.get_max_time())
+		
+		plot_dict = {}
+
+		for idx, ch in enumerate(self.ch_list):
+			plot_dict[ch] = {}
+			y = np.zeros(d)
+			plot_dict [ch]['time'] = 1e-3*np.arange (d)
+
+			i = 0
+			if (ch[0] == 'D'):
+				for j in self.dig_outputs[ch]:
+					y[i:i+int(j[1])] = 0.5*int(j[0])*np.ones(int(j[1]))
+					i = i + int(j[1])
+			elif (ch[0] == 'A'):
+				print "Added analog ch, ", ch
+				for j in self.anlg_outputs[ch]:
+					y[i:i+int(j[1])] = j[0]*np.ones(int(j[1]))
+					i = i + int(j[1])
+			plot_dict [ch]['y'] = y
+			plot_dict [ch]['color'] = self.color_list [idx]
+
+		return plot_dict
+
 	def plot_channels (self):
+
+		"""
+		Plots waveforms loaded on digital/analog channels
+		"""
+
+		# SOMETHING WEIRD HAPPENS WHEN PLOTTING ANALOG CHANNELS !!!!
+
+		pdict = self.get_plot_dict()
+		curr_offset = 0
+		tick_pos = []
+		offset = 2
+
+		fig = plt.figure(figsize = (20, 8))
+		ax = plt.subplot (1,1,1)
+
+		for ch in self.ch_list:
+
+			t = pdict[ch]['time']
+			y = pdict[ch]['y']
+			c = pdict[ch]['color']
+
+			if (ch[0] == 'D'):
+				plt.plot (t, y+curr_offset*np.ones(len(y)), linewidth = 5, color = c)
+				plt.fill_between (t, curr_offset, y+curr_offset*np.ones(len(y)), color = c, alpha=0.2)
+				tick_pos.append (curr_offset)
+				plt.plot (t, curr_offset*np.ones(len(y)), '--', linewidth = 2, color = 'gray')
+				plt.plot (t, (0.5+curr_offset)*np.ones(len(y)), ':', linewidth = 1, color = 'gray')
+				curr_offset += 0.5*offset
+			elif (ch[0] == 'A'):
+				curr_offset += 0.25*offset
+				plt.plot (t, 0.75*y+curr_offset*np.ones(len(y)), linewidth = 5, color = c)
+				plt.plot (t, curr_offset*np.ones(len(y)), '--', linewidth = 2, color = 'gray')
+				tick_pos.append (curr_offset)
+				plt.plot (t, (-0.75+curr_offset)*np.ones(len(y)), ':', linewidth = 1, color = 'r')
+				plt.plot (t, (0.75+curr_offset)*np.ones(len(y)), ':', linewidth = 1, color = 'r')
+
+				curr_offset += 0.5*offset
+
+		ax.yaxis.set_ticks([0, len(self.labels_list)]) 
+		ax.yaxis.set(ticks=tick_pos, ticklabels=self.labels_list)
+
+		for label in (ax.get_xticklabels() + ax.get_yticklabels()):
+			#label.set_fontname('Arial')
+			label.set_fontsize(20)
+		try:
+			if self.xaxis:
+				plt.xlim ([1e-3*self.xaxis[0], 1e-3*self.xaxis[1]])
+				plt.xlabel ('time (us)', fontsize = 20)
+		except:
+			pass
+		plt.ion()
+		plt.show()
+
+
+	def plot_channels_old (self):
 
 		"""
 		Plots waveforms loaded on digital/analog channels
@@ -988,7 +1083,9 @@ class StreamController ():
 		elif (len(repetitions) == 1):
 			repetitions = [repetitions]
 
-		channels, labels, colors - self._plot_settings(repetitions)
+		channels, labels, colors = self._plot_settings(repetitions)
+		xaxis = None
+
 		for n in repetitions:
 			self._stream_dict ['rep_'+str(n)].set_plot (channels=channels, labels=labels, colors=colors, xaxis=xaxis)
 			self._stream_dict ['rep_'+str(n)].plot_channels()

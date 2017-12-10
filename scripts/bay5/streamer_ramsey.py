@@ -52,7 +52,7 @@ strCtrl.generate_ctrl_stream()
 #strCtrl._stream_dict['rep_0'].plot_channels()
 #strCtrl._stream_dict['rep_1'].plot_channels()
 #strCtrl._stream_dict['rep_2'].plot_channels()
-strCtrl.view_stream()
+strCtrl.view_stream_inline()
 
 
 
