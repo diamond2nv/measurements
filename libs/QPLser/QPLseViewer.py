@@ -24,6 +24,7 @@ class QPLviewGUI(QtWidgets.QMainWindow):
         self.ui = uM.Ui_Panel()
         self.ui.setupUi(self)
         self._stream_dict = stream_dict
+        self._available_chs = stream_dict['plot-channels']
         #self.ui.plot_canvas.setSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Expanding)
 
         #SETTINGS EVENTS
@@ -34,32 +35,33 @@ class QPLviewGUI(QtWidgets.QMainWindow):
         self.ui.comboBox_units.addItem ("ns")
         self.ui.comboBox_units.addItem ("us")
         self.ui.comboBox_units.addItem ("ms")
-        self.ui.comboBox_units.addItem ("s")
+        self.ui.comboBox_units.addItem ("s")          
 
-        # dynamically create _view_DX and _view_AX
-        for c in ['D0', 'D1', 'D2', 'D3', 'D4', 'D5', 'D6', 'D7', 'A0', 'A1']:
-            self._make_view_channel (ch = c)
+        # initialize values
+        for ch in self._available_chs:
+            # dynamically create _view_DX and _view_AX
+            self._make_view_channel (ch = ch)
+
+            # Initialize in "checked" state
+            a = getattr (self.ui, 'cb_'+ch, None)
+            a.setChecked (True)
+        self.ui.canvas.set_view_channels (np.ones(len(self._available_chs)))
 
         #CONNECT SIGNALS TO EVENTS
         self.ui.sb_rep_nr.valueChanged.connect (self._set_rep_nr)
         self.ui.dsb_view_time.valueChanged.connect (self._set_view_time)
         self.ui.comboBox_units.currentIndexChanged.connect (self._set_time_units)
-        self.ui.cb_D0.stateChanged.connect (self._view_D0)
-        self.ui.cb_D1.stateChanged.connect (self._view_D1)
-        self.ui.cb_D2.stateChanged.connect (self._view_D2)
-        self.ui.cb_D3.stateChanged.connect (self._view_D3)
-        self.ui.cb_D4.stateChanged.connect (self._view_D4)
-        self.ui.cb_D5.stateChanged.connect (self._view_D5)
-        self.ui.cb_D6.stateChanged.connect (self._view_D6)
-        self.ui.cb_D7.stateChanged.connect (self._view_D7)
-        self.ui.cb_A0.stateChanged.connect (self._view_A0)
-        self.ui.cb_A1.stateChanged.connect (self._view_A1)
+        # connect checkbox signals for available checkboxes
+        for ch in self._available_chs:
+            a = getattr (self.ui, 'cb_'+ch, None)
+            fn = getattr (self, '_view_'+ch, None)
+            if callable (fn):
+                a.stateChanged.connect (fn)
         #self.ui.button_save.clicked.connect(self._save_view)
         #self.ui.lineEdit_fileName.textChanged.connect(self.set_file_tag)
 
 
         #INITIALIZATIONS:
-        self._ch_view = []
         self._t = 1
         self._time_units = 1
         self._total_reps = self._stream_dict['nr_reps']
@@ -117,15 +119,19 @@ class QPLviewGUI(QtWidgets.QMainWindow):
         funcname = '_view_'+ch
 
         def f(state):
+            ind = self._available_chs.index(ch)
             if state == QtCore.Qt.Checked:
-                self._ch_view.append(ch)
-                print "Add: ", ch
+                self.set_switch_ch_check(index=ind, value=1)
             else:
-                self._ch_view.remove(ch)
-                print "Remove: ", ch
+                self.set_switch_ch_check(index=ind, value=0)
+            self.ui.canvas.repaint()
 
         f.__name__ = funcname
         setattr(self, funcname, f)
+
+    def set_switch_ch_check (self, index, value):
+        self.ui.canvas._view_chs[index] = value
+        self.ui.canvas.update_figure()
     
     def _set_rep_nr (self, n):
         self._rep_nr = n

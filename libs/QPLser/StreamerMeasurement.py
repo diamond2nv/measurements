@@ -444,7 +444,6 @@ class Stream ():
 					y[i:i+int(j[1])] = 0.5*int(j[0])*np.ones(int(j[1]))
 					i = i + int(j[1])
 			elif (ch[0] == 'A'):
-				print "Added analog ch, ", ch
 				for j in self.anlg_outputs[ch]:
 					y[i:i+int(j[1])] = j[0]*np.ones(int(j[1]))
 					i = i + int(j[1])

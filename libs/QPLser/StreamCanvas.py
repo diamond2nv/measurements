@@ -50,10 +50,10 @@ class StreamCanvas(MplCanvas):
         self._stream.set_plot(channels = self._channels,
                     labels = self._labels, colors = self._colors)
         self._pdict = None
-        print "New stream uploaded!"
 
-    def set_channels(self, channel_idx):
-        pass
+    def set_view_channels(self, channels_idx):
+        self._view_chs = channels_idx
+        self.draw()
 
     def set_time_interval (self, t):
         self._t = t
@@ -67,29 +67,30 @@ class StreamCanvas(MplCanvas):
         tick_pos = []
         offset = 2
 
-        for ch in self._stream.ch_list:
+        for ind, ch in enumerate(self._stream.ch_list):
 
-            t = self._pdict[ch]['time']
-            y = self._pdict[ch]['y']
-            c = self._pdict[ch]['color']
+            if (int(self._view_chs[ind]) == 1):
 
-            if (ch[0] == 'D'):
-                self.axes.plot (t, y+curr_offset*np.ones(len(y)), linewidth = 3, color = c)
-                self.axes.fill_between (t, curr_offset, y+curr_offset*np.ones(len(y)), color = c, alpha=0.2)
-                tick_pos.append (curr_offset)
-                self.axes.plot (t, curr_offset*np.ones(len(y)), '--', linewidth = 2, color = 'gray')
-                self.axes.plot (t, (0.5+curr_offset)*np.ones(len(y)), ':', linewidth = 1, color = 'gray')
-                curr_offset += 0.5*offset
-            elif (ch[0] == 'A'):
-                curr_offset += 0.25*offset
-                self.axes.plot (t, 0.75*y+curr_offset*np.ones(len(y)), linewidth = 3, color = c)
-                self.axes.plot (t, curr_offset*np.ones(len(y)), '--', linewidth = 2, color = 'gray')
-                tick_pos.append (curr_offset)
-                self.axes.plot (t, (-0.75+curr_offset)*np.ones(len(y)), ':', linewidth = 1, color = 'r')
-                self.axes.plot (t, (0.75+curr_offset)*np.ones(len(y)), ':', linewidth = 1, color = 'r')
+                t = self._pdict[ch]['time']
+                y = self._pdict[ch]['y']
+                c = self._pdict[ch]['color']
 
-                curr_offset += 0.5*offset
+                if (ch[0] == 'D'):
+                    self.axes.plot (t, y+curr_offset*np.ones(len(y)), linewidth = 3, color = c)
+                    self.axes.fill_between (t, curr_offset, y+curr_offset*np.ones(len(y)), color = c, alpha=0.2)
+                    tick_pos.append (curr_offset)
+                    self.axes.plot (t, curr_offset*np.ones(len(y)), '--', linewidth = 2, color = 'gray')
+                    self.axes.plot (t, (0.5+curr_offset)*np.ones(len(y)), ':', linewidth = 1, color = 'gray')
+                    curr_offset += 0.5*offset
+                elif (ch[0] == 'A'):
+                    curr_offset += 0.25*offset
+                    self.axes.plot (t, 0.75*y+curr_offset*np.ones(len(y)), linewidth = 3, color = c)
+                    self.axes.plot (t, curr_offset*np.ones(len(y)), '--', linewidth = 2, color = 'gray')
+                    tick_pos.append (curr_offset)
+                    self.axes.plot (t, (-0.75+curr_offset)*np.ones(len(y)), ':', linewidth = 1, color = 'r')
+                    self.axes.plot (t, (0.75+curr_offset)*np.ones(len(y)), ':', linewidth = 1, color = 'r')
 
+                    curr_offset += 0.5*offset
         
         self.axes.yaxis.set_ticks([0, len(self._stream.labels_list)]) 
         self.axes.yaxis.set(ticks=tick_pos, ticklabels=self._stream.labels_list)
