@@ -12,7 +12,7 @@ class DeviceCtrl():
             
         elif int(err.error_code) == -1073807246:
             print('\n##########  ATTENTION: ' +
-                  'The {} is busy. Did you close any other program using it?\n').format(self.string_id)
+                  'The {} is busy. Did you close any other program using it?\n'.format(self.string_id))
             raise
         else:
             raise  

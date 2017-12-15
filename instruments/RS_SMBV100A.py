@@ -3,6 +3,7 @@ import visa
 import numpy as np
 import logging
 from tools import toolbox_delft as toolbox
+from time import sleep
 
 
 class RS_SMBV100A():
@@ -12,33 +13,33 @@ class RS_SMBV100A():
     '''
 
     def __init__(self, address, reset=False, max_cw_pwr=-20, log_level = logging.INFO):
-    	self.log = logging.getLogger(__name__)
-    	self.log.setLevel(log_level)
+        self.log = logging.getLogger(__name__)
+        self.log.setLevel(log_level)
 
-    	self.log.info(__name__ + ' : Initializing instrument')
-    	if (toolbox.validate_ip (address)):
-    		self._ip = address
-    		self._address = 'TCPIP::'+self._ip+'::inst0::INSTR'
-    	else:
-    		self._address = address
+        self.log.info(__name__ + ' : Initializing instrument')
+        if (toolbox.validate_ip (address)):
+            self._ip = address
+            self._address = 'TCPIP::'+self._ip+'::inst0::INSTR'
+        else:
+            self._address = address
 
-    	try:
-    		rm = visa.ResourceManager()
-    		self._vi = rm.open_resource(self._address, timeout=3, read_termination='\n')
-    	except Exception as e:
-    		print 'Impossible to connect to device! ', e
-    	self._max_pow = -30
+        try:
+            rm = visa.ResourceManager()
+            self._vi = rm.open_resource(self._address, timeout=3, read_termination='\n')
+        except Exception as e:
+            print('Impossible to connect to device! ', e)
+        self._max_pow = -30
 
     def get_instr_type(self):
-    	return "RF_source"
+        return "RF_source"
 
     def reconnect (self):
-    	try:
-    		rm = visa.ResourceManager()
-    		self._vi = rm.open_resource(self._address, timeout=3, read_termination='\n')
-    		print 'Connection to device established: ', self._vi.ask('*IDN?')
-    	except Exception as e:
-    		print 'Impossible to connect to device!', e
+        try:
+            rm = visa.ResourceManager()
+            self._vi = rm.open_resource(self._address, timeout=3, read_termination='\n')
+            print('Connection to device established: ', self._vi.ask('*IDN?'))
+        except Exception as e:
+            print('Impossible to connect to device!', e)
 
     def reset(self):
         '''
@@ -52,7 +53,7 @@ class RS_SMBV100A():
         '''
         Returns the frequency setting forthe instrument [in Hz]
         '''
-    	return float (self._vi.ask('SOUR:FREQ?'))
+        return float (self._vi.ask('SOUR:FREQ?'))
 
     def set_frequency (self, frequency):
         '''
@@ -65,13 +66,13 @@ class RS_SMBV100A():
         '''
         Returns the power setting forthe instrument [in dBm]
         '''
-    	return float (self._vi.ask('SOUR:POW?'))
+        return float (self._vi.ask('SOUR:POW?'))
 
     def set_power(self,power):
         '''
         Set output power of device. Input: power (float) = output power in dBm
         '''
-       	self.log.debug(__name__ + ' : setting power to %s dBm' % power)
+        self.log.debug(__name__ + ' : setting power to %s dBm' % power)
         
         if self.get_pulse_modulation() == 'off' and power > self.get_max_cw_pwr():
             self.log.warning(__name__ + ' : power exceeds max cw power; power not set.')
@@ -88,25 +89,25 @@ class RS_SMBV100A():
         return
 
     def get_status(self):
-       	'''
+        '''
         Returns the instrument status [on/off]
         '''
-    	stat = self._vi.ask(':OUTP:STAT?')
+        stat = self._vi.ask(':OUTP:STAT?')
 
         if stat == '1':
             return 'on'
         elif stat == '0':
             return 'off'
         else:
-            print len(stat)
+            print(len(stat))
             raise ValueError('Output status not specified : %s' % stat)
 
     def get_pulse_modulation (self):
-    	'''
+        '''
         Returns the status of the pulse-modulation [on/off]
-        '''    	
-    	self.log.debug(__name__ + ' : reading pulse modulation status from instrument')
-    	stat = self._vi.ask(':SOUR:PULM:STAT?')
+        '''     
+        self.log.debug(__name__ + ' : reading pulse modulation status from instrument')
+        stat = self._vi.ask(':SOUR:PULM:STAT?')
 
         if stat == '1':
             return 'on'
@@ -139,7 +140,7 @@ class RS_SMBV100A():
         self._vi.write(':SOUR:PULM:STAT %s' % value)
 
     def get_iq_status(self):
-    	self.log.debug(__name__ + ' : reading IQ modulation status from instrument')
+        self.log.debug(__name__ + ' : reading IQ modulation status from instrument')
         stat = self._vi.ask('IQ:STAT?')
 
         if stat == '1':
@@ -180,9 +181,9 @@ class RS_SMBV100A():
             None
         '''
         self.log.info(__name__ + ' : reading all settings from instrument')
-        print 'Source status: ', self.get_status()
-        print 'Frequency: ', self.get_frequency()*1e-9, ' GHz'
-        print 'Power: ', self.get_power(), ' dBm'
+        print('Source status: ', self.get_status())
+        print('Frequency: ', self.get_frequency()*1e-9, ' GHz')
+        print('Power: ', self.get_power(), ' dBm')
 
     def set_mode(self, mode):
         '''
@@ -215,7 +216,7 @@ class RS_SMBV100A():
         self._vi.write('SOUR:LIST:LEAR')
 
     def _create_list(self, start, stop, unit, number_of_steps):
-        flist_l = numpy.linspace(start, stop, number_of_steps)
+        flist_l = np.linspace(start, stop, number_of_steps)
         flist_s = ''
         k=0
         for f_el in flist_l:
@@ -245,13 +246,13 @@ class RS_SMBV100A():
             s=self._vi.ask('CAL:ALL:MEAS?')
         else:
             s=self._vi.ask('CAL:FREQ:MEAS?')
-            print 'Frequency calibrated'
+            print('Frequency calibrated')
             s=self._vi.ask('CAL:LEV:MEAS?')
-            print 'Level calibrated'
+            print('Level calibrated')
             if cal_IQ_mod:
                 self.set_iq('on')
                 s=self._vi.ask('CAL:IQM:LOC?')
-                print 'IQ modulator calibrated'
+                print('IQ modulator calibrated')
         
         self.set_status('off')
         self.set_pulm('off')
@@ -285,7 +286,7 @@ class RS_SMBV100A():
         Get all entries in the error queue and then delete them.
 
         Input:
-        	None
+            None
 
         Output:
             errors (string) : 0 No error, i.e the error queue is empty.

@@ -13,6 +13,8 @@ from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as Canvas
 from matplotlib.figure import Figure
 from measurements.libs.QPLser import StreamCanvas as SC
 import random
+
+from importlib import reload
 reload (SC)
 
 class Ui_Panel(object):

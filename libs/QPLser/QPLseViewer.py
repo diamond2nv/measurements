@@ -9,6 +9,7 @@ from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 from PyQt5 import QtCore, QtGui, QtWidgets
 from measurements.libs.QPLser import ui_QPLseViewer as uM
+from importlib import reload
 reload (uM)
 
 
