@@ -16,7 +16,7 @@ import pylab as pl
 
 class ANCError(Exception):
 
-    """Error regarding anything with the ANC controller
+    """Exception raised by detecting an error message from the ANC controller
     
     Attributes:
         value (str): error message
@@ -229,7 +229,21 @@ class ANCaxis():
             
 
 class AttocubeANC():
+
+    """Class which has the methods to speak directly to an ANC controller
+    
+    Attributes:
+        ANC (pyvisa.ResourceManager): PyVISA resource manager handling the communication with the device.
+        isANC300 (bool): if True, the controller is a newer ANC300. Otherwise, an old ANC150 or ANC200.
+        lastOrderSent (str): last string sent to the device (for log and debug purposes)
+    """
+    
     def __init__(self, visaResourceId):
+        """Opens the communication with the device and initializes variables.
+        
+        Args:
+            visaResourceId (str): VISA address of the device (e.g. r'ASRL11::INSTR')
+        """
         rm = visa.ResourceManager()
         try:
             self.ANC = rm.open_resource(visaResourceId, baud_rate=38400) # baud rate important for ANC150
@@ -246,12 +260,29 @@ class AttocubeANC():
         self.lastOrderSent = 'NO ORDER'
     
     def __enter__(self):
+        """In a context manager ("with" statement), just returns the object.
+        
+        Returns:
+            AttocubeANC object: this object
+        """
         return self
     
     def __exit__(self, exc_type, exc_val, exc_tb):
+        """In a context manager ("with" statement), closes the object.
+        
+        Args:
+            exc_type (exception): Exception type
+            exc_val (exception value): Exception value
+            exc_tb (traceback): Traceback.
+        """
         self.close()
         
     def determineANC300(self):
+        """Determines whether this controller is an ANC 300 or not
+        
+        Returns:
+            bool: True if ANC300, False otherwise.
+        """
         lines = self.query('ver')
         for line in lines:
             if 'ANC300' in line:
@@ -259,6 +290,17 @@ class AttocubeANC():
         return False
     
     def query(self, msg):
+        """Send an order to the controller and collect a response from the controller.
+        
+        Args:
+            msg (str): Message to send to the controller
+        
+        Returns:
+            str: message received in response from the controller.
+        
+        Raises:
+            ANCError: If an error is replied by the controller, it is raised as an ANCError
+        """
         self.lastOrderSent = msg
         self.ANC.write(msg)
         lines = []
@@ -272,14 +314,29 @@ class AttocubeANC():
         
         
     def groundMode(self, *axes):
+        """Set these axes to GROUND mode.
+        
+        Args:
+            *axes: list of axes to set to GROUND mode
+        """
         for i in axes:
             self.query('setm {} gnd'.format(i))
         
     def stepMode(self, *axes):
+        """Set these axes to STEP mode
+        
+        Args:
+            *axes: list of axes to set to STEP mode
+        """
         for i in axes:
             self.query('setm {} stp'.format(i))
             
     def scanMode(self, *axes):
+        """Set these axes to SCAN mode
+        
+        Args:
+            *axes: list of axes to set to SCAN mode
+        """
         for i in axes:
             if self.isANC300:
                 self.query(r'setdci {} off'.format(i))
@@ -289,6 +346,11 @@ class AttocubeANC():
                 self.query(r'setm {} stp'.format(i))  # FOR ANC200 (old scanner controllers)
             
     def capacitanceMode(self, *axes):
+        """Set these axes to CAP mode (capacitance measurement).
+        
+        Args:
+            *axes: list of axes to set to CAP mode (capacitance measurement)
+        """
         if self.isANC300:
             for i in axes:
                 self.query(r'setm {} cap'.format(i))
@@ -296,6 +358,14 @@ class AttocubeANC():
             pass
             
     def getMode(self, *axes):
+        """Get the current mode of these axes.
+        
+        Args:
+            *axes: list of axes from which to get the mode
+        
+        Returns:
+            list of str: modes of the selected axes.
+        """
         mode = []
         for i in axes:
             try:
@@ -310,7 +380,15 @@ class AttocubeANC():
         return mode
             
     def getCapacitance(self, *axes):
-        """ Beware: axes will enter in capacitance measuring mode and stay. """
+        """Get the capacitance of these axes.
+        Beware: axes will enter in capacitance measuring mode and stay. 
+        
+        Args:
+            *axes: list of axes from which to get the capacitance
+        
+        Returns:
+            list of str: capacitances of the selected axes.
+        """
         cap = []
         for i in axes:
             try:
@@ -325,24 +403,52 @@ class AttocubeANC():
         return cap
     
     def setStepAmplitude(self, amplitude, *axes):
+        """Set the step amplitude for these axes.
+        
+        Args:
+            amplitude (float): new amplitude to set
+            *axes: list of axes 
+        """
         for i in axes:
             self.query('setv {} {}'.format(i, int(amplitude)))
             
     def setStepFrequency(self, frequency, *axes):
+        """Set the step frequency for these axes.
+        
+        Args:
+            frequency (int): new frequency to set
+            *axes: list of axes
+        """
         for i in axes:
             self.query('setf {} {}'.format(i, int(frequency)))
             
     def setOffset(self, offset, *axes):
+        """Set the offset for these axes.
+        
+        Args:
+            offset (float): new offset to set
+            *axes: list of axes
+        
+        Returns:
+            str: answer from the controller
+        """
         for i in axes:
             if self.isANC300:
                 echo = self.query(r'seta {} {:f}'.format(i, offset))
             else:
                 offset = pl.uint16(float(offset)/150 * (2**16 - 1))
-                self.toto = r'setv {} {}'.format(i, offset)
-                echo = self.query(self.toto)    
+                echo = self.query(r'setv {} {}'.format(i, offset))    
         return echo
                        
     def getStepFrequency(self, *axes):
+        """Get the step frequency from these axes.
+        
+        Args:
+            *axes: list of axes
+        
+        Returns:
+            list of int: frequencies set for these axes.
+        """
         freqs = []
         for i in axes:
             line = self.query(r'getf {}'.format(i))[1]
@@ -351,6 +457,14 @@ class AttocubeANC():
         return freqs
         
     def getStepAmplitude(self, *axes):
+        """Get the step amplitude from these axes.
+        
+        Args:
+            *axes: list of axes
+        
+        Returns:
+            list of float: amplitudes set for these axes.
+        """
         amps = []
         for i in axes:
             line = self.query(r'getv {}'.format(i))[1]
@@ -359,6 +473,14 @@ class AttocubeANC():
         return amps
 
     def getOffset(self, *axes):
+        """Get the offsets from these axes.
+        
+        Args:
+            *axes: list of axes.
+        
+        Returns:
+            list of float: offsets set for these axes.
+        """
         offset = []
         for i in axes:
             if self.isANC300:
@@ -373,7 +495,12 @@ class AttocubeANC():
         
         
     def stepUp(self, nbOfSteps=-1, *axes):
-        """ nbOfSteps is the number of steps. Set nbOfSteps to -1 to move continuously """
+        """Move these axes by a number of steps up.
+        
+        Args:
+            nbOfSteps (int, optional): number of steps to move. Set to -1 to move continuously.
+            *axes: list of axes
+        """
         for i in axes:
             if nbOfSteps == -1:
                 self.query('stepu {} c'.format(i))
@@ -381,7 +508,12 @@ class AttocubeANC():
                 self.query('stepu {} {}'.format(i, nbOfSteps))
     
     def stepDown(self, nbOfSteps=-1, *axes):
-        """ nbOfSteps is the number of steps. Set nbOfSteps to -1 to move continuously """
+        """Move these axes by a number of steps down.
+        
+        Args:
+            nbOfSteps (int, optional): number of steps to move. Set to -1 to move continuously.
+            *axes: list of axes
+        """
         for i in axes:
             if nbOfSteps == -1:
                 self.query('stepd {} c'.format(i))
@@ -389,10 +521,20 @@ class AttocubeANC():
                 self.query('stepd {} {}'.format(i, nbOfSteps))
             
     def stopMotion(self, *axes):
+        """Stop motion in these axes.
+        
+        Args:
+            *axes: list of axes.
+        """
         for i in axes:
             self.query('stop {}'.format(i))
             
     def waitStep(self, *axes):
+        """Wait for stepping to finish.
+        
+        Args:
+            *axes: list of axes
+        """
         if self.isANC300:
             tempTimeout = self.ANC.timeout
             self.ANC.timeout = 100000
@@ -405,6 +547,8 @@ class AttocubeANC():
             warnings.warn('The ANC controller used does not handle task-end wait. Please be careful when repeating orders.')
              
     def close(self):
+        """Closes connection to the controller.
+        """
         self.ANC.close()
         
 if __name__ == '__main__':
