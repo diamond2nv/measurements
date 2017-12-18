@@ -15,12 +15,37 @@ import warnings
 import pylab as pl
 
 class ANCError(Exception):
+
+    """Error regarding anything with the ANC controller
+    
+    Attributes:
+        value (str): error message
+    """
+    
     def __init__(self, value):
         self.value = value
     def __str__(self):
         return repr(self.value)
 
 class ANCaxis():
+
+    """Class to handle one axis of an Attocube controller. 
+    Should be provided a valid AttocubeANC() object (the controller where the axis is).
+    
+    Attributes:
+        active (bool): True if axis is active. False otherwise.
+        atto (AttocubeANC object): AttocubeANC() object handling the controller where the axis is.
+        CAP (str): constant string identifying the capacitance measurement mode
+        GROUND (str): constant string identifying the ground mode
+        id (int): integer identifying the position of the axis in the controller
+        INACTIVE (str): constant string identifying the inactive mode (no communication with the controller will be attempted)
+        mode (str): string identifying the current mode of the axis
+        OFFSET (str): constant string identifying the offset mode of the axis
+        reversedStep (bool): if True, the axis will behave reversed (an up order will go down and reversewise)
+        STEP (str): constant string identifying the step mode of the axis
+        UNKNOWN (str): constant string identifying any unknown mode of the axis. In this mode, the axis will be inactive.
+    """
+    
     # mode keys
     INACTIVE = 'inactive'
     UNKNOWN = 'unknown'
@@ -30,6 +55,13 @@ class ANCaxis():
     STEP = 'step'
     
     def __init__(self, axisId, ANChandle, reversedStep=False):
+        """Sets basic properties and reads the mode from the axis if not INACTIVE.
+        
+        Args:
+            axisId (int): integer identifying the position of the axis in the controller
+            ANChandle (AttocubeANC object): AttocubeANC() object handling the controller where the axis is.
+            reversedStep (bool, optional): if True, the axis will behave reversed (an up order will go down and reversewise)
+        """
         self.id = axisId
         self.atto = ANChandle
         self.reversedStep = reversedStep
@@ -41,6 +73,11 @@ class ANCaxis():
             self.mode = self.getMode()
     
     def switchMode(self, newmode):
+        """Change the axis mode to newmode
+        
+        Args:
+            newmode (str): string identifying the mode of the axis (check mode keys at the beginning of the class).
+        """
         if self.active:
             if newmode == self.GROUND:
                 self.atto.groundMode(self.id)
@@ -54,6 +91,11 @@ class ANCaxis():
             self.mode = self.getMode()
                 
     def getMode(self):
+        """Reads the current mode of the axis
+        
+        Returns:
+            str: string identifying the mode of the axis (check mode keys at the beginning of the class).
+        """
         if self.active:
             modeStr = self.atto.getMode(self.id)[0]
             if modeStr == 'gnd':
@@ -71,10 +113,17 @@ class ANCaxis():
             return self.INACTIVE
         
     def stopMotion(self):
+        """Stops all motion of the axis if set active.
+        """
         if self.active:
             self.atto.stopMotion(self.id)
         
     def stepUp(self, nbOfSteps=-1):
+        """In STEP mode, does nbOfSteps steps up.
+        
+        Args:
+            nbOfSteps (int, optional): number of steps to make. If -1, will step continuously until stopped.
+        """
         self.mode = self.getMode()
         if self.mode == self.STEP:
             if self.reversedStep:
@@ -83,6 +132,11 @@ class ANCaxis():
                 self.atto.stepUp(nbOfSteps, self.id)
                     
     def stepDown(self, nbOfSteps=-1):
+        """In STEP mode, does nbOfSteps steps down.
+        
+        Args:
+            nbOfSteps (int, optional): number of steps to make. If -1, will step continuously until stopped.
+        """
         self.mode = self.getMode()
         if self.mode == self.STEP:
             if self.reversedStep:
@@ -91,16 +145,31 @@ class ANCaxis():
                 self.atto.stepDown(nbOfSteps, self.id)
             
     def setStepAmplitude(self, amplitude):
+        """In STEP mode, sets the amplitude (in volts) of one step.
+        
+        Args:
+            amplitude (float): new amplitude (in volts) to set.
+        """
         self.mode = self.getMode()
         if self.mode == self.STEP:
             self.atto.setStepAmplitude(amplitude, self.id)
             
     def setStepFrequency(self, frequency):
+        """In STEP mode, sets the frequency (in hertz) of the steps.
+        
+        Args:
+            frequency (float): new frequency (in hertz) to set.
+        """
         self.mode = self.getMode()
         if self.mode == self.STEP:
             self.atto.setStepFrequency(frequency, self.id)
             
     def getStepAmplitude(self):
+        """In STEP mode, gets the amplitude (in volts) of one step.
+        
+        Returns:
+            float: amplitude of one step (in volts). 0 if axis not in STEP mode.
+        """
         self.mode = self.getMode()
         if self.mode == self.STEP:
             return self.atto.getStepAmplitude(self.id)[0]
@@ -108,6 +177,11 @@ class ANCaxis():
             return 0.
             
     def getStepFrequency(self):
+        """In STEP mode, gets the frequency (in hertz) of the steps.
+        
+        Returns:
+            float: frequency (in hertz). 0 if axis not in STEP mode.
+        """
         self.mode = self.getMode()
         if self.mode == self.STEP:
             return self.atto.getStepFrequency(self.id)[0]
@@ -115,6 +189,12 @@ class ANCaxis():
             return 0
             
     def setOffset(self, offset):
+        """In OFFSET or STEP modes (ambiguous definition for old ANC200 controllers), 
+        sets the offset in volts. A warning will be issued if the order is not accepted.
+        
+        Args:
+            offset (float): offset (in volts) to set for this axis.
+        """
         try:
             if self.mode in {self.OFFSET, self.STEP}:  # STEP for the old ANC200
                 self.atto.setOffset(offset, self.id)
@@ -122,6 +202,12 @@ class ANCaxis():
             warnings.warn('Axis {} may not have an OFFSET mode.'.format(self.id))
             
     def getOffset(self):
+        """In OFFSET or STEP modes (ambiguous definition for old ANC200 controllers), 
+        gets the offset in volts. A warning will be issued if the order is not accepted.
+        
+        Returns:
+            float: current offset in volts. 0 if axis not in OFFSET or STEP mode or order not accepted.
+        """
         try:
             if self.mode in {self.OFFSET, self.STEP}:  # STEP for the old ANC200
                 retVal = self.atto.getOffset(self.id)[0]
@@ -134,6 +220,8 @@ class ANCaxis():
             return retVal
             
     def waitStep(self):
+        """Wait for the axis to finish whatever it is doing (certainly stepping)
+        """
         self.mode = self.getMode()
         if self.mode == self.STEP:
             self.atto.waitStep(self.id)
