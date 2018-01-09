@@ -38,8 +38,10 @@ class ScannerCtrl (mgen.DeviceCtrl):
     def _close(self):
         pass
 
-    def move_smooth(self, targets=[0], axes=[0]):
-        # targets and axes should be iterables
+    def move_smooth(self, targets=[0], axes=None):
+        # targets and axes should be iterables (or axes=None if default x, y, etc.)
+        if axes is None:
+            axes = range(len(targets))
         to_pos_list = targets
         nb_steps_list = []
         from_pos_list = []
