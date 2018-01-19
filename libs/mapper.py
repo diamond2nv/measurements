@@ -8,6 +8,7 @@ Created on Wed Nov 22 09:23:52 2017
 import pylab as pl
 import time
 from tools import data_object as DO
+import numpy as np
 
 
 class XYScan ():
@@ -184,7 +185,7 @@ class XYScan ():
         print("File saved")
 
     def save_to_npz(self, file_name):
-        np.savez (filename+'.npz', self.counts)
+        np.savez (file_name+'.npz', self.counts)
 
     def plot_counts(self):
 
