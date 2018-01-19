@@ -183,6 +183,9 @@ class XYScan ():
         d_obj.save_object_to_file (self, file_name)
         print("File saved")
 
+    def save_to_npz(self, file_name):
+        np.savez (filename+'.npz', self.counts)
+
     def plot_counts(self):
 
         if (self.detector_type == 'apd'):
