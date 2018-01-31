@@ -1,4 +1,0 @@
-{"attoAxes": {"Px": 4, "Py": 5, "Pz": 6, "Sx": 2, "Sy": 3, "Sz": 1},
- "attoVisaScannersId": "ASRL10::INSTR",
- "attoVisaPositionersId": "ASRL10::INSTR",
- "reversedMotion": {"Sx": 1, "Sy": 0, "Sz": 1, "Px": 1, "Py": 1, "Pz": 0}}

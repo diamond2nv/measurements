@@ -148,7 +148,7 @@ class AttoPos(QWidget):
             PzStepRev = config['reversedMotion']['Pz']
         except (IOError, ValueError, KeyError):
             with open('CONFIG.txt', 'w') as text_file:
-                text_file.write('{"attoAxes": {"Px": 1, "Py": 2, "Pz": 3, "Sx": 4, "Sy": 5, "Sz": 6},\n "attoVisaScannersId": "ASRL1::INSTR",\n "attoVisaPositionersId": "ASRL1::INSTR",\n "reversedMotion": {"Px": 0, "Py": 0, "Pz": 0}}')
+                text_file.write('{"attoAxes": {"Px": 1, "Py": 2, "Pz": 3, "Sx": 4, "Sy": 5, "Sz": 6},\n "attoVisaScannersId": "ASRL1::INSTR",\n "attoVisaPositionersId": "ASRL1::INSTR",\n "reversedMotion": {"Sx": 0, "Sy": 0, "Sz": 0, "Px": 0, "Py": 0, "Pz": 0}}')
             errorMessageWindow(self, 'Invalid config file', 'The config file is invalid and has been replaced by a new one.\nPlease modify it with the proper parameters and relaunch this program.')
             raise
         
