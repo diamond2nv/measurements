@@ -23,6 +23,7 @@ from PyQt5.QtWidgets import QApplication, QWidget, QFileDialog, QShortcut, QMess
 from PyQt5.QtGui import QKeySequence
 from PyQt5.QtMultimedia import QSound
 from measurements.instruments.starlightRead import StarlightCCD
+from tools.arrayProcessing import histeq
 from UiStarlightCapture import Ui_starlightCapture
 
 import datetime
@@ -42,25 +43,6 @@ import pyqtgraph as pg
 if sys.executable.endswith("pythonw.exe"):  # this allows pythonw not to quit immediately
     sys.stdout = open(os.devnull, "w")
     sys.stderr = open(os.path.join(os.getenv("TEMP"), "stderr-"+os.path.basename(sys.argv[0])), "w")
-
-def histeq(im,nbr_bins=256):
-    """
-    This function equalises the histogram of im (numpy array), distributing
-    the pixels accross nbr_bins bins.
-    Returns the equalised image as a numpy array (same shape as input).
-    Largely copied from https://stackoverflow.com/a/28520445  
-        (author: Trilarion, 17/07/2017)
-    """
-    #get image histogram
-    imhist, bins = pl.histogram(im.flatten(), nbr_bins, normed=True)
-    cdf = imhist.cumsum() #cumulative distribution function
-    cdf = 65535 * cdf / cdf[-1] #normalize
-    
-    #use linear interpolation of cdf to find new pixel values
-    im2 = pl.interp(im.flatten(), bins[:-1], cdf)
-    
-    return im2.reshape(im.shape)
-
     
 def findFWHM(vector, maxPos=None, amplitude=None):
     """ 
