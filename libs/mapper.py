@@ -111,7 +111,7 @@ class XYScan ():
             first_point = True
             idx = 0
 
-            self._scanner.move_smooth(targets=[self.xPositions[0], self.yPositions[0]])
+            self._scanner.goSmoothlyToPos(xPos=self.xPositions[0], yPos=self.yPositions[0])
 
             print('\nScanners are at start position. Waiting for spectrometer acquisition.\n')
 
@@ -159,12 +159,12 @@ class XYScan ():
 
                 # move back to first point of row smoothly
                 if y != self.yPositions[-1]:
-                    self._scanner.move_smooth(targets=[self.xPositions[0], y])
+                    self._scanner.goSmoothlyToPos(xPos=self.xPositions[0], yPos=y)       
 
             # go smoothly to start position
             if self._back_to_zero:
                 print('\nGoing back to 0 V on scanners...')
-                self._scanner.move_smooth(targets=[0, 0])
+                self._scanner.goSmoothlyToPos(xPos=0, yPos=0)
 
             print('\nSCAN COMPLETED\n' +
                   'X from {:.2f} V to {:.2f} V with step size {:.2f} V (nb of steps: {})\n'.format(self.xPositions[0], self.xPositions[-1], self.xStep, self.xNbOfSteps) +

@@ -13,8 +13,7 @@ NOTE (R. Proux):   this library is NEWER than the pylonWeetabixTrigger.py librar
 
 import PyDAQmx as daq
 import numpy as np
-import time
-from ctypes import c_char_p
+from ctypes import *
 
 
 class Trigger(daq.Task):
@@ -73,15 +72,15 @@ class TrigSender(daq.Task):
     def __init__(self, channel):
         daq.Task.__init__(self)
         self.CreateDOChan(channel,"",daq.DAQmx_Val_ChanPerLine)
-        dataDown = np.array([0], dtype=np.uint8)
+        dataDown = py.array([0], dtype=py.uint8)
         self.WriteDigitalLines(1, 1, 10.0, daq.DAQmx_Val_GroupByChannel, dataDown, None, None)
 
     def emit(self):
         """
         Emits a 1 ms pulse on the digital output
         """
-        dataUp = np.array([1], dtype=np.uint8)
-        dataDown = np.array([0], dtype=np.uint8)
+        dataUp = py.array([1], dtype=py.uint8)
+        dataDown = py.array([0], dtype=py.uint8)
         self.WriteDigitalLines(1, 1, 10.0, daq.DAQmx_Val_GroupByChannel, dataUp, None, None)
         self.WriteDigitalLines(1, 1, 10.0, daq.DAQmx_Val_GroupByChannel, dataDown, None, None)
 
@@ -95,7 +94,7 @@ class TrigReceiver(daq.Task):
         """
         Measures the current state of the digital input (one sample)
         """
-        data = np.array([0], dtype=np.uint8)
+        data = py.array([0], dtype=py.uint8)
         self.ReadDigitalLines(1, 10.0, daq.DAQmx_Val_GroupByChannel, data, 1, None, None, None)
         return data[0]
 

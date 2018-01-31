@@ -8,7 +8,7 @@ Created on Thu Jun 16 14:00:22 2016
 
 import pylab as py
 import time
-from measurements.instruments.starlightReadUSBlib import StarlightCamUSB, bytesToPx
+from starlightReadUSBlib import *
 
         
 class StarlightCCD(StarlightCamUSB):

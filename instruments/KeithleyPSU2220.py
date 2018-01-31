@@ -112,7 +112,7 @@ class Keithley2220:
         repeat is the number of measurements (default 1), then meaning val taken. """
         self.channelSelect(channel)
         response = 0.
-        for i in range(repeat):
+        for i in xrange(repeat):
             response += float(self.query('MEAS:VOLT:DC?'))
         response /= repeat
         return response
@@ -133,7 +133,7 @@ class Keithley2220:
         repeat is the number of measurements (default 1), then meaning val taken. """
         self.channelSelect(channel)
         response = 0.
-        for i in range(repeat):
+        for i in xrange(repeat):
             response += float(self.query('MEAS:CURR:DC?'))
         response /= repeat
         return response

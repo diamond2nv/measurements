@@ -4,8 +4,9 @@ Created on Tue Mar 28 16:51:51 2017
 
 @author: Raphael Proux
 
-Library to control the Solstis laser from MSquared. 
-Based on an example from Msquared (for the Firefly)
+Tests with the Solstis laser from MSquared
+
+Tests with the socket library (based on Msquared)
 """
 
 import socket
