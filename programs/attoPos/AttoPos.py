@@ -108,17 +108,17 @@ class keysRef():
     
 class AttoPos(QWidget):
     
-#==============================================================================
-#                    MAIN PARAMETERS FOR THE EXPERIMENT                       #
-#==============================================================================
-    
+    #==============================================================================
+    #                    MAIN PARAMETERS FOR THE EXPERIMENT                       #
+    #==============================================================================
+        
     # these parameters are not meant to be changed on daily operation
     SMOOTH_DELAY = 0.005  # in s, delay between steps for smooth piezo movements
     SMOOTH_STEP = 1  # in V
-    
-#==============================================================================
+        
+    #==============================================================================
 
-    def __init__(self, app):
+    def __init__(self, app, config):
         self.dialog = QWidget.__init__(self)
         self.app = app
         
@@ -128,32 +128,28 @@ class AttoPos(QWidget):
         
         # open configuration file
         try: 
-            with open('CONFIG.txt') as infile:
-                config = json.load(infile)
-            SxAxisId = config['attoAxes']['Sx']
-            SyAxisId = config['attoAxes']['Sy']
-            SzAxisId = config['attoAxes']['Sz']
-            PxAxisId = config['attoAxes']['Px']
-            PyAxisId = config['attoAxes']['Py']
-            PzAxisId = config['attoAxes']['Pz']
-            visaScannersId = config['attoVisaScannersId']
-            visaPositionersId = config['attoVisaPositionersId']
+            # initialize instruments
+            self.initInstruments(visaPositionersId=config['attoVisaPositionersId'], 
+                                 visaScannersId=config['attoVisaScannersId'],
+                                 SxAxisId=config['attoAxes']['Sx'],
+                                 SyAxisId=config['attoAxes']['Sy'],
+                                 SzAxisId=config['attoAxes']['Sz'],
+                                 PxAxisId=config['attoAxes']['Px'],
+                                 PyAxisId=config['attoAxes']['Py'],
+                                 PzAxisId=config['attoAxes']['Pz'],
+                                 PxStepRev=config['reversedMotion']['Px'],
+                                 PyStepRev=config['reversedMotion']['Py'],
+                                 PzStepRev=config['reversedMotion']['Pz'])
             # not the reversed move of the scanners has to be handled by this 
             #   program and not the library
             self.SxStepRev = config['reversedMotion']['Sx']
             self.SyStepRev = config['reversedMotion']['Sy']
             self.SzStepRev = config['reversedMotion']['Sz']
-            PxStepRev = config['reversedMotion']['Px']
-            PyStepRev = config['reversedMotion']['Py']
-            PzStepRev = config['reversedMotion']['Pz']
-        except (IOError, ValueError, KeyError):
-            with open('CONFIG.txt', 'w') as text_file:
-                text_file.write('{"attoAxes": {"Px": 1, "Py": 2, "Pz": 3, "Sx": 4, "Sy": 5, "Sz": 6},\n "attoVisaScannersId": "ASRL1::INSTR",\n "attoVisaPositionersId": "ASRL1::INSTR",\n "reversedMotion": {"Sx": 0, "Sy": 0, "Sz": 0, "Px": 0, "Py": 0, "Pz": 0}}')
-            errorMessageWindow(self, 'Invalid config file', 'The config file is invalid and has been replaced by a new one.\nPlease modify it with the proper parameters and relaunch this program.')
+        except (ValueError, KeyError):
+            errorMessageWindow(self, 'Invalid config dictionary', 'The config dictionary in your script is invalid.\nPlease check documentation for a reference dictionary.')
             raise
         
-        # initialize instruments
-        self.initInstruments(visaPositionersId, visaScannersId, SxAxisId, SyAxisId, SzAxisId, PxAxisId, PyAxisId, PzAxisId, PxStepRev, PyStepRev, PzStepRev)
+        
         
         # deactivate GUI of inactive axes
         self.guiDeactivateAxes()
@@ -992,13 +988,36 @@ def errorMessageWindow(parentWindow, winTitle, winText):
     msg.setWindowTitle(winTitle)
     msg.setText(winText)
     msg.exec_()
-        
-if __name__ == "__main__":
-        
+
+def attopos_run(config):
     app = QApplication(sys.argv)
     app.aboutToQuit.connect(app.deleteLater)
     
-    window = AttoPos(app)
+    window = AttoPos(app, config)
+    
+    try:
+        #window.ui.setFocus(True)
+        window.setFocus(True)
+        window.show()
+        app.exec_()
+    except:
+        raise
+    finally:
+        window.closeInstruments()
+        
+if __name__ == "__main__":
+    
+
+    config = {"attoAxes": {"Px": 1, "Py": 2, "Pz": 3, "Sx": 4, "Sy": 5, "Sz": 6}, 
+              "attoVisaScannersId": "ASRL1::INSTR", 
+              "attoVisaPositionersId": "ASRL1::INSTR", 
+              "reversedMotion": {"Sx": 0, "Sy": 0, "Sz": 0, "Px": 0, "Py": 0, "Pz": 0}}
+
+
+    app = QApplication(sys.argv)
+    app.aboutToQuit.connect(app.deleteLater)
+    
+    window = AttoPos(app, config)
     
     try:
         #window.ui.setFocus(True)
