@@ -25,10 +25,10 @@ reload(mdet)
 delayBetweenPoints = 1
 delayBetweenRows = 0.5
 
-xLims = (0, 2)
+xLims = (0, 20)
 xStep = 1
 
-yLims = (0, 2)
+yLims = (0, 20)
 yStep = 1
 
 #voltsDirectory = r'C:\Users\ted\Desktop\temporary_meas'
@@ -60,7 +60,7 @@ XYscan.set_range (xLims=xLims, xStep=xStep, yLims=yLims, yStep=yStep)
 XYscan.set_delays (between_points = delayBetweenPoints, between_rows = delayBetweenRows)
 #XYscan.restore_back_to_zero()
 XYscan.run_scan()
-XYscan.save_to_npz('C:/Users/ted/Desktop/measurements/scan1')
+XYscan.save_to_npz('C:/Users/ted/Desktop/measurements/HDScan6')
 #XYscan.save_to_hdf5(file_name=r'C:\Users\ted\Desktop\measurements\test5.hdf5')
 #XYscan.plot_counts()
 
