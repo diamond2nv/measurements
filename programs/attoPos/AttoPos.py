@@ -606,15 +606,15 @@ class AttoPos(QWidget):
         
     def PxOffsetChange(self, event):
         """ Sets the Px axis offset on the ANC when a user-change happens. """
-        self.PxAxis.setStepOffset(event)
+        self.PxAxis.setStepAmplitude(event)
         self.PxOffsetUpdate()
     def PyOffsetChange(self, event):
         """ Sets the Py axis offset on the ANC when a user-change happens. """
-        self.PyAxis.setStepOffset(event)
+        self.PyAxis.setStepAmplitude(event)
         self.PyOffsetUpdate()
     def PzOffsetChange(self, event):
         """ Sets the Pz axis offset on the ANC when a user-change happens. """
-        self.PzAxis.setStepOffset(event)
+        self.PzAxis.setStepAmplitude(event)
         self.PzOffsetUpdate()
     
     def PxOffsetUpdate(self):
