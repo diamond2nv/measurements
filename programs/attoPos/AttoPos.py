@@ -24,12 +24,11 @@ Complete keyboard control is possible (see in GUI)
 from PyQt5.QtWidgets import QApplication, QWidget, QShortcut, QMessageBox
 from PyQt5.QtGui import QKeySequence
 from PyQt5 import QtCore
-from measurements.programs.attopos.UiAttoPos import Ui_AttoPos
+from measurements.programs.attoPos.UiAttoPos import Ui_AttoPos
 from measurements.instruments.AttocubeANCV1 import AttocubeANC, ANCaxis, ANCError
 import sys
 import time
 import pylab as pl
-import json
 import visa
 
 class commandedVar():
@@ -899,17 +898,17 @@ class AttoPos(QWidget):
     def toggleContIndicator(self, contActive):
         """ Switch on the CONT indicators for the corresponding axes which are moving. """
         if contActive.xUp or contActive.xDown:
-            self.ui.contXled.setStyleSheet("background-color: rgb(0, 115, 255);\ncolor: rgb(255, 255, 255);");
+            self.ui.contXled.setStyleSheet("background-color: rgb(0, 115, 255);\ncolor: rgb(255, 255, 255);")
         else:
-            self.ui.contXled.setStyleSheet("background-color: rgb(231, 248, 255);\ncolor: rgb(255, 255, 255);");
+            self.ui.contXled.setStyleSheet("background-color: rgb(231, 248, 255);\ncolor: rgb(255, 255, 255);")
         if contActive.yUp or contActive.yDown:
-            self.ui.contYled.setStyleSheet("background-color: rgb(0, 115, 255);\ncolor: rgb(255, 255, 255);");
+            self.ui.contYled.setStyleSheet("background-color: rgb(0, 115, 255);\ncolor: rgb(255, 255, 255);")
         else:
-            self.ui.contYled.setStyleSheet("background-color: rgb(231, 248, 255);\ncolor: rgb(255, 255, 255);");
+            self.ui.contYled.setStyleSheet("background-color: rgb(231, 248, 255);\ncolor: rgb(255, 255, 255);")
         if contActive.zUp or contActive.zDown:
-            self.ui.contZled.setStyleSheet("background-color: rgb(0, 115, 255);\ncolor: rgb(255, 255, 255);");
+            self.ui.contZled.setStyleSheet("background-color: rgb(0, 115, 255);\ncolor: rgb(255, 255, 255);")
         else:
-            self.ui.contZled.setStyleSheet("background-color: rgb(231, 248, 255);\ncolor: rgb(255, 255, 255);");
+            self.ui.contZled.setStyleSheet("background-color: rgb(231, 248, 255);\ncolor: rgb(255, 255, 255);")
             
     def arrowKeyControlToggled(self, event):
         """ Big keyboard control button toggled by user or by focusOnWindow(). 
@@ -918,15 +917,15 @@ class AttoPos(QWidget):
         self.keyControl = event
         if self.keyControlAutoSwitched:
             self.keyControlAutoSwitched = False
-        elif self.keyControl == False:  # if user deactivates keyboard control on purpose
+        elif not self.keyControl:  # if user deactivates keyboard control on purpose
             self.keyControlSetByUser = True
         else:
             self.keyControlSetByUser = False
             
         if self.keyControl:
-            self.ui.arrowKeyControl.setStyleSheet("background-color: rgb(38, 234, 68);");
+            self.ui.arrowKeyControl.setStyleSheet("background-color: rgb(38, 234, 68);")
         else:
-            self.ui.arrowKeyControl.setStyleSheet("background-color: red;");
+            self.ui.arrowKeyControl.setStyleSheet("background-color: red;")
     
     def toggleArrowKeyControlShortcut(self):
         """ Programmatically toggle big keyboard control button. Associated to the Ctrl+Space shortcut. """

@@ -5,7 +5,7 @@ Created on 01/02/2018
 @author: raphael proux
 """
 
-from measurements.programs.attopos.AttoPos import attopos_run
+from measurements.programs.attoPos.AttoPos import attopos_run
 
 config = {"attoAxes": {"Px": 2, "Py": 1, "Pz": 3, "Sx": 0, "Sy": 0, "Sz": 0}, 
           "attoVisaScannersId": "ASRL22::INSTR", 
