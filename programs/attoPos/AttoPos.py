@@ -24,7 +24,7 @@ Complete keyboard control is possible (see in GUI)
 from PyQt5.QtWidgets import QApplication, QWidget, QShortcut, QMessageBox
 from PyQt5.QtGui import QKeySequence
 from PyQt5 import QtCore
-from UiAttoPos import Ui_AttoPos
+from measurements.programs.attopos.UiAttoPos import Ui_AttoPos
 from measurements.instruments.AttocubeANCV1 import AttocubeANC, ANCaxis, ANCError
 import sys
 import time
