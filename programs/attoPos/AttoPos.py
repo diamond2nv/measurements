@@ -794,7 +794,7 @@ class AttoPos(QWidget):
             elif event.key() == self.keys.cont:         # on press of continuous motion key, activate continuous motion mode
                 self.contStepMode = True
             elif event.key() == self.keys.contLock:     # locked continuous motion of positioners
-                self.contLockKeyPressed = True
+                self.contLockKeyPressed = True  
             elif event.key() == self.keys.fullStop:     # full stop of all positioners motion
                 self.PxStop()
                 self.PyStop()
@@ -816,10 +816,10 @@ class AttoPos(QWidget):
                         self._keyReleasePxyzDetail(event.key())
             elif event.key() == self.keys.cont:         # on release of continuous motion key, deactivate continuous motion mode
                 self.contStepMode = False
-                if not self.contLockedStepMode:
-                    self.PxStop()
-                    self.PyStop()
-                    self.PzStop()
+                #if not self.contLockedStepMode:
+                self.PxStop()
+                self.PyStop()
+                self.PzStop()
             elif event.key() == self.keys.contLock:     # locked continuous motion key released
                 self.contLockKeyPressed = False
                 

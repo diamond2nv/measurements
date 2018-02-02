@@ -24,7 +24,7 @@ from PyQt5.QtGui import QKeySequence
 from PyQt5.QtMultimedia import QSound
 from measurements.instruments.starlightRead import StarlightCCD
 from tools.arrayProcessing import histeq
-from UiStarlightCapture import Ui_starlightCapture
+from measurements.programs.starlightCamera.UiStarlightCapture import Ui_starlightCapture
 
 import datetime
 import sys
