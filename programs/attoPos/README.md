@@ -59,7 +59,7 @@ navigation and the display still shows the actual voltage applied on the piezoel
 
 For a new computer being configured, please check you have the PyVISA package and PyQT5 installed.
 With the Anaconda distribution, these can be installed using `pip install pyvisa` and 
-`conda install pyqt=4` in the command prompt.
+`conda install pyqt=5` in the command prompt.
 
 If the program does not work properly, check the following:
 
@@ -75,4 +75,13 @@ to restart all python kernels. In Spyder, this can be done in the menu at the to
 
 - if all these steps have failed, disconnecting the device and restarting it might help, which means grounding all the connected piezo stacks. __ATTENTION:__ the controller must be disconnected from USB to be able to restart properly.
 
+
+## Note if you modify the interface and the arrows on the buttons have disappeared
+
+When you modify the `AttoPos.ui` file, you need to export it to Python using the `pyuic` tool provided by PyQt. Here:
+```
+pyuic5 AttoPos.ui -o UiAttoPos.py
+```
+
+You will then lose the arrows in the continuous and step command buttons, which comes from a relative path issue. When you apply `pyuic5` to generate the Python file, you will need to make some modifications. First, import `os.path` by adding `import os.path` at the beginning, and then modify the name of the files `"ArrowDown.png"` and `"ArrowUp.png"` by path reconstructing codes `os.path.join(os.path.dirname(__file__), "ArrowDown.png")` and `os.path.join(os.path.dirname(__file__), "ArrowUp.png")`.
 

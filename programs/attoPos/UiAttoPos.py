@@ -7,6 +7,7 @@
 # WARNING! All changes made in this file will be lost!
 
 from PyQt5 import QtCore, QtGui, QtWidgets
+import os.path
 
 class Ui_AttoPos(object):
     def setupUi(self, AttoPos):
@@ -332,7 +333,7 @@ class Ui_AttoPos(object):
         self.PyContUp.setMinimumSize(QtCore.QSize(75, 70))
         self.PyContUp.setMaximumSize(QtCore.QSize(75, 70))
         icon1 = QtGui.QIcon()
-        icon1.addPixmap(QtGui.QPixmap("ArrowUp.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        icon1.addPixmap(QtGui.QPixmap(os.path.join(os.path.dirname(__file__), "ArrowUp.png")), QtGui.QIcon.Normal, QtGui.QIcon.Off)
         self.PyContUp.setIcon(icon1)
         self.PyContUp.setIconSize(QtCore.QSize(35, 35))
         self.PyContUp.setObjectName("PyContUp")
@@ -341,7 +342,7 @@ class Ui_AttoPos(object):
         self.PyContDown.setMinimumSize(QtCore.QSize(75, 70))
         self.PyContDown.setMaximumSize(QtCore.QSize(75, 70))
         icon2 = QtGui.QIcon()
-        icon2.addPixmap(QtGui.QPixmap("ArrowDown.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        icon2.addPixmap(QtGui.QPixmap(os.path.join(os.path.dirname(__file__), "ArrowDown.png")), QtGui.QIcon.Normal, QtGui.QIcon.Off)
         self.PyContDown.setIcon(icon2)
         self.PyContDown.setIconSize(QtCore.QSize(35, 35))
         self.PyContDown.setObjectName("PyContDown")
