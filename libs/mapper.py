@@ -174,6 +174,7 @@ class XYScan ():
         except KeyboardInterrupt:
             print('\n####  Program interrupted by user.  ####')
         finally:
+            self.counts = counts
             self._scanner.close()
             for detector in self._detectors:
                 detector.close()
@@ -185,7 +186,7 @@ class XYScan ():
         print("File saved")
 
     def save_to_npz(self, file_name):
-        np.savez (file_name+'.npz', self.counts)
+        np.savez (file_name+'.npz', xPos = self.xPositions, yPos = self.yPositions, counts = self.counts)
 
     def plot_counts(self):
 

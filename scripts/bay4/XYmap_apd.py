@@ -26,10 +26,10 @@ delayBetweenPoints = 1
 delayBetweenRows = 0.5
 
 xLims = (0, 20)
-xStep = 1
+xStep = 5
 
 yLims = (0, 20)
-yStep = 1
+yStep = 5
 
 #voltsDirectory = r'C:\Users\ted\Desktop\temporary_meas'
 #realPosDirectory = r'C:\Users\ted\Desktop\temporary_meas'
@@ -39,15 +39,18 @@ yStep = 1
 toDC_drive_voltage = 1./15
 
 # APD counter integration time (ms)
-ctr_time_ms = 1000
+ctr_time_ms = 10
 ctr_port = 'pfi0'
 
 #######################
 # instruments
-attoCtrl = mscan.AttocubeNI (chX = '/Weetabix/ao0', chY = '/Weetabix/ao1')
-apdCtrl = mdet.APDCounterCtrl (ctr_port = ctr_port,
-                         work_folder = r"C:\Users\ted\Desktop\temporary_meas",
-                         debug = True)
+attoCtrl = mscan.ScannerCtrl ()
+apdCtrl = mdet.dummyAPD(work_folder = r"C:\Users\ted\Desktop\temporary_meas")
+#attoCtrl = mscan.AttocubeNI (chX = '/Weetabix/ao0', chY = '/Weetabix/ao1')
+#apdCtrl = mdet.APDCounterCtrl (ctr_port = ctr_port,
+#                         work_folder = r"C:\Users\ted\Desktop\temporary_meas",
+#                         debug = True)
+
 apdCtrl.set_integration_time_ms(ctr_time_ms)
 
 d = datetime.datetime.now()
@@ -60,7 +63,7 @@ XYscan.set_range (xLims=xLims, xStep=xStep, yLims=yLims, yStep=yStep)
 XYscan.set_delays (between_points = delayBetweenPoints, between_rows = delayBetweenRows)
 #XYscan.restore_back_to_zero()
 XYscan.run_scan()
-XYscan.save_to_npz('C:/Users/ted/Desktop/measurements/HDScan6')
+XYscan.save_to_npz('C:/Research/test')
 #XYscan.save_to_hdf5(file_name=r'C:\Users\ted\Desktop\measurements\test5.hdf5')
 #XYscan.plot_counts()
 

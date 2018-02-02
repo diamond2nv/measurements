@@ -3,6 +3,7 @@
 import time
 import sys
 import visa
+import numpy as np
 
 from measurements.libs import mapper_general as mgen
 
@@ -188,6 +189,37 @@ class APDCounterCtrl (DetectorCtrl):
     def _close (self):
         self._ctr.clear()
 
+class dummyAPD (DetectorCtrl):
+
+    def __init__(self, work_folder, random_counts = True, debug = False):
+        self.string_id = 'APD NI box counter'
+        self._wfolder = work_folder
+        self.delay_after_readout = 0.
+        self._debug = debug
+        self._random = random_counts
+        
+    def set_integration_time_ms (self, t):
+        self._ctr_time_ms = t
+
+    def initialize (self):
+        pass
+
+    def readout (self):
+        if self._random:
+            c = int(1000*np.random.rand ())
+        else:
+            c = 0
+        if self._debug:
+            print ("APD counts: ", c)
+
+        return c
+
+    def first_point (self):
+        self.readout()
+        return True
+
+    def _close (self):
+        pass
 
 class VoltmeterCtrl (DetectorCtrl):
 
