@@ -90,7 +90,6 @@ class keysRef():
     fullStop = QtCore.Qt.Key_0
     
     cont = QtCore.Qt.Key_Control
-    contLock = QtCore.Qt.Key_Alt
 
     close = QtCore.Qt.Key_Escape
     
@@ -161,8 +160,8 @@ class AttoPos(QWidget):
         self.SyGrounded = True
         self.SzGrounded = True
         self.SxDeactivated = False
-        self.SxDeactivated = False
-        self.SxDeactivated = False
+        self.SyDeactivated = False
+        self.SzDeactivated = False
         self.PxAmp = 0.
         self.PyAmp = 0.
         self.PzAmp = 0.
@@ -176,9 +175,7 @@ class AttoPos(QWidget):
         self.keyControlAutoSwitched = False
         self.keyControlSetByUser = False
         self.contStepMode = False
-        self.contLockKeyPressed = False
         self.nbOfStepsToDo = 1
-        self.contLockedStepMode = commandedVar()
         self.contActive = commandedVar2()
         self.stepActive = commandedVar2()
         
@@ -737,10 +734,10 @@ class AttoPos(QWidget):
     def keyPressEvent(self, event):
         """ For keyboard navigation, called by Qt when a key press event happens. """
         # deals with the keyboard navigation
-        if not event.isAutoRepeat():
-            print('Press not auto repeat',event.key())
-        else:
-            print('Press auto repeat',event.key())
+        # if not event.isAutoRepeat():
+        #     print('Press not auto repeat',event.key())
+        # else:
+        #     print('Press auto repeat',event.key())
         
         if self.keyControl:  # check if keyboard control is on (big button)
             if event.key() == self.keys.close:          # close program
@@ -803,25 +800,22 @@ class AttoPos(QWidget):
     
     def keyReleaseEvent(self, event):
         """ For keyboard navigation, called by Qt when a key release event happens. """
-        if not event.isAutoRepeat():
-            print('Release not auto repeat',event.key())
-        else:
-            print('Release auto repeat',event.key())
+        # if not event.isAutoRepeat():
+        #     print('Release not auto repeat',event.key())
+        # else:
+        #     print('Release auto repeat',event.key())
         
         if self.keyControl:  # check if keyboard control is on (big button)
             if event.key() in self.keys.positioners:    # for positioners in general (dealt with in _keyReleasePxyzDetail)
                 if not event.isAutoRepeat():
                     # if continuous motion without locking, will stop the motion on release
-                    if self.contStepMode and not self.contLockedStepMode: 
+                    if self.contStepMode:
                         self._keyReleasePxyzDetail(event.key())
             elif event.key() == self.keys.cont:         # on release of continuous motion key, deactivate continuous motion mode
                 self.contStepMode = False
-                #if not self.contLockedStepMode:
                 self.PxStop()
                 self.PyStop()
                 self.PzStop()
-            elif event.key() == self.keys.contLock:     # locked continuous motion key released
-                self.contLockKeyPressed = False
                 
     def _keyPressPxyzDetail(self, key):
         """ Detail of keypress function for handling positioners exclusively """
