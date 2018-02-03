@@ -737,48 +737,50 @@ class AttoPos(QWidget):
     def keyPressEvent(self, event):
         """ For keyboard navigation, called by Qt when a key press event happens. """
         # deals with the keyboard navigation
-        #if not event.isAutoRepeat():
-#        print('Press',event.key())
+        if not event.isAutoRepeat():
+            print('Press not auto repeat',event.key())
+        else:
+            print('Press auto repeat',event.key())
         
         if self.keyControl:  # check if keyboard control is on (big button)
             if event.key() == self.keys.close:          # close program
                 self.close()
-            elif event.key() == self.keys.SxDown:       # scanner X down
+            elif event.key() == self.keys.SxDown and not self.SxDeactivated:       # scanner X down
                 singleStep = self.ui.SxPos.singleStep()
                 value = self.ui.SxPos.value()
                 if self.SxStepRev:
                     self.ui.SxPos.setValue(value + singleStep)
                 else:
                     self.ui.SxPos.setValue(value - singleStep)
-            elif event.key() == self.keys.SxUp:         # scanner X up
+            elif event.key() == self.keys.SxUp and not self.SxDeactivated:         # scanner X up
                 singleStep = self.ui.SxPos.singleStep()
                 value = self.ui.SxPos.value()
                 if self.SxStepRev:
                     self.ui.SxPos.setValue(value - singleStep)
                 else:
                     self.ui.SxPos.setValue(value + singleStep)
-            elif event.key() == self.keys.SyDown:       # scanner Y down
+            elif event.key() == self.keys.SyDown and not self.SyDeactivated:       # scanner Y down
                 singleStep = self.ui.SyPos.singleStep()
                 value = self.ui.SyPos.value()
                 if self.SyStepRev:
                     self.ui.SyPos.setValue(value + singleStep)
                 else:
                     self.ui.SyPos.setValue(value - singleStep)
-            elif event.key() == self.keys.SyUp:         # scanner Y up
+            elif event.key() == self.keys.SyUp and not self.SyDeactivated:         # scanner Y up
                 singleStep = self.ui.SyPos.singleStep()
                 value = self.ui.SyPos.value()
                 if self.SyStepRev:
                     self.ui.SyPos.setValue(value - singleStep)
                 else:
                     self.ui.SyPos.setValue(value + singleStep)
-            elif event.key() == self.keys.SzDown:       # scanner Z down
+            elif event.key() == self.keys.SzDown and not self.SzDeactivated:       # scanner Z down
                 singleStep = self.ui.SzPos.singleStep()
                 value = self.ui.SzPos.value()
                 if self.SzStepRev:
                     self.ui.SzPos.setValue(value + singleStep)
                 else:
                     self.ui.SzPos.setValue(value - singleStep)
-            elif event.key() == self.keys.SzUp:         # scanner Z up
+            elif event.key() == self.keys.SzUp and not self.SzDeactivated:         # scanner Z up
                 singleStep = self.ui.SzPos.singleStep()
                 value = self.ui.SzPos.value()
                 if self.SzStepRev:
@@ -793,21 +795,19 @@ class AttoPos(QWidget):
                         self._keyPressPxyzDetail(event.key())
             elif event.key() == self.keys.cont:         # on press of continuous motion key, activate continuous motion mode
                 self.contStepMode = True
-            elif event.key() == self.keys.contLock:     # locked continuous motion of positioners
-                self.contLockKeyPressed = True  
-            elif event.key() == self.keys.fullStop:     # full stop of all positioners motion
+            
+            if event.key() == self.keys.fullStop:     # full stop of all positioners motion
                 self.PxStop()
                 self.PyStop()
                 self.PzStop()
-                self.contLockKeyPressed = False
-                self.contLockedStepMode.x = False
-                self.contLockedStepMode.y = False
-                self.contLockedStepMode.z = False
     
     def keyReleaseEvent(self, event):
         """ For keyboard navigation, called by Qt when a key release event happens. """
-        #if not event.isAutoRepeat():
-#        print('Release',event.key())
+        if not event.isAutoRepeat():
+            print('Release not auto repeat',event.key())
+        else:
+            print('Release auto repeat',event.key())
+        
         if self.keyControl:  # check if keyboard control is on (big button)
             if event.key() in self.keys.positioners:    # for positioners in general (dealt with in _keyReleasePxyzDetail)
                 if not event.isAutoRepeat():
@@ -826,13 +826,7 @@ class AttoPos(QWidget):
     def _keyPressPxyzDetail(self, key):
         """ Detail of keypress function for handling positioners exclusively """
         if key in self.keys.Px:  # X AXIS
-            if self.contLockedStepMode.x and not self.contLockKeyPressed:  # if button pushed while stepping in locked mode, stop motors
-                self.PxStop()
-                self.contLockedStepMode.x = False
-            elif self.contStepMode:  # if continuous mode is expected, begin stepping
-                if self.contLockKeyPressed:
-                    self.contLockedStepMode.x = True
-                    
+            if self.contStepMode:  # if continuous mode is expected, begin stepping
                 if key == self.keys.PxDown:
                     self.PxContDown()
                 elif key == self.keys.PxUp:
@@ -844,13 +838,7 @@ class AttoPos(QWidget):
                     self.PxStepUp()
                     
         elif key in self.keys.Py:  # Y AXIS
-            if self.contLockedStepMode.y and not self.contLockKeyPressed:  # if button pushed while stepping in locked mode, stop motors
-                self.PyStop()
-                self.contLockedStepMode.y = False
-            elif self.contStepMode:  # if continuous mode is expected, begin stepping
-                if self.contLockKeyPressed:
-                    self.contLockedStepMode.y = True
-                    
+            if self.contStepMode:  # if continuous mode is expected, begin stepping   
                 if key == self.keys.PyDown:
                     self.PyContDown()
                 elif key == self.keys.PyUp:
@@ -862,13 +850,7 @@ class AttoPos(QWidget):
                     self.PyStepUp()
                     
         elif key in self.keys.Pz:  # Z AXIS
-            if self.contLockedStepMode.z and not self.contLockKeyPressed:  # if button pushed while stepping in locked mode, stop motors
-                self.PzStop()
-                self.contLockedStepMode.z = False
-            elif self.contStepMode:  # if continuous mode is expected, begin stepping
-                if self.contLockKeyPressed:
-                    self.contLockedStepMode.z = True
-                    
+            if self.contStepMode:  # if continuous mode is expected, begin stepping
                 if key == self.keys.PzDown:
                     self.PzContDown()
                 elif key == self.keys.PzUp:
