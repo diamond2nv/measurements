@@ -902,6 +902,9 @@ class AttoPos(QWidget):
             self.ui.arrowKeyControl.setStyleSheet("background-color: rgb(38, 234, 68);")
         else:
             self.ui.arrowKeyControl.setStyleSheet("background-color: red;")
+            self.PxStop()
+            self.PyStop()
+            self.PzStop()
     
     def toggleArrowKeyControlShortcut(self):
         """ Programmatically toggle big keyboard control button. Associated to the Ctrl+Space shortcut. """
