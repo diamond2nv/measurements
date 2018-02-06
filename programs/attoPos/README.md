@@ -7,7 +7,7 @@ AttoPos V3.1 (adapted to python 3 on the 31/01/18)
 This program controls the scanners and positioners on an Attocube ANC300 controller with three 
 axes of each (or less, XYZ style). It can also be interfaced with older ANC150 (positioners) and 
 ANC200 (scanners) and handle both at the same time (one for the scanners, one for the 
-positioners).
+positioners). It has only been tested with Python 3.6.
 
 
 ## Connecting the ANC controller to the computer
@@ -22,37 +22,52 @@ Note that the program can handle two different controllers (one for the scanners
 for the positioners).
 
 ## Execution
-The main file to execute is `AttoPos.py`. For first execution, please see the configuration file section below.
+The main file is `AttoPos.py`, but it cannot be executed by itself. It needs to be called by a script in which you will define the configuration of the software – which address for the controller, which axis for which actuator, etc.
 
+A typical script will contain the following:
+```
+from measurements.programs.attoPos.AttoPos import attopos_run
 
-## Configuration file `CONFIG.txt`
+config = {"attoAxes": {"Px": 2, "Py": 1, "Pz": 3, "Sx": 0, "Sy": 0, "Sz": 0}, 
+          "attoVisaScannersId": "ASRL22::INSTR", 
+          "attoVisaPositionersId": "ASRL20::INSTR", 
+          "reversedMotion": {"Sx": 0, "Sy": 0, "Sz": 0, "Px": 0, "Py": 0, "Pz": 0}}
 
-When launching the AttoPos program for the first time, an error should occur and a `CONFIG.txt` file  will be created in the same folder as the AttoPos program.
+attopos_run(config)
+```
+
+You should change the `config` dictionary according to your system. For details see the next section.
+
+The `attopos_run()` function is the call which launches the attoPos program.
+
+### Shortcut for Windows users
+
+A nice trick for Windows users: you can use a shortcut to launch the program as an executable. First, you need to create a shortcut to the call script file. Then open the properties (right-click > Properties) of the shortcut. The destination will have the full path to the call script file. Add `pythonw` in front – you may need to add double quotation marks around the filepath if it contains spaces.
+
+If this does not work, you may not have `pythonw` in your `PATH` environment variable. You will then need to 
+
+## Configuration dictionary
+
+As written above, the call script will contain a dictionary that is to be passed to `attopos_run()`. Here is a typical dictionary containing all the parameters:
+```
+config = {"attoAxes": {"Px": 2, "Py": 1, "Pz": 3, "Sx": 0, "Sy": 0, "Sz": 0}, 
+          "attoVisaScannersId": "ASRL22::INSTR", 
+          "attoVisaPositionersId": "ASRL20::INSTR", 
+          "reversedMotion": {"Sx": 0, "Sy": 0, "Sz": 0, "Px": 0, "Py": 0, "Pz": 0}}
+```
+
 Modify it to set the parameters of the different positioners/scanners axes.
 Px/y/z are the three positioner axes, Sx/y/z are the three scanner axes.
 
+Here is a description of the parameters:
+
 - VISA identifiers: `attoVisaScannersId` and `attoVisaPositionersId`  
-The controllers are recognized as serial interfaces by Windows. 
-You can use National Instruments MAX to check the VISA identifier. It should be of the 
-form `ASRL9::INSTR`. Even if it is common that the number in the VISA identifier 
-corresponds to the COM port number in Windows, they do not necessarily match.  
-In the case where the controllers handling the scanners and the positioners are 
-different, you can input the VISA identifier of each one in the `CONFIG.txt` file. 
-If only one controller is used, the two VISA identifiers in the `CONFIG.txt` file 
-must be identical.
-
+The controllers are recognized as serial interfaces by Windows. You can use National Instruments MAX to check the VISA identifier. It should be of the form `ASRL9::INSTR`. Even if it is common that the number in the VISA identifier corresponds to the COM port number in Windows, they do not necessarily match.  
+In the case where the controllers handling the scanners and the positioners are different, you can input the VISA identifier of each one in the `config` dictionary. If only one controller is used, the two VISA identifiers in the `config` dictionary must be identical.
 - Axes: `attoAxes`  
-ID numbers of the axes on the controller, usually between 1 and 6. If you want to 
-deactivate an axis (for example if it is not existing), put 0 as an ID number (it
-will then appear greyed out in the user interface).
-
+ID numbers of the axes on the controller, usually between `1` and `6`. If you want to deactivate an axis (for example if it is not existing), put `0` as an ID number (it will then appear greyed out in the user interface).
 - Direction of motion: `reversedMotion`  
-For each axis, you can reverse the behaviour of the UP/DOWN orders given by the keyboard
-navigation and for the STEP UP/DOWN and CONT UP/DOWN buttons (positioners only).
-Concretely, for the positioners, if `reversedMotion` is set to 0, the up/down orders will 
-behave identically to the up/down buttons on the controller. If `reversedMotion` is set to 1,
-it will behave in a reversed fashion. For the scanners, it only affects the keyboard 
-navigation and the display still shows the actual voltage applied on the piezoelectric crystals.
+For each axis, you can reverse the behaviour of the UP/DOWN orders given by the keyboard navigation and for the STEP UP/DOWN and CONT UP/DOWN buttons (positioners only). Concretely, for the positioners, if `reversedMotion` is set to `0`, the up/down orders will behave identically to the up/down buttons on the controller. If `reversedMotion` is set to `1`, it will behave in a reversed fashion. For the scanners, it only affects the keyboard navigation and the display still shows the actual voltage applied on the piezoelectric crystals.
 
 
 ## Troubleshooting
@@ -76,7 +91,7 @@ to restart all python kernels. In Spyder, this can be done in the menu at the to
 - if all these steps have failed, disconnecting the device and restarting it might help, which means grounding all the connected piezo stacks. __ATTENTION:__ the controller must be disconnected from USB to be able to restart properly.
 
 
-## Note if you modify the interface and the arrows on the buttons have disappeared
+## Note: when you modify the Qt interface file
 
 When you modify the `AttoPos.ui` file, you need to export it to Python using the `pyuic` tool provided by PyQt. Here:
 ```
