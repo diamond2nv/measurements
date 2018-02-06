@@ -44,7 +44,7 @@ The `attopos_run()` function is the call which launches the attoPos program.
 
 A nice trick for Windows users: you can use a shortcut to launch the program as an executable. First, you need to create a shortcut to the call script file. Then open the properties (right-click > Properties) of the shortcut. The destination will have the full path to the call script file. Add `pythonw` in front – you may need to add double quotation marks around the filepath if it contains spaces.
 
-If this does not work, you may not have `pythonw` in your `PATH` environment variable. You will then need to 
+If this does not work, you may not have `pythonw` in your `PATH` environment variable. You will then need to put the full path to your `pythonw.exe` file which should be at the root of your Anaconda install directory (or other distribution). 
 
 ## Configuration dictionary
 
