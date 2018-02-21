@@ -5,10 +5,10 @@ Created on Tue Jun 21 09:23:52 2016
 @author: raphael proux, cristian bonato
 """
 
-import pylab as py
-import time
+# import pylab as py
+# import time
 import datetime
-import os.path
+# import os.path
 import sys
 from measurements.libs import mapper_scanners as mscan, mapper_detectors as mdet
 from  measurements.libs import mapper
@@ -25,12 +25,12 @@ reload(mdet)
 delayBetweenPoints = 1
 delayBetweenRows = 0.5
 
-xLims = (0, 20)
-xStep = 5
 
-yLims = (0, 20)
-yStep = 5
-
+# ROOM-TEMPERATURE: max 20V!!!!
+xLims = (0, 10)
+xStep = 0.25
+yLims = (0, 10)
+yStep = 0.25
 #voltsDirectory = r'C:\Users\ted\Desktop\temporary_meas'
 #realPosDirectory = r'C:\Users\ted\Desktop\temporary_meas'
 
@@ -39,17 +39,17 @@ yStep = 5
 toDC_drive_voltage = 1./15
 
 # APD counter integration time (ms)
-ctr_time_ms = 10
+ctr_time_ms = 1000
 ctr_port = 'pfi0'
 
 #######################
 # instruments
-attoCtrl = mscan.ScannerCtrl ()
-apdCtrl = mdet.dummyAPD(work_folder = r"C:\Users\ted\Desktop\temporary_meas")
-#attoCtrl = mscan.AttocubeNI (chX = '/Weetabix/ao0', chY = '/Weetabix/ao1')
-#apdCtrl = mdet.APDCounterCtrl (ctr_port = ctr_port,
-#                         work_folder = r"C:\Users\ted\Desktop\temporary_meas",
-#                         debug = True)
+#attoCtrl = mscan.ScannerCtrl ()
+#apdCtrl = mdet.dummyAPD(work_folder = r"C:\Users\ted\Desktop\temporary_meas")
+attoCtrl = mscan.AttocubeNI (chX = '/Weetabix/ao0', chY = '/Weetabix/ao1')
+apdCtrl = mdet.APDCounterCtrl (ctr_port = ctr_port,
+                               work_folder = r"C:\Users\ted\Desktop\temporary_meas",
+                               debug = True)
 
 apdCtrl.set_integration_time_ms(ctr_time_ms)
 
@@ -61,9 +61,9 @@ d = datetime.datetime.now()
 XYscan = mapper.XYScan(scanner = attoCtrl, detectors = [apdCtrl])
 XYscan.set_range (xLims=xLims, xStep=xStep, yLims=yLims, yStep=yStep)
 XYscan.set_delays (between_points = delayBetweenPoints, between_rows = delayBetweenRows)
-#XYscan.restore_back_to_zero()
+XYscan.set_back_to_zero()
 XYscan.run_scan()
-XYscan.save_to_npz('C:/Research/test')
+XYscan.save_to_txt('C:/Users/ted/Desktop/measurements/Amy/APD3/wide_pos2.2_2')
 #XYscan.save_to_hdf5(file_name=r'C:\Users\ted\Desktop\measurements\test5.hdf5')
 #XYscan.plot_counts()
 
