@@ -147,10 +147,10 @@ class XYScan ():
                         # delay between points
                         time.sleep(self.delayBetweenPoints)
 
-                        # trigger exposure
-                        if self._detectors is not None:
-                            for counts, detector in zip(self.counts, self._detectors):
-                                counts[id_x, id_y] = detector.readout()   # POSSIBLE BLOCKING BEHAVIOUR HERE! put non blocking (spectros...) before blocking (apds...) in the detectors list
+                    # trigger exposure / detector measurement
+                    if self._detectors is not None:
+                        for counts, detector in zip(self.counts, self._detectors):
+                            counts[id_x, id_y] = detector.readout()   # POSSIBLE BLOCKING BEHAVIOUR HERE! put non blocking (spectros...) before blocking (apds...) in the detectors list
 
                     time.sleep(self.max_delay_after_readout)  # some old devices will not react immediately to say they are integrating
 

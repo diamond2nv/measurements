@@ -64,7 +64,7 @@ class PylonNICtrl (DetectorCtrl):
         while CCDready == 0:
             CCDready = self.receiverTask.listen()
 
-    def readout (self):
+    def readout(self):
         self.senderTask.emit()
         return 0
 
@@ -81,6 +81,7 @@ class ActonNICtrl (DetectorCtrl):
         self._receiver_port = receiver_port
         self.delay_after_readout = 0.5
         # self.expect_not_scan = True
+        self.measurement_started_flag = False
         self.first_point_flag = True
 
     def initialize (self):
@@ -91,12 +92,12 @@ class ActonNICtrl (DetectorCtrl):
 
     def first_point (self):
 
-        if self.first_point_flag:
+        if not self.measurement_started_flag:
             self.senderTask.emit()
             time.sleep(0.1)
             if self.receiverTask.listen():
-                self.first_point_flag = False
-        if not self.first_point_flag:
+                self.measurement_started_flag = True
+        if self.measurement_started_flag:
             return True
         else:
             return False
@@ -113,8 +114,11 @@ class ActonNICtrl (DetectorCtrl):
         return not self.receiverTask.listen()  # when NOT SCAN signal is down -> detector ready
 
     def readout (self):
-        self.senderTask.emit()
-        self.expect_not_scan = True
+        if self.first_point_flag:
+            self.first_point_flag = False
+        else:
+            self.senderTask.emit()
+            # self.expect_not_scan = True
         return 0
 
     def _close(self):
@@ -130,15 +134,16 @@ class ActonLockinCtrl (DetectorCtrl):
         self._lockin = LockIn7265(lockinVisaAddress)
         self.delay_after_readout = 0.5
         self.delay_state_check = 0.1 
+        self.measurement_started_flag = False
         self.first_point_flag = True
 
     def first_point (self):
-        if self.first_point_flag:
+        if not self.measurement_started_flag:
             self._lockin.sendPulse()
             time.sleep(0.1)
             if self._lockin.readADCdigital():
-                self.first_point_flag = False
-        if not self.first_point_flag:
+                self.measurement_started_flag = True
+        if self.measurement_started_flag:
             return True
         else:
             return False
@@ -148,7 +153,10 @@ class ActonLockinCtrl (DetectorCtrl):
         return not self._lockin.readADCdigital()
 
     def readout (self):
-        self.lockin.sendPulse()
+        if self.first_point_flag:
+            self.first_point_flag = False
+        else:
+            self.lockin.sendPulse()
         return 0
 
     def _close(self):
@@ -182,7 +190,6 @@ class APDCounterCtrl (DetectorCtrl):
         return c
 
     def first_point (self):
-        self.readout()
         return True
 
     def _close (self):
