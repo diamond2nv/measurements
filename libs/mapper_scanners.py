@@ -25,6 +25,7 @@ class ScannerCtrl (mgen.DeviceCtrl):
     smooth_step = 1.
     smooth_delay = 0.05
     string_id = 'Unknown scanner'
+    _channels = []
 
     def initialize(self):
         pass
@@ -32,8 +33,20 @@ class ScannerCtrl (mgen.DeviceCtrl):
     def move(self, target, axis=0):
         pass
 
+    def moveX(self, value):
+        pass
+
+    def moveY(self, value):
+        pass
+
     def get(self, axis=0):
         return None
+
+    def getX (self):
+        pass
+
+    def getY (self):
+        pass
 
     def _close(self):
         pass
@@ -48,6 +61,7 @@ class ScannerCtrl (mgen.DeviceCtrl):
         for axis, to_pos in zip(axes, to_pos_list):
             from_pos = self.get(axis=axis)
             from_pos_list.append(from_pos)
+            print(from_pos,to_pos,axis)
             nb_steps_list.append(int(abs(pl.floor((from_pos - to_pos) / float(self.smooth_step))) + 1))
 
         total_nb_of_steps = max(nb_steps_list)
@@ -70,8 +84,7 @@ class AttocubeNI (ScannerCtrl):
 
     def __init__ (self, chX='/Weetabix/ao0', chY='/Weetabix/ao1', conversion_factor=1/15.):
         self.string_id = 'Attocube ANC controlled by NI box DC AO'
-        self._chX = chX
-        self._chY = chY
+        self._channels = [chX, chY]
         self.conversion_factor = conversion_factor
 
         self.smooth_step = 1
@@ -81,8 +94,8 @@ class AttocubeNI (ScannerCtrl):
         self._currY = 0
 
     def initialize (self):
-        self.scanners_volt_drive_X = voltOut(self._chX)
-        self.scanners_volt_drive_Y = voltOut(self._chY)
+        self.scanners_volt_drive_X = voltOut(self._channels[0])
+        self.scanners_volt_drive_Y = voltOut(self._channels[1])
 
     def move(self, target, axis=0):
         if axis == 0:
@@ -121,9 +134,8 @@ class AttocubeVISA (ScannerCtrl):
     def __init__ (self, VISA_address, axisX=1, axisY=2):
         self.string_id = 'Attocube ANC controlled by VISA'
         self._VISA_address = VISA_address
-        self._axisX = axisX
-        self._axisY = axisY
-
+        self._channels = [axisX, axisY]
+       
         self.smooth_step = 0.5
         self.smooth_delay = 0.05
 
@@ -143,11 +155,11 @@ class AttocubeVISA (ScannerCtrl):
             self.moveY(target)
 
     def moveX (self, value):
-        self._ANChandle.setOffset(value, self._axisX)
+        self._ANChandle.setOffset(value, self._channels[0])
         self._currX = value
 
     def moveY (self, value):
-        self._ANChandle.setOffset(value, self._axisY)
+        self._ANChandle.setOffset(value, self._channels[1])
         self._currY = value
 
     def _close(self):
@@ -168,12 +180,23 @@ class AttocubeVISA (ScannerCtrl):
 
 class Keithley2220(ScannerCtrl):
 
-    def __init__(self, VISA_address):
+    def __init__(self, VISA_address, channels):
         self.string_id = 'Keithley PSU2220 DC power supply controlled by VISA'
         self._VISA_address = VISA_address
 
         self.smooth_step = 0.1
         self.smooth_delay = 0.05
+
+        try:
+            channels = list(channels)
+        except TypeError:
+            channels = [channels]
+        if len(channels) == 1:
+            channels.append(None)
+
+
+        self._channels = channels
+        print(self._channels,"channels")
 
     def initialize(self, switch_on_output=False):
         try:
@@ -183,23 +206,37 @@ class Keithley2220(ScannerCtrl):
         if switch_on_output:
             self.output_switch(on=True)
 
-    def move(self, value, axis=0, mode='voltage'):
-        if mode == 'voltage':
-            self._Keithley_handle.setVoltage(channel=axis, voltage=value)
-        elif mode == 'current':
-            self._Keithley_handle.setCurrent(channel=axis, voltage=value)
+    def move(self, value, axis, mode='voltage'):
+        if axis is not None:
+            if mode == 'voltage':
+                self._Keithley_handle.setVoltage(channel=self._channels[axis], voltage=value)
+            elif mode == 'current':
+                self._Keithley_handle.setCurrent(channel=self._channels[axis], voltage=value)
+
+    def moveX(self, value):
+        self.move(value=value, axis=self._channels[0])
+    def moveY(self, value):
+        self.move(value=value, axis=self._channels[1])
 
     def get_setting(self, axis, mode='voltage'):
-        if mode == 'voltage':
-            self._Keithley_handle.readSetVoltage(channel=axis)
-        elif mode == 'current':
-            self._Keithley_handle.readSetCurrent(channel=axis)
+        if axis is not None:
+            if mode == 'voltage':
+                return self._Keithley_handle.readSetVoltage(channel=self._channels[axis])
+            elif mode == 'current':
+                return self._Keithley_handle.readSetCurrent(channel=self._channels[axis])
 
-    def get (self, axis, mode='voltage'):
-        if mode == 'voltage':
-            self._Keithley_handle.readVoltage(channel=axis)
-        elif mode == 'current':
-            self._Keithley_handle.readCurrent(channel=axis)
+    def get(self, axis=None, mode='voltage'):
+        if axis is not None:
+            if mode == 'voltage':
+                return self._Keithley_handle.readVoltage(channel=self._channels[axis])
+
+            elif mode == 'current':
+                return self._Keithley_handle.readCurrent(channel=self._channels[axis]) 
+
+    def getX(self):
+        return self.get(axis=self.channels[0])
+    def getY(self):
+        return self.get(axis=self.channels[1])
 
     def channel_combine(self, combMode=KeithleyPSU2220.Keithley2220channelModes.OFF):
         # 'off', 'parallel' or 'series'
