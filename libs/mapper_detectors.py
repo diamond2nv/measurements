@@ -7,14 +7,14 @@ import numpy as np
 
 from measurements.libs import mapper_general as mgen
 
-# from measurements.instruments.LockIn7265GPIB import LockIn7265
-from measurements.instruments import NIBox
-from measurements.instruments.pylonWeetabixTrigger import trigSender, trigReceiver
+from measurements.instruments.LockIn7265GPIB import LockIn7265
+#from measurements.instruments import NIBox
+#from measurements.instruments.pylonWeetabixTrigger import trigSender, trigReceiver
 from measurements.instruments.KeithleyMultimeter import KeithleyMultimeter
 if sys.version_info.major == 3:
     from importlib import reload
 
-reload(NIBox)
+#reload(NIBox)
 reload(mgen)
 
 
@@ -24,7 +24,7 @@ class DetectorCtrl (mgen.DeviceCtrl):
     delay_after_readout = 0.
     delay_state_check = 0.
 
-    def __init__(self, work_folder):
+    def __init__(self, work_folder=None):
         self._wfolder = work_folder
 
     def initialize (self):
@@ -48,7 +48,7 @@ class DetectorCtrl (mgen.DeviceCtrl):
 
 class PylonNICtrl (DetectorCtrl):
 
-    def __init__(self, work_folder, sender_port="/Weetabix/port1/line3", receiver_port = "/Weetabix/port1/line2"):
+    def __init__(self, sender_port, receiver_port, work_folder=None):
         self.string_id = 'Pylon (new spectro) camera - NI box control'
         self._wfolder = work_folder
         self._sender_port = sender_port
@@ -76,7 +76,7 @@ class PylonNICtrl (DetectorCtrl):
 
 class ActonNICtrl (DetectorCtrl):
 
-    def __init__(self, sender_port, receiver_port):
+    def __init__(self, sender_port, receiver_port, work_folder=None):
         self.string_id = 'Acton (old spectro) camera - NI box control'
         self._sender_port = sender_port
         self._receiver_port = receiver_port
@@ -125,7 +125,7 @@ class ActonNICtrl (DetectorCtrl):
 
 class ActonLockinCtrl (DetectorCtrl):
 
-    def __init__(self, work_folder, lockinVisaAddress):
+    def __init__(self, lockinVisaAddress, work_folder=None):
         self.string_id = 'Acton (old spectro) camera - Lockin control'
         self._wfolder = work_folder
         self._lockin = LockIn7265(lockinVisaAddress)
@@ -149,16 +149,16 @@ class ActonLockinCtrl (DetectorCtrl):
         return not self._lockin.readADCdigital()
 
     def readout (self):
-        self.lockin.sendPulse()
+        self._lockin.sendPulse()
         return 0
 
     def _close(self):
-        self.lockin.close()
+        self._lockin.close()
 
 
 class APDCounterCtrl (DetectorCtrl):
 
-    def __init__(self, work_folder, ctr_port, debug = False):
+    def __init__(self, ctr_port, debug = False, work_folder=None):
         self.string_id = 'APD NI box counter'
         self._wfolder = work_folder
         self._ctr_port = ctr_port
@@ -191,7 +191,7 @@ class APDCounterCtrl (DetectorCtrl):
 
 class dummyAPD (DetectorCtrl):
 
-    def __init__(self, work_folder, random_counts = True, debug = False):
+    def __init__(self, random_counts = True, debug = False, work_folder=None):
         self.string_id = 'APD NI box counter'
         self._wfolder = work_folder
         self.delay_after_readout = 0.
@@ -223,7 +223,7 @@ class dummyAPD (DetectorCtrl):
 
 class VoltmeterCtrl (DetectorCtrl):
 
-    def __init__(self, VISA_address):
+    def __init__(self, VISA_address, work_folder=None):
         self.string_id = 'Voltmeter'
         self._VISA_address = VISA_address
         self.delay_after_readout = 0.
@@ -236,6 +236,10 @@ class VoltmeterCtrl (DetectorCtrl):
 
     def readout (self):
         return self._voltmeter.read()
+
+
+    def first_point (self):
+        return self.readout()
 
     def _close (self):
         self._voltmeter.close()

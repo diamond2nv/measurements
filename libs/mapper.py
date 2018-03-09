@@ -42,15 +42,20 @@ class XYScan ():
         # to go back to 0 V at the end of a scan
         self._back_to_zero = True
 
-    def set_range (self, xLims, xStep, yLims, yStep):
+    def set_range (self, xLims, xStep, yLims=None, yStep=None):
 
         self.xNbOfSteps = int(abs(pl.floor((float(xLims[1]) - float(xLims[0])) / float(xStep))) + 1)
         self.xPositions = pl.linspace(xLims[0], xLims[1], self.xNbOfSteps)
-        self.yNbOfSteps = int(abs(pl.floor((float(yLims[1]) - float(yLims[0])) / float(yStep))) + 1)
-        self.yPositions = pl.linspace(yLims[0], yLims[1], self.yNbOfSteps)
-        self.totalNbOfSteps = self.xNbOfSteps * self.yNbOfSteps
         self.xStep = xStep
-        self.yStep = yStep
+        if yLims is not None or yStep is not None:
+            self.yNbOfSteps = int(abs(pl.floor((float(yLims[1]) - float(yLims[0])) / float(yStep))) + 1)
+            self.yPositions = pl.linspace(yLims[0], yLims[1], self.yNbOfSteps)
+            self.yStep = yStep
+        else:
+            self.yNbOfSteps = 1
+            self.yPositions = pl.array([0])
+            self.yStep = 0
+        self.totalNbOfSteps = self.xNbOfSteps * self.yNbOfSteps
 
         if self._detectors is None:
             self.counts = None
@@ -149,8 +154,8 @@ class XYScan ():
 
                         # trigger exposure
                         if self._detectors is not None:
-                            for counts, detector in zip(self.counts, self._detectors):
-                                counts[id_x, id_y] = detector.readout()   # POSSIBLE BLOCKING BEHAVIOUR HERE! put non blocking (spectros...) before blocking (apds...) in the detectors list
+                            for i, detector in enumerate(self._detectors):
+                                self.counts[i][id_x, id_y] = detector.readout()   # POSSIBLE BLOCKING BEHAVIOUR HERE! put non blocking (spectros...) before blocking (apds...) in the detectors list
                                 #print(counts)
 
                     time.sleep(self.max_delay_after_readout)  # some old devices will not react immediately to say they are integrating
@@ -175,16 +180,6 @@ class XYScan ():
         except KeyboardInterrupt:
             print('\n####  Program interrupted by user.  ####')
         finally:
-
-            self.counts = np.zeros ([int(len(self.xPositions)), int(len(self.yPositions))])
-
-            #recast counts array
-            for x in np.arange(len(self.xPositions)):
-                for y in np.arange(len(self.yPositions)):
-                   self.counts[x,y] = int(counts[x,y])
-
-            #print ("Counts:")
-            #print(self.counts)
             self._scanner.close()
             for detector in self._detectors:
                 detector.close()

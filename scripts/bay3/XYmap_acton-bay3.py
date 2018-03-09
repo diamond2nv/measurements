@@ -22,22 +22,22 @@ reload(mdet)
 #######################
 #     Parameters      #
 
-delayBetweenPoints = 0.5
+delayBetweenPoints = 0.1
 delayBetweenRows = 0.5
 
-xLims = (10, 100)  # (10, 100)
-xStep = 1
+xLims = (81, 91)  # (10, 100)
+xStep =0.5
 
-yLims = (10, 140)  # (10, 140)
-yStep = 1
+yLims = (77.5, 87.5)  # (10, 140)
+yStep = 0.5
 
-voltsDirectory = r'C:\Users\QPL\Desktop\temp_measurements'
+voltsDirectory = r'C:\Users\QPL\Desktop\temporary_meas'
 
 #######################
 # instruments
-attoCtrl = mscan.AttocubeVISA(VISA_address=r'ASRL11::INSTR', axisX=2, axisY=1)
-spectroCtrl = mdet.ActonLockinCtrl(lockinVisaAddress="/Weetabix/port2/line0")
-voltmeterCtrl = mdet.VoltmeterCtrl(VISA_address=r'GPIB0::13::INSTR')
+attoCtrl = mscan.AttocubeVISA(VISA_address=r'ASRL6::INSTR', axisX=5, axisY=4)
+spectroCtrl = mdet.ActonLockinCtrl(lockinVisaAddress=r"GPIB0::14::INSTR")
+voltmeterCtrl = mdet.VoltmeterCtrl(VISA_address=r'GPIB0::22::INSTR')
 
 d = datetime.datetime.now()
 voltsFilePath = os.path.join(voltsDirectory, 'powerInVolts_{:%Y-%m-%d_%H-%M-%S}.txt'.format(d))

@@ -8,14 +8,15 @@ import visa
 from measurements.libs import mapper_general as mgen
 
 #from measurements.instruments.LockIn7265GPIB import LockIn7265
-from measurements.instruments import NIBox
+#from measurements.instruments import NIBox
 from measurements.instruments import AttocubeANCV1 as attoANC
-from measurements.instruments.pylonWeetabixTrigger import voltOut
+from measurements.instruments import KeithleyPSU2220
+#from measurements.instruments.pylonWeetabixTrigger import voltOut
 
 if sys.version_info.major == 3:
     from importlib import reload
 
-reload(NIBox)
+#reload(NIBox)
 reload(mgen)
 
 
@@ -26,8 +27,8 @@ class ScannerCtrl (mgen.DeviceCtrl):
     string_id = 'Unknown scanner'
 
     def initialize(self):
-        self._x = 0
-        self._y = 0
+        self._currX = 0
+        self._currY = 0
 
     def moveX (self, value):
         pass
@@ -36,10 +37,10 @@ class ScannerCtrl (mgen.DeviceCtrl):
         pass
 
     def getX (self):
-        return self._x
+        return self._currX
 
     def getY (self):
-        return self._y
+        return self._currY
 
     def _close(self):
         pass
@@ -137,3 +138,33 @@ class AttocubeVISA (ScannerCtrl):
 
     def getY (self):
         return self._currY
+
+class KeithleyPSU (ScannerCtrl):
+
+    def __init__ (self, VISA_address, channel=1):
+        self.string_id = 'Keithley PSU2220'
+        self._VISA_address = VISA_address
+        self._axisX = channel
+
+        self.smooth_step = 0.5
+        self.smooth_delay = 0.05
+
+        self._currX = 0
+        self._currY = 0
+
+    def initialize(self):
+        try:
+            self._PSUhandle = KeithleyPSU2220.Keithley2220(self._VISA_address)
+        except visa.VisaIOError as err:
+            self.visa_error_handling(err)
+
+    def moveX (self, value):
+        self._PSUhandle.setVoltage(channel=self._axisX, voltage=value)
+        self._currX = value
+
+    def getX (self):
+        self._currX = self._PSUhandle.readVoltage(channel=self._axisX)
+        return self._currX
+
+    def _close(self):
+        self._PSUhandle.close()

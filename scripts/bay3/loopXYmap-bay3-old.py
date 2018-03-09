@@ -27,16 +27,16 @@ voltmeterVisaAddress = r'ASRL11::INSTR'
 #######################
 #     Parameters      #
 
-delayBetweenPoints = 0
-delayBetweenRows = 0.
+delayBetweenPoints = 0.5
+delayBetweenRows = 0.5
 
-xLims = (60, 100)
+xLims = (0, 2)
 xStep = 1
 
-yLims = (60, 100)
+yLims = (0, 2)
 yStep = 1
 
-nMaps = 25
+nMaps = 1
 
 backToZero = False  # to go back to zero at the end of the measurement 
                    # (to avoid steady high voltage on piezo)
