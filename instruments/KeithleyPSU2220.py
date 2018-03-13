@@ -12,6 +12,7 @@ It should work also via GPIB.
 """
 
 import visa
+import re
 
 class Keithley2220channelModes:
     OFF = 'off'
@@ -46,8 +47,14 @@ class Keithley2220:
     def channelSelect(self, channel):
         """ Selects current channel to be affected by subsequent queries. """
         self.write('INST:SEL CH{}'.format(channel))
-    
-    
+        assert self.get_selected_channel() == channel, 'Could not select channel.'
+        
+
+    def get_selected_channel(self):
+        """ Returns the integer identifier of the currently selected channel """
+        return int(re.findall(r'\d',self.query('INST:SEL?'))[0])
+        
+
     def channelEnabled(self, channel=0):
         """ True for output enabled, False for output disabled.
         channel=0 for both channels (true if one channel is enabled). """
@@ -99,44 +106,68 @@ class Keithley2220:
 
     def setVoltage(self, channel, voltage):
         """ sets voltage in V to specified channel """
-        self.channelSelect(channel)
-        self.write('VOLT {}V'.format(voltage))
+        try:
+            self.channelSelect(channel)
+        except AssertionError:
+            pass
+        else:
+            self.write('VOLT {}V'.format(voltage))
     
     def readSetVoltage(self, channel):
         """ reads voltage set to specified channel, in V """
-        self.channelSelect(channel)
-        return float(self.query('VOLT?'))
+        try:
+            self.channelSelect(channel)
+        except AssertionError:
+            return None
+        else:
+            return float(self.query('VOLT?'))
     
     def readVoltage(self, channel, repeat=1):
         """ measures voltage from specified channel, in V.
         repeat is the number of measurements (default 1), then meaning val taken. """
-        self.channelSelect(channel)
-        response = 0.
-        for i in range(repeat):
-            response += float(self.query('MEAS:VOLT:DC?'))
-        response /= repeat
-        return response
-    
+        try:
+            self.channelSelect(channel)
+        except AssertionError:
+            return None
+        else:
+            response = 0.
+            for i in range(repeat):
+                response += float(self.query('MEAS:VOLT:DC?'))
+            response /= repeat
+            return response
+        
     
     def setCurrent(self, channel, current):
         """ sets current in A to specified channel """
-        self.channelSelect(channel)
-        self.write('CURR {}A'.format(current))
+        try:
+            self.channelSelect(channel)
+        except AssertionError:
+            pass
+        else:
+            self.write('CURR {}A'.format(current))
     
     def readSetCurrent(self, channel):
         """ reads current set to specified channel, in A """
-        self.channelSelect(channel)
-        return float(self.query('CURR?'))
+        try:
+            self.channelSelect(channel)
+        except AssertionError:
+            return None
+        else:
+            return float(self.query('CURR?'))
     
     def readCurrent(self, channel, repeat=1):
         """ measures current from specified channel, in A.
         repeat is the number of measurements (default 1), then meaning val taken. """
-        self.channelSelect(channel)
-        response = 0.
-        for i in range(repeat):
-            response += float(self.query('MEAS:CURR:DC?'))
-        response /= repeat
-        return response
+        try:
+            self.channelSelect(channel)
+        except AssertionError:
+            return None
+        else:
+            response = 0.
+            for i in range(repeat):
+                response += float(self.query('MEAS:CURR:DC?'))
+            response /= repeat
+            return response
     
     
     def channelCombine(self, combMode=chMode.OFF):
@@ -158,26 +189,36 @@ class Keithley2220:
 
   
 if __name__ == "__main__":
-    with Keithley2220(visaAddress='USB0::0x05E6::0x2220::9100904::INSTR') as keithleyPSU:
+    with Keithley2220(visaAddress=r'GPIB0::10::INSTR') as keithleyPSU:
         response = keithleyPSU.query('*IDN?')
         
         print(repr(response))
-        
+
+        print(repr(keithleyPSU.get_selected_channel()))
+
+        keithleyPSU.channelSelect(1)
+        keithleyPSU.channelSelect(2)
+        keithleyPSU.channelSelect(1)
+        keithleyPSU.channelSelect(2)
+        keithleyPSU.channelSelect(1)
+        keithleyPSU.channelSelect(2)
+        keithleyPSU.channelSelect(0)
+
 #        response = keithleyPSU.query('*IDN?')
 #        
 #        print repr(response)
         
         #response = keithleyPSU.query('OUTPUT?')
         
-        keithleyPSU.channelEnable(state=True, channel=0)
+        # keithleyPSU.channelEnable(state=True, channel=0)
         
-        keithleyPSU.channelCombine(keithleyPSU.chMode.OFF)
+        # keithleyPSU.channelCombine(keithleyPSU.chMode.OFF)
         
-        keithleyPSU.outputOn(True)
-        keithleyPSU.setVoltage(channel=1, voltage=10)
-        print(keithleyPSU.readVoltage(channel=1))
-        keithleyPSU.setCurrent(channel=1, current=1)
-        print(keithleyPSU.readSetCurrent(channel=1))
+        # keithleyPSU.outputOn(True)
+        # keithleyPSU.setVoltage(channel=1, voltage=10)
+        # print(keithleyPSU.readVoltage(channel=1))
+        # keithleyPSU.setCurrent(channel=1, current=1)
+        # print(keithleyPSU.readSetCurrent(channel=1))
         
 #        print repr(keithleyPSU.readDCvoltage(1))
         

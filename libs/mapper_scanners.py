@@ -62,11 +62,16 @@ class ScannerCtrl (mgen.DeviceCtrl):
             from_pos = self.get(axis=axis)
             from_pos_list.append(from_pos)
             print(from_pos,to_pos,axis)
-            nb_steps_list.append(int(abs(pl.floor((from_pos - to_pos) / float(self.smooth_step))) + 1))
+            if from_pos is None:
+                nb_steps_list.append(0)
+            else:
+                nb_steps_list.append(int(abs(pl.floor((from_pos - to_pos) / float(self.smooth_step))) + 1))
 
         total_nb_of_steps = max(nb_steps_list)
         smooth_positions = []
         for to_pos, from_pos, nb_steps in zip(to_pos_list, from_pos_list, nb_steps_list):
+            if from_pos is None:
+                from_pos = 0
             smooth_positions.append(pl.append(pl.linspace(from_pos, to_pos, nb_steps), 
                                               pl.zeros(total_nb_of_steps - nb_steps) + to_pos))
 
@@ -75,7 +80,6 @@ class ScannerCtrl (mgen.DeviceCtrl):
                 self.move(pos[i], axis=axis)
             time.sleep(self.smooth_delay)
             
-
     def close_error_handling(self):
         print('WARNING: Scanners {} did not close properly.'.format(self.string_id))
 
@@ -184,7 +188,7 @@ class Keithley2220(ScannerCtrl):
         self.string_id = 'Keithley PSU2220 DC power supply controlled by VISA'
         self._VISA_address = VISA_address
 
-        self.smooth_step = 0.1
+        self.smooth_step = 0.5
         self.smooth_delay = 0.05
 
         try:
@@ -224,6 +228,8 @@ class Keithley2220(ScannerCtrl):
                 return self._Keithley_handle.readSetVoltage(channel=self._channels[axis])
             elif mode == 'current':
                 return self._Keithley_handle.readSetCurrent(channel=self._channels[axis])
+        else:
+            return None
 
     def get(self, axis=None, mode='voltage'):
         if axis is not None:
@@ -232,6 +238,8 @@ class Keithley2220(ScannerCtrl):
 
             elif mode == 'current':
                 return self._Keithley_handle.readCurrent(channel=self._channels[axis]) 
+        else:
+            return None
 
     def getX(self):
         return self.get(axis=self.channels[0])

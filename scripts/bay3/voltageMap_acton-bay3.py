@@ -22,11 +22,11 @@ reload(mdet)
 #######################
 #     Parameters      #
 
-delayBetweenPoints = 5
+delayBetweenPoints = 0.5
 delayBetweenRows = 0.
 
-xLims = (0, 1)  # (10, 100)
-xStep = 0.25
+xLims = (0, 0)  # (10, 100)
+xStep = 2
 
 voltsDirectory = r'C:\Users\QPL\Desktop\temporary_meas'
 
