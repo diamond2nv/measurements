@@ -61,7 +61,7 @@ class ScannerCtrl (mgen.DeviceCtrl):
         for axis, to_pos in zip(axes, to_pos_list):
             from_pos = self.get(axis=axis)
             from_pos_list.append(from_pos)
-            print(from_pos,to_pos,axis)
+            #print(from_pos,to_pos,axis)
             if from_pos is None:
                 nb_steps_list.append(0)
             else:
@@ -176,10 +176,10 @@ class AttocubeVISA (ScannerCtrl):
             return self.getY()
 
     def getX (self):
-        return self._currX
-
+        return self._ANChandle.getOffset(self._channels[0])
+        
     def getY (self):
-        return self._currY
+        return self._ANChandle.getOffset(self._channels[1])
 
 
 class Keithley2220(ScannerCtrl):
@@ -200,7 +200,7 @@ class Keithley2220(ScannerCtrl):
 
 
         self._channels = channels
-        print(self._channels,"channels")
+        
 
     def initialize(self, switch_on_output=False):
         try:
@@ -255,6 +255,20 @@ class Keithley2220(ScannerCtrl):
 
     def _close(self):
         self._Keithley_handle.close()
+
+
+class Keithley2220_neg_pos(Keithley2220):
+    def __init__(self, VISA_address, ch_neg, ch_pos):
+        super().__init__(VISA_address, channels=[ch_neg,ch_pos])
+
+    def move(self, value, axis=0):
+        if axis == 0:
+            if value < 0:
+                super().move(-value, axis=0)
+                super().move(0, axis=1)
+            else:
+                super().move(value, axis=1)
+                super().move(0, axis=0)
 
 
 

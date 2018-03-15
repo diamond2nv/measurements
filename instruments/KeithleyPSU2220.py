@@ -111,7 +111,6 @@ class Keithley2220:
         except AssertionError:
             pass
         else:
-            print('sent voltage')
             self.write('VOLT {}V'.format(voltage))
     
     def readSetVoltage(self, channel):

@@ -4,7 +4,7 @@ Created on Tue Jun 21 09:23:52 2016
 
 @author: raphael proux, cristian bonato
 
-Voltage sweep with the Keithley power supply while measuring spectra with the Acton spectrometer
+map script designed to use a NI box for triggering the old acton spectro + ANC300 serial interface for the piezos
 """
 
 import datetime
@@ -23,20 +23,19 @@ reload(mdet)
 #     Parameters      #
 
 delayBetweenPoints = 0.5
-delayBetweenRows = 0.
+delayBetweenRows = 0.5
 
-xLims = (-1, 1)  # (0, 5)
-xStep = 0.25
+xLims = (60, 65)  # (10, 100)
+xStep = 1
+
+yLims = (80, 82)  # (10, 140)
+yStep = 1
 
 voltsDirectory = r'C:\Users\QPL\Desktop\temporary_meas'
 
 #######################
 # instruments
-
-#psuCtrl = mscan.Keithley2220(VISA_address=r'GPIB0::10::INSTR', channels=1)
-
-psuCtrl = mscan.Keithley2220_neg_pos(VISA_address=r'GPIB0::10::INSTR', ch_neg=1, ch_pos=2)
-
+attoCtrl = mscan.AttocubeVISA(VISA_address=r'ASRL6::INSTR', axisX=5, axisY=4)
 spectroCtrl = mdet.ActonLockinCtrl(lockinVisaAddress=r"GPIB0::14::INSTR")
 voltmeterCtrl = mdet.VoltmeterCtrl(VISA_address=r'GPIB0::22::INSTR')
 
@@ -44,11 +43,11 @@ d = datetime.datetime.now()
 voltsFilePath = os.path.join(voltsDirectory, 'powerInVolts_{:%Y-%m-%d_%H-%M-%S}.txt'.format(d))
 
 # Scanning program
-volts_scan = mapper.XYScan(scanner=psuCtrl, detectors=[spectroCtrl, voltmeterCtrl])
-volts_scan.set_range(xLims=xLims, xStep=xStep)
-volts_scan.set_delays(between_points=delayBetweenPoints, between_rows=delayBetweenRows)
+XYscan = mapper.XYScan(scanner=attoCtrl, detectors=[spectroCtrl, voltmeterCtrl])
+XYscan.set_range(xLims=xLims, xStep=xStep, yLims=yLims, yStep=yStep)
+XYscan.set_delays(between_points=delayBetweenPoints, between_rows=delayBetweenRows)
 #XYscan.set_back_to_zero()
-volts_scan.run_scan()
+XYscan.run_scan()
 
-volts_scan.save_volts(volts_scan.counts[1], voltsFilePath)
+XYscan.save_volts(XYscan.counts[1], voltsFilePath, flatten=True)
 
