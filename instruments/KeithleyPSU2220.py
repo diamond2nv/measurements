@@ -111,6 +111,7 @@ class Keithley2220:
         except AssertionError:
             pass
         else:
+            print('sent voltage')
             self.write('VOLT {}V'.format(voltage))
     
     def readSetVoltage(self, channel):
@@ -197,7 +198,9 @@ if __name__ == "__main__":
         print(repr(keithleyPSU.get_selected_channel()))
 
         keithleyPSU.channelSelect(1)
+        print('hello')
         keithleyPSU.channelSelect(2)
+        print('hello')
         keithleyPSU.channelSelect(1)
         keithleyPSU.channelSelect(2)
         keithleyPSU.channelSelect(1)

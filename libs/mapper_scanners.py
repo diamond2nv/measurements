@@ -218,9 +218,9 @@ class Keithley2220(ScannerCtrl):
                 self._Keithley_handle.setCurrent(channel=self._channels[axis], voltage=value)
 
     def moveX(self, value):
-        self.move(value=value, axis=self._channels[0])
+        self.move(value=value, axis=0)
     def moveY(self, value):
-        self.move(value=value, axis=self._channels[1])
+        self.move(value=value, axis=1)
 
     def get_setting(self, axis, mode='voltage'):
         if axis is not None:
@@ -242,9 +242,9 @@ class Keithley2220(ScannerCtrl):
             return None
 
     def getX(self):
-        return self.get(axis=self.channels[0])
+        return self.get(axis=0)
     def getY(self):
-        return self.get(axis=self.channels[1])
+        return self.get(axis=1)
 
     def channel_combine(self, combMode=KeithleyPSU2220.Keithley2220channelModes.OFF):
         # 'off', 'parallel' or 'series'
