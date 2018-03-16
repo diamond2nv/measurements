@@ -25,10 +25,10 @@ reload(mdet)
 delayBetweenPoints = 0.5
 delayBetweenRows = 0.5
 
-xLims = (60, 65)  # (10, 100)
+xLims = (65, 85)  # (10, 100)
 xStep = 1
 
-yLims = (80, 82)  # (10, 140)
+yLims = (65, 85)  # (10, 140)
 yStep = 1
 
 voltsDirectory = r'C:\Users\QPL\Desktop\temporary_meas'

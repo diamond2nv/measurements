@@ -22,10 +22,11 @@ reload(mgen)
 
 class ScannerCtrl (mgen.DeviceCtrl):
 
-    smooth_step = 1.
-    smooth_delay = 0.05
-    string_id = 'Unknown scanner'
-    _channels = []
+    def __init__(self):
+        self.smooth_step = 1.
+        self.smooth_delay = 0.05
+        self.string_id = 'Unknown scanner'
+        self._channels = []
 
     def initialize(self):
         pass
@@ -47,6 +48,12 @@ class ScannerCtrl (mgen.DeviceCtrl):
 
     def getY (self):
         pass
+
+    def set_smooth_delay(self, value):
+        self.smooth_delay = value
+
+    def set_smooth_step(self, value):
+        self.smooth_step = value
 
     def _close(self):
         pass
@@ -87,7 +94,8 @@ class ScannerCtrl (mgen.DeviceCtrl):
 class AttocubeNI (ScannerCtrl):
 
     def __init__ (self, chX='/Weetabix/ao0', chY='/Weetabix/ao1', conversion_factor=1/15.):
-        self.string_id = 'Attocube ANC controlled by NI box DC AO'
+        super().__init__()
+        self.string_id = 'Attocube ANC scanners controlled by NI box DC AO'
         self._channels = [chX, chY]
         self.conversion_factor = conversion_factor
 
@@ -133,10 +141,10 @@ class AttocubeNI (ScannerCtrl):
 
 
 class AttocubeVISA (ScannerCtrl):
-    # NOTE : IMPLEMENT POSITION GETTERS PROPERLY
 
     def __init__ (self, VISA_address, axisX=1, axisY=2):
-        self.string_id = 'Attocube ANC controlled by VISA'
+        super().__init__()
+        self.string_id = 'Attocube ANC scanners controlled by VISA'
         self._VISA_address = VISA_address
         self._channels = [axisX, axisY]
        
@@ -182,9 +190,80 @@ class AttocubeVISA (ScannerCtrl):
         return self._ANChandle.getOffset(self._channels[1])
 
 
+# class AttocubeVISAstepper (ScannerCtrl):
+    
+#     def __init__ (self, VISA_address, channels):
+#         super().__init__()
+#         self.string_id = 'Attocube ANC steppers controlled by VISA'
+#         self._VISA_address = VISA_address
+#         try:
+#             channels = list(channels)
+#         except TypeError:
+#             channels = [channels]
+#         if len(channels) == 1:
+#             channels.append(None)
+
+#         self._channels = channels
+        
+#         self._curr_position = [0, 0]
+       
+#     def initialize (self):
+#         try:
+#             self._ANChandle = attoANC.AttocubeANC(self._VISA_address)
+#         except visa.VisaIOError as err:
+#             self.visa_error_handling(err)
+
+#         self._attoAxis = attoANC.ANCaxis(self._channels[0], self._ANChandle)
+
+#     def move(self, target, axis=0):
+
+#         move_by_deg = target - self._curr_position[0]
+#         move_by_clicks = int(py.floor(stepSizeInDeg * nbOfClicksPerDeg))
+#         if move_by_clicks < 0:
+#             self._attoAxis.stepUp(-move_by_clicks)
+#         else:
+#             self._attoAxis.stepDown(move_by_clicks)
+
+
+
+
+
+
+
+#         if axis == 0:
+#             self.moveX(target)
+#         elif axis == 1:
+#             self.moveY(target)
+
+#     def moveX (self, value):
+#         self._ANChandle.setOffset(value, self._channels[0])
+#         self._currX = value
+
+#     def moveY (self, value):
+#         self._ANChandle.setOffset(value, self._channels[1])
+#         self._currY = value
+
+#     def _close(self):
+#         self._ANChandle.close()
+
+#     def get(self, axis=0):
+#         if axis == 0:
+#             return self.getX()
+#         elif axis == 1:
+#             return self.getY()
+
+#     def getX (self):
+#         return self._ANChandle.getOffset(self._channels[0])
+        
+#     def getY (self):
+#         return self._ANChandle.getOffset(self._channels[1])
+
+
+
 class Keithley2220(ScannerCtrl):
 
     def __init__(self, VISA_address, channels):
+        super().__init__()
         self.string_id = 'Keithley PSU2220 DC power supply controlled by VISA'
         self._VISA_address = VISA_address
 
@@ -269,6 +348,17 @@ class Keithley2220_neg_pos(Keithley2220):
             else:
                 super().move(value, axis=1)
                 super().move(0, axis=0)
+
+    def get(self, axis=0):
+        if axis == 0:
+            neg_bias = self._Keithley_handle.readVoltage(channel=self._channels[0])
+            pos_bias = self._Keithley_handle.readVoltage(channel=self._channels[1])
+            return pos_bias-neg_bias
+        elif axis == 1:
+            return 0
+        else:
+            return None
+
 
 
 

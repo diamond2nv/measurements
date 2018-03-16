@@ -25,7 +25,7 @@ reload(mdet)
 delayBetweenPoints = 0.5
 delayBetweenRows = 0.
 
-xLims = (-1, 1)  # (0, 5)
+xLims = (-20, 30)  # (0, 5)
 xStep = 0.25
 
 voltsDirectory = r'C:\Users\QPL\Desktop\temporary_meas'
@@ -36,6 +36,7 @@ voltsDirectory = r'C:\Users\QPL\Desktop\temporary_meas'
 #psuCtrl = mscan.Keithley2220(VISA_address=r'GPIB0::10::INSTR', channels=1)
 
 psuCtrl = mscan.Keithley2220_neg_pos(VISA_address=r'GPIB0::10::INSTR', ch_neg=1, ch_pos=2)
+psuCtrl.set_smooth_delay(0.5)
 
 spectroCtrl = mdet.ActonLockinCtrl(lockinVisaAddress=r"GPIB0::14::INSTR")
 voltmeterCtrl = mdet.VoltmeterCtrl(VISA_address=r'GPIB0::22::INSTR')
@@ -47,7 +48,8 @@ voltsFilePath = os.path.join(voltsDirectory, 'powerInVolts_{:%Y-%m-%d_%H-%M-%S}.
 volts_scan = mapper.XYScan(scanner=psuCtrl, detectors=[spectroCtrl, voltmeterCtrl])
 volts_scan.set_range(xLims=xLims, xStep=xStep)
 volts_scan.set_delays(between_points=delayBetweenPoints, between_rows=delayBetweenRows)
-#XYscan.set_back_to_zero()
+volts_scan.set_back_to_zero()
+
 volts_scan.run_scan()
 
 volts_scan.save_volts(volts_scan.counts[1], voltsFilePath)

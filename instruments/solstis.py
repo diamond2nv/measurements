@@ -25,16 +25,16 @@ class solstisLaser():
     TUNING_IN_PROGRESS = 2
     WAVELENGTH_MAINTAINED = 3
 
-    def __init__(self, laserIpAddress, pcIpAddress, portNumber=39933, transmissionId=0):
-        self._address = laserIpAddress # Ip address of the Solstis
-        self._pc_ip = pcIpAddress  # ip-address of the pc
-        self._port = portNumber
+    def __init__(self, laser_ip_address, pc_ip_address, port_number=39933, transmission_id=0):
+        self._address = laser_ip_address # Ip address of the Solstis
+        self._pc_ip = pc_ip_address  # ip-address of the pc
+        self._port = port_number
         self._s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self._transmission_id = transmissionId
+        self._transmission_id = transmission_id
         self._connection = False
         
-        self.wavelengthCurrent = -1
-        self.wavelengthToGo = -1
+        self.wavelength_current = -1
+        self.wavelength_to_go = -1
 
         try:
             # The raw socket connection
@@ -60,9 +60,6 @@ class solstisLaser():
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.close()
         
-    
-    
-    # The most important method.
     def _send_message(self,message_dict):
         """
         This method takes a dict obj (without 'message' at front), converts it to a string, sends it to the THz-FireFly laser and returns
@@ -84,17 +81,17 @@ class solstisLaser():
 
         return reply_message
     
-    def getWavelength(self):
+    def get_wavelength(self):
         reply = self._send_message({"op":"poll_wave_m"})
-        self.wavelengthCurrent = reply['parameters']['current_wavelength'][0]
-        return self.wavelengthCurrent
+        self.wavelength_current = reply['parameters']['current_wavelength'][0]
+        return self.wavelength_current
         
-    def setWavelength(self, newWavelength):
+    def set_wavelength(self, newWavelength):
         message_dict = {"op":"set_wave_m","parameters":{"wavelength":[newWavelength]}}
         self._send_message(message_dict)
-        self.wavelengthToGo = newWavelength
+        self.wavelength_to_go = newWavelength
     
-    def getTuningStatus(self):
+    def get_tuning_status(self):
         message_dict = {"op":"poll_wave_m"}
         response = self._send_message(message_dict)
 #        print response
@@ -112,7 +109,7 @@ class solstisLaser():
 #            raise SolstisError('Wavelength could not get locked.')
         
         
-    def maintainWavelength(self, activate=True):
+    def maintain_wavelength(self, activate=True):
         if activate:
             operation = 'on'
         else:
@@ -125,55 +122,55 @@ class solstisLaser():
         else:
             time.sleep(0.1)  # necessary for the laser to take the order into account
             
-    def getEthalonLockStatus(self):
+    def get_ethalon_lock_status(self):
         message_dict = {"op":"etalon_lock_status"}
         response = self._send_message(message_dict)
         return response['parameters']['condition']
         
-    def waitForEthalonLock(self):
+    def wait_for_ethalon_lock(self):
 #        
-#        while self.getEthalonLockStatus() != 'on':
-#            print self.getEthalonLockStatus()
+#        while self.get_ethalon_lock_status() != 'on':
+#            print self.get_ethalon_lock_status()
 #            time.sleep(0.1)
 #            pass
         while True:
-            status = self.getEthalonLockStatus()
+            status = self.get_ethalon_lock_status()
 #            print status
 #            sys.stdout.flush()
             time.sleep(0.05)
             if status == 'on':
                 break
         
-    def waitForTuningStatusFinished(self, nbOfPasses=100):
+    def wait_for_tuning_status_finished(self, nbOfPasses=100):
         for i in range(nbOfPasses):
             while True:
-                tuning_status = self.getTuningStatus()
+                tuning_status = self.get_tuning_status()
                 if tuning_status == self.WAVELENGTH_MAINTAINED:
                     break
                 elif tuning_status == self.TUNING_NOT_ACTIVE:
                     raise SolstisError('Tuning is not active')
     
-    def waitForGoodWavelength(self, timeout=60, finishRangeRadius=0.01):
+    def wait_for_good_wavelength(self, timeout=60, finishRangeRadius=0.01):
         # timeout in seconds, -1 for infinite
         # finishRangeRadius in nm
         startTime = time.time()
         while True:
             curTime = time.time() - startTime
             
-            curWave = self.getWavelength()
+            curWave = self.get_wavelength()
             
             if timeout != -1 and curTime > timeout:
-                print('WARNING: Timeout. Solstis did not reach exact wavelength ({} instead of {}).'.format(curWave, self.wavelengthToGo))
+                print('WARNING: Timeout. Solstis did not reach exact wavelength ({} instead of {}).'.format(curWave, self.wavelength_to_go))
                 break
             
             
-            if self.wavelengthToGo - finishRangeRadius < curWave < self.wavelengthToGo + finishRangeRadius:
+            if self.wavelength_to_go - finishRangeRadius < curWave < self.wavelength_to_go + finishRangeRadius:
                 break
 
-    def waitForTuning(self, timeout=60, finishRangeRadius=0.01):
+    def wait_for_tuning(self, timeout=60, finishRangeRadius=0.01):
         try:
-            self.waitForGoodWavelength(timeout=timeout, finishRangeRadius=finishRangeRadius)
-            self.waitForTuningStatusFinished(nbOfPasses=10)
+            self.wait_for_good_wavelength(timeout=timeout, finishRangeRadius=finishRangeRadius)
+            self.wait_for_tuning_status_finished(nbOfPasses=10)
         except:
             raise
 
@@ -189,14 +186,14 @@ if __name__ == "__main__":
 ##    print toto._send_message({"op":"poll_wave_m"})
 ##    print toto._send_message({"op":"set_wave_m","parameters":{"wavelength":[836.90]}})
 #    print toto._send_message({"op":"poll_wave_m"})
-    toto.maintainWavelength(True)
-    toto.setWavelength(800)
+    toto.maintain_wavelength(True)
+    toto.set_wavelength(800)
 #    time.sleep(1)
-    print(toto.getTuningStatus())
-    print(toto.getTuningStatus())
-    print(toto.getTuningStatus())
-    toto.waitForTuning()
-#    toto.waitForGoodWavelength(timeout=20, finishRangeRadius=0.002)
-#    print toto.getWavelength()
-#    print toto.getTuningStatus()
+    print(toto.get_tuning_status())
+    print(toto.get_tuning_status())
+    print(toto.get_tuning_status())
+    toto.wait_for_tuning()
+#    toto.wait_for_good_wavelength(timeout=20, finishRangeRadius=0.002)
+#    print toto.get_wavelength()
+#    print toto.get_tuning_status()
     
