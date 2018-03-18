@@ -76,6 +76,10 @@ class QPLviewGUI(QtWidgets.QMainWindow):
         self.ui.canvas.upload_stream (stream = self._stream_dict['rep_0'])
         self.ui.canvas.update_figure()
 
+        self.begin = QtCore.QPoint()
+        self.end = QtCore.QPoint()
+
+        
         #TIMER:
         #self.refresh_time = 100
         #self.timer = QtCore.QTimer(self)
@@ -161,3 +165,24 @@ class QPLviewGUI(QtWidgets.QMainWindow):
 
     def closeEvent(self, ce):
         self.fileQuit()
+
+    def paintEvent(self, event):
+        qp = QtGui.QPainter(self)
+        br = QtGui.QBrush(QtGui.QColor(100, 10, 10, 40))  
+        qp.setBrush(br)   
+        qp.drawRect(QtCore.QRect(self.begin, self.end))       
+
+    def mousePressEvent(self, event):
+        self.begin = event.pos()
+        self.end = event.pos()
+        self.update()
+
+    def mouseMoveEvent(self, event):
+        self.end = event.pos()
+        self.update()
+
+    def mouseReleaseEvent(self, event):
+        self.begin = event.pos()
+        self.end = event.pos()
+        self.update()
+

@@ -130,3 +130,36 @@ class TestCanvas(MplCanvas):
         self.axes.plot([0, 1, 2, 3], l, 'r')
         self.draw()
 
+class ZoomableWidget(QtWidgets.QVBoxLayout):
+
+    def __init__(self, *args, **kwargs):
+        MplCanvas.__init__(self, *args, **kwargs)
+        self._stream = None
+        self._pdict = None
+        self._channels = None
+        self._labels = None
+        self._colors = None
+        #self.setGeometry(30,30,600,400)
+        self.begin = QtCore.QPoint()
+        self.end = QtCore.QPoint()
+        self.show()
+
+    def paintEvent(self, event):
+        qp = QtGui.QPainter(self)
+        br = QtGui.QBrush(QtGui.QColor(100, 10, 10, 40))  
+        qp.setBrush(br)   
+        qp.drawRect(QtCore.QRect(self.begin, self.end))       
+
+    def mousePressEvent(self, event):
+        self.begin = event.pos()
+        self.end = event.pos()
+        self.update()
+
+    def mouseMoveEvent(self, event):
+        self.end = event.pos()
+        self.update()
+
+    def mouseReleaseEvent(self, event):
+        self.begin = event.pos()
+        self.end = event.pos()
+        self.update()
