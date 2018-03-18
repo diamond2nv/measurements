@@ -29,9 +29,10 @@ class Ui_Panel(object):
         self.button_save.setFont(font)
         self.button_save.setObjectName("button_save")
         self.vbl = QtWidgets.QVBoxLayout(Panel)
+        self.vbl.setContentsMargins(0,0,0,0)
         #self.vbl.setGeometry(QtCore.QRect(10, 10, 1131, 561))
         #self.vbl.setObjectName("plot_canvas")
-        self.canvas = SC.StreamCanvas(Panel, width=6.3, height=3, dpi=200)
+        self.canvas = SC.StreamCanvas(Panel, width=7, height=3, dpi=200)
         self.vbl.addWidget (self.canvas)
 
         self.lineEdit_fileTag = QtWidgets.QLineEdit(Panel)

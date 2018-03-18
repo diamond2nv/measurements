@@ -1,10 +1,3 @@
-# -*- coding: utf-8 -*-
-
-# Form implementation generated from reading ui file 'QPLser_view.ui'
-#
-# Created by: PyQt5 UI code generator 5.6
-#
-# WARNING! All changes made in this file will be lost!
 
 from PyQt5 import QtCore, QtGui, QtWidgets
 import numpy as np
@@ -33,9 +26,7 @@ class MplCanvas(Canvas):
     def update (self):
         pass
 
-
 class StreamCanvas(MplCanvas):
-    """A canvas that updates itself every second with a new plot."""
 
     def __init__(self, *args, **kwargs):
         MplCanvas.__init__(self, *args, **kwargs)
@@ -53,7 +44,7 @@ class StreamCanvas(MplCanvas):
 
     def set_view_channels(self, channels_idx):
         self._view_chs = channels_idx
-        self.draw()
+        self.axes.figure.canvas.draw()
 
     def set_time_interval (self, t):
         self._t = t
@@ -97,12 +88,12 @@ class StreamCanvas(MplCanvas):
 
         for label in (self.axes.get_xticklabels() + self.axes.get_yticklabels()):
             #label.set_fontname('Arial')
-            label.set_fontsize(10)
+            label.set_fontsize(6)
         
     def update_figure (self):
-        self.axes.cla()
+        #self.axes.cla()
         self._plot_channels()
-        self.draw()
+        self.axes.figure.canvas.draw()
 
     def resize_canvas (self, w, h):
         self._w_inches = w/float(self._dpi)
@@ -110,56 +101,3 @@ class StreamCanvas(MplCanvas):
         self.fig.set_size_inches (self._w_inches, self._h_inches)
         self.update_figure()
 
-
-class TestCanvas(MplCanvas):
-    """A canvas that updates itself every second with a new plot."""
-
-    def __init__(self, *args, **kwargs):
-        MplCanvas.__init__(self, *args, **kwargs)
-        timer = QtCore.QTimer(self)
-        timer.timeout.connect(self.update_figure)
-        timer.start(1000)
-
-    def compute_initial_figure(self):
-        self.axes.plot([0, 1, 2, 3], [1, 2, 0, 4], 'r')
-
-    def update_figure(self):
-        # Build a list of 4 random integers between 0 and 10 (both inclusive)
-        l = [random.randint(0, 10) for i in range(4)]
-        self.axes.cla()
-        self.axes.plot([0, 1, 2, 3], l, 'r')
-        self.draw()
-
-class ZoomableWidget(QtWidgets.QVBoxLayout):
-
-    def __init__(self, *args, **kwargs):
-        MplCanvas.__init__(self, *args, **kwargs)
-        self._stream = None
-        self._pdict = None
-        self._channels = None
-        self._labels = None
-        self._colors = None
-        #self.setGeometry(30,30,600,400)
-        self.begin = QtCore.QPoint()
-        self.end = QtCore.QPoint()
-        self.show()
-
-    def paintEvent(self, event):
-        qp = QtGui.QPainter(self)
-        br = QtGui.QBrush(QtGui.QColor(100, 10, 10, 40))  
-        qp.setBrush(br)   
-        qp.drawRect(QtCore.QRect(self.begin, self.end))       
-
-    def mousePressEvent(self, event):
-        self.begin = event.pos()
-        self.end = event.pos()
-        self.update()
-
-    def mouseMoveEvent(self, event):
-        self.end = event.pos()
-        self.update()
-
-    def mouseReleaseEvent(self, event):
-        self.begin = event.pos()
-        self.end = event.pos()
-        self.update()

@@ -7,6 +7,7 @@ import numpy as np
 import h5py
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
+from matplotlib.patches import Rectangle
 from PyQt5 import QtCore, QtGui, QtWidgets
 from measurements.libs.QPLser import ui_QPLseViewer as uM
 from importlib import reload
@@ -18,18 +19,21 @@ class QPLviewGUI(QtWidgets.QMainWindow):
 
         QtWidgets.QWidget.__init__(self)
         self.setAttribute(QtCore.Qt.WA_DeleteOnClose)
-        self.setWindowTitle("application main window")
-
-        #self.setAttribute(QtCore.Qt.WA_DeleteOnClose)
-        #self.setWindowTitle("Laser-Piezo Scan Interface")
         self.ui = uM.Ui_Panel()
         self.ui.setupUi(self)
         self._stream_dict = stream_dict
         self._available_chs = stream_dict['plot-channels']
-        #self.ui.plot_canvas.setSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Expanding)
+
+        # setup transparent rectangle for zoom
+        self.ax = self.ui.canvas.axes
+        self.rect = Rectangle((0,0), 0, 0, alpha=0.3)
+        self.x0 = None
+        self.y0 = None
+        self.x1 = None
+        self.y1 = None
+        self.ax.add_patch(self.rect)
 
         #SETTINGS EVENTS
-        
         self.ui.sb_rep_nr.setRange(1, 999)
         self.ui.dsb_view_time.setRange (0.001, 99.)
         self.ui.dsb_view_time.setDecimals(3)
@@ -37,6 +41,11 @@ class QPLviewGUI(QtWidgets.QMainWindow):
         self.ui.comboBox_units.addItem ("us")
         self.ui.comboBox_units.addItem ("ms")
         self.ui.comboBox_units.addItem ("s")          
+        # connect to mouse events for zoom
+        self.ui.canvas.mpl_connect('button_press_event', self.mouseClick)
+        self.ui.canvas.mpl_connect('motion_notify_event', self.mouseMove)
+        self.ui.canvas.mpl_connect('button_release_event', self.mouseRelease)
+        self.mouse_clicked = False
 
         # initialize values
         for ch in self._available_chs:
@@ -76,45 +85,16 @@ class QPLviewGUI(QtWidgets.QMainWindow):
         self.ui.canvas.upload_stream (stream = self._stream_dict['rep_0'])
         self.ui.canvas.update_figure()
 
-        self.begin = QtCore.QPoint()
-        self.end = QtCore.QPoint()
-
-        
-        #TIMER:
-        #self.refresh_time = 100
-        #self.timer = QtCore.QTimer(self)
-        #self.timer.timeout.connect(self.manage_tasks)
-        #self.timer.start(self.refresh_time)
-
     def resizeEvent( self, event ):
         QtWidgets.QWidget.resizeEvent (self, event )
         w = event.size().width()
         h = event.size().height()
         self.w = w
         self.h = h
-        self.ui.canvas.resize_canvas (w=w, h=h)
+        self.ui.canvas.resize_canvas (w=w, h=h*0.8)
 
     def manage_tasks (self):
         pass
-        '''
-        if (self._running_task == 'pzscan'):
-            self.run_new_pzscan()
-        elif (self._running_task == 'lr_laser_scan'):
-            self.run_new_lr_laser_scan()
-        elif (self._running_task == 'fine_laser_scan'):
-            self.run_new_fine_laser_scan()
-        elif (self._running_task == 'fine_laser_calib'):
-            self.run_new_laser_calibration()
-        elif (self._running_task == 'timeseries'):
-            self.run_new_timeseries()
-        elif (self._running_task == 'update_2D_scan'):
-            self.run_update_2D_scan()            
-        elif (self._running_task == 'sweep_msyncdelay'):
-            self.run_new_sweep_msyncdelay()            
-        else:
-            idle = True
-        '''
-
 
     def _make_view_channel (self, ch):
         
@@ -166,23 +146,41 @@ class QPLviewGUI(QtWidgets.QMainWindow):
     def closeEvent(self, ce):
         self.fileQuit()
 
-    def paintEvent(self, event):
-        qp = QtGui.QPainter(self)
-        br = QtGui.QBrush(QtGui.QColor(100, 10, 10, 40))  
-        qp.setBrush(br)   
-        qp.drawRect(QtCore.QRect(self.begin, self.end))       
+    def mouseClick(self, event):
+        if (event.xdata != None):
+            self.x0 = event.xdata
+            if (event.ydata != None):
+                self.y0 = event.ydata
+                self.mouse_clicked = True
+                #print ("Set (x0, y0) = ", self.x0, self.y0)
 
-    def mousePressEvent(self, event):
-        self.begin = event.pos()
-        self.end = event.pos()
-        self.update()
+    def mouseMove(self, event):
+        if self.mouse_clicked:
+            if (event.xdata != None):
+                self.x1 = event.xdata
+                if (event.ydata != None):
+                    self.y1 = event.ydata
+                    #print ("Set (x1, y1) = ", self.x1, self.y1)
+            #print ("Now draw rectangle!")
+            self.rect.set_width(self.x1 - self.x0)
+            self.rect.set_height(self.y1 - self.y0)
+            self.rect.set_xy((self.x0, self.y0))
+            self.ax.figure.canvas.draw()
+            self.ui.canvas.repaint()
 
-    def mouseMoveEvent(self, event):
-        self.end = event.pos()
-        self.update()
+    def mouseRelease(self, event):
+        if self.mouse_clicked:
+            if (event.xdata != None):
+                self.x1 = event.xdata
+                if (event.ydata != None):
+                    self.y1 = event.ydata
+                    print ("Set (x1, y1) = ", self.x1, self.y1)
 
-    def mouseReleaseEvent(self, event):
-        self.begin = event.pos()
-        self.end = event.pos()
-        self.update()
+        self.mouse_clicked = False
+        self.rect.set_width(0)
+        self.rect.set_height(0)
+        self.ui.canvas.axes.set_xlim ([self.x0, self.x1])
+        self.ui.canvas.repaint()
+
+
 
