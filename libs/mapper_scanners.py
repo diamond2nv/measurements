@@ -116,9 +116,13 @@ class ScannerCtrl (mgen.DeviceCtrl):
 
     def set_smooth_step(self, value):
         self.smooth_step = value
-            
+
+    def move_smooth(self, scanner_axes, targets=[]):
+        move_smooth(scanner_axes=scanner_axes, targets=targets)
+
     def close_error_handling(self):
         print('WARNING: Scanners {} did not close properly.'.format(self.string_id))
+
 
 class Saxis():
     def __init__(self, scanner, axis):
@@ -131,11 +135,13 @@ class Saxis():
     def get(self):
         return self.scanner.get(axis=self.axis)
     def move_smooth(self, target):
-        move_smooth(scanner_axes=[self], targets=[target])
+        # note this construction through the scanner object allows the user to overload move_smooth() for a specific scanner
+        self.scanner.move_smooth(scanner_axes=[self], targets=[target])
     def initialize(self):
         self.scanner.initialize()
     def close(self):
         self.scanner.close()
+
 
 def move_smooth(scanner_axes, targets=[]):
     smooth_steps = [s_axis.scanner.smooth_step for s_axis in scanner_axes]
@@ -169,10 +175,10 @@ def move_smooth(scanner_axes, targets=[]):
             s_axis.move(pos[i])
         time.sleep(smooth_delay)
 
+
 #################################################
 #             LAB SCANNERS CLASSES              #
 #################################################
-
 
 class TestScanner (ScannerCtrl):
 
@@ -180,7 +186,7 @@ class TestScanner (ScannerCtrl):
         super().__init__(channels=channels)
         self.string_id = 'Test device'
         self.address = address
-       
+
         self.smooth_step = 0.5
         self.smooth_delay = 0.5
 
@@ -199,7 +205,7 @@ class TestScanner (ScannerCtrl):
 
 
 class AttocubeNI (ScannerCtrl):
-    def __init__(self, chX='/Weetabix/ao0', chY='/Weetabix/ao1', conversion_factor=1/15.):
+    def __init__(self, chX='/Weetabix/ao0', chY='/Weetabix/ao1', start_pos=[0,0], conversion_factor=1/15.):
         super().__init__(channels=[chX, chY])
         self.string_id = 'Attocube ANC scanners controlled by NI box DC AO'
         self.conversion_factor = conversion_factor
@@ -207,10 +213,10 @@ class AttocubeNI (ScannerCtrl):
         self.smooth_step = 1
         self.smooth_delay = 0.05
 
-        self._curr_pos = [0 for channel in self._channels]
+        self._curr_pos = [pos for channel, pos in zip(self._channels, start_pos)]
 
     def _initialize(self):
-        self.scanners_volt_drives = [voltOut(self._channels[i]) for i in self._channels]
+        self.scanners_volt_drives = [voltOut(channel) for channel in self._channels]
 
     def _move(self, target, axis=0):
         self.scanners_volt_drives[axis].write(self.conversion_factor * target)
@@ -230,7 +236,7 @@ class AttocubeVISA (ScannerCtrl):
         super().__init__(channels=[chX, chY])
         self.string_id = 'Attocube ANC scanners controlled by VISA'
         self._VISA_address = VISA_address
-       
+
         self.smooth_step = 0.5
         self.smooth_delay = 0.05
 
@@ -314,7 +320,6 @@ class AttocubeVISA (ScannerCtrl):
         
 #     def getY (self):
 #         return self._ANChandle.getOffset(self._channels[1])
-
 
 
 class Keithley2220(ScannerCtrl):

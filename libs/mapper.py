@@ -67,9 +67,9 @@ class XYScan ():
         seconds = nbOfSeconds - minutes*60 - hours*3600
         return hours, minutes, seconds
 
-    def print_elapsed_time(self, startTime, currentIndex, totalNbOfSteps):
-        elapsedTime = float(time.time() - startTime)
-        remainingTime = elapsedTime / currentIndex * (totalNbOfSteps - (currentIndex-1))
+    def print_elapsed_time(self, start_time, current_index, total_nb_of_steps):
+        elapsedTime = float(time.time() - start_time)
+        remainingTime = elapsedTime / current_index * (total_nb_of_steps - (current_index-1))
         
         hoursE, minutesE, secondsE = self.seconds_in_HMS(elapsedTime)
         hoursR, minutesR, secondsR = self.seconds_in_HMS(remainingTime)
@@ -135,7 +135,7 @@ class XYScan ():
                         first_point = False
                     else:
                         if idx % 10 == 0:
-                            self.print_elapsed_time(startTime=start_time, currentIndex=idx, totalNbOfSteps=self.totalNbOfSteps)
+                            self.print_elapsed_time(start_time=start_time, current_index=idx, total_nb_of_steps=self.totalNbOfSteps)
 
                         # delay between rows
                         if firstInRow:
@@ -173,7 +173,7 @@ class XYScan ():
         except KeyboardInterrupt:
             print('\n####  Program interrupted by user.  ####')
         finally:
-            for scanner in self._scanners:
+            for scanner in self._scanner_axes:
                 scanner.close()
             for detector in self._detectors:
                 detector.close()

@@ -26,16 +26,16 @@ class DetectorCtrl (mgen.DeviceCtrl):
     def __init__(self, work_folder=None):
         self._wfolder = work_folder
 
-    def initialize (self):
+    def initialize(self):
         pass
 
-    def readout (self):
+    def readout(self):
         return None
 
-    def is_ready (self):
+    def is_ready(self):
         return True
 
-    def first_point (self):
+    def first_point(self):
         return True
 
     def _close(self):
@@ -47,22 +47,23 @@ class DetectorCtrl (mgen.DeviceCtrl):
 
 class PylonNICtrl (DetectorCtrl):
 
-    def __init__(self, sender_port="/Weetabix/port1/line3", receiver_port = "/Weetabix/port1/line2", work_folder=None):
+    def __init__(self, sender_port="/Weetabix/port1/line3", receiver_port="/Weetabix/port1/line2", work_folder=None):
         self.string_id = 'Pylon (new spectro) camera - NI box control'
         self._wfolder = work_folder
         self._sender_port = sender_port
         self._receiver_port = receiver_port
 
-    def initialize (self):
+    def initialize(self):
         self.senderTask = trigSender(self._sender_port)
         self.senderTask.StartTask()
         self.receiverTask = trigReceiver(self._receiver_port)
         self.receiverTask.StartTask()
 
-    def wait_for_ready (self):
-        CCDready = 0
-        while CCDready == 0:
-            CCDready = self.receiverTask.listen()
+    def first_point(self):
+        return self.receiverTask.listen()
+
+    def is_ready(self):
+        return self.receiverTask.listen()
 
     def readout(self):
         self.senderTask.emit()
@@ -85,13 +86,13 @@ class ActonNICtrl (DetectorCtrl):
         self.first_point_flag = True
         self._wfolder = work_folder
 
-    def initialize (self):
+    def initialize(self):
         self.senderTask = trigSender(self._sender_port)
         self.senderTask.StartTask()
         self.receiverTask = trigReceiver(self._receiver_port)
         self.receiverTask.StartTask()
 
-    def first_point (self):
+    def first_point(self):
 
         if not self.measurement_started_flag:
             self.senderTask.emit()
@@ -103,18 +104,10 @@ class ActonNICtrl (DetectorCtrl):
         else:
             return False
 
-    def is_ready (self):
-        # if self.expect_not_scan:  # wait for CCD 'NOT SCAN' signal (device scanning)
-        #     if self.receiverTask.listen():
-        #         self.expect_not_scan = False
-        # if not self.expect_not_scan:
-        #     if not self.receiverTask.listen():
-        #         return True
-        # return False
-
+    def is_ready(self):
         return not self.receiverTask.listen()  # when NOT SCAN signal is down -> detector ready
 
-    def readout (self):
+    def readout(self):
         if self.first_point_flag:
             self.first_point_flag = False
         else:
@@ -138,7 +131,7 @@ class ActonLockinCtrl (DetectorCtrl):
         self.measurement_started_flag = False
         self.first_point_flag = True
 
-    def first_point (self):
+    def first_point(self):
         if not self.measurement_started_flag:
             self._lockin.sendPulse()
             time.sleep(0.1)
@@ -148,12 +141,11 @@ class ActonLockinCtrl (DetectorCtrl):
             return True
         else:
             return False
-        
 
-    def is_ready (self):
+    def is_ready(self):
         return not self._lockin.readADCdigital()
 
-    def readout (self):
+    def readout(self):
         if self.first_point_flag:
             self.first_point_flag = False
         else:
@@ -166,34 +158,34 @@ class ActonLockinCtrl (DetectorCtrl):
 
 class APDCounterCtrl (DetectorCtrl):
 
-    def __init__(self, ctr_port, debug = False, work_folder=None):
+    def __init__(self, ctr_port, debug=False, work_folder=None):
         self.string_id = 'APD NI box counter'
         self._wfolder = work_folder
         self._ctr_port = ctr_port
         self.delay_after_readout = 0.
         self._debug = debug
-        
-    def set_integration_time_ms (self, t):
+
+    def set_integration_time_ms(self, t):
         self._ctr_time_ms = t
 
-    def initialize (self):
+    def initialize(self):
         self._ctr = NIBox.NIBoxCounter(dt=self._ctr_time_ms)
-        self._ctr.set_port (self._ctr_port)
+        self._ctr.set_port(self._ctr_port)
 
-    def readout (self):
+    def readout(self):
         self._ctr.start()
-        c = self._ctr.get_counts ()
+        c = self._ctr.get_counts()
         self._ctr.stop()
 
         if self._debug:
-            print ("APD counts: ", c)
+            print("APD counts: ", c)
 
         return c
 
-    def first_point (self):
+    def first_point(self):
         return True
 
-    def _close (self):
+    def _close(self):
         self._ctr.clear()
 
 
@@ -205,15 +197,14 @@ class VoltmeterCtrl (DetectorCtrl):
         self.delay_after_readout = 0.
         self._wfolder = work_folder
 
-    def initialize (self):
+    def initialize(self):
         try:
             self._voltmeter = KeithleyMultimeter(self._VISA_address)
         except visa.VisaIOError as err:
             self.visa_error_handling(err)
 
-    def readout (self):
+    def readout(self):
         return self._voltmeter.read()
 
-    def _close (self):
+    def _close(self):
         self._voltmeter.close()
-
