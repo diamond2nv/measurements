@@ -14,6 +14,9 @@ class MplCanvas(Canvas):
         self._w_inches = width
         self._h_inches = height
         self._dpi = dpi
+        self.fig.subplots_adjust(left=0.05,right=0.95,
+                            bottom=0.1,top=0.98,
+                            hspace=0,wspace=0)
 
         Canvas.__init__(self, self.fig)
         self.setParent(parent)
@@ -35,6 +38,7 @@ class StreamCanvas(MplCanvas):
         self._channels = None
         self._labels = None
         self._colors = None
+        self.scaling_factor = 1
 
     def upload_stream (self, stream):
         self._stream = stream
@@ -62,7 +66,7 @@ class StreamCanvas(MplCanvas):
 
             if (int(self._view_chs[ind]) == 1):
 
-                t = self._pdict[ch]['time']
+                t = self._pdict[ch]['time']/self.scaling_factor
                 y = self._pdict[ch]['y']
                 c = self._pdict[ch]['color']
 
@@ -101,3 +105,6 @@ class StreamCanvas(MplCanvas):
         self.fig.set_size_inches (self._w_inches, self._h_inches)
         self.update_figure()
 
+    def set_time_range(self, t0, t1):
+        self.axes.set_xlim ([t0, t1])
+        self.axes.figure.canvas.repaint()
