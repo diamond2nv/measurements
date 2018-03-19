@@ -53,7 +53,12 @@ class StreamCanvas(MplCanvas):
     def set_time_interval (self, t):
         self._t = t
 
+    def clear (self):
+        self.axes.clear()
+
     def _plot_channels (self):
+
+        self.axes.cla()
 
         if (self._pdict == None):
             self._pdict = self._stream.get_plot_dict()
@@ -66,7 +71,7 @@ class StreamCanvas(MplCanvas):
 
             if (int(self._view_chs[ind]) == 1):
 
-                t = self._pdict[ch]['time']/self.scaling_factor
+                t = self._pdict[ch]['time']*1000
                 y = self._pdict[ch]['y']
                 c = self._pdict[ch]['color']
 
@@ -95,9 +100,9 @@ class StreamCanvas(MplCanvas):
             label.set_fontsize(6)
         
     def update_figure (self):
-        #self.axes.cla()
         self._plot_channels()
         self.axes.figure.canvas.draw()
+        self.repaint()
 
     def resize_canvas (self, w, h):
         self._w_inches = w/float(self._dpi)
@@ -107,4 +112,8 @@ class StreamCanvas(MplCanvas):
 
     def set_time_range(self, t0, t1):
         self.axes.set_xlim ([t0, t1])
-        self.axes.figure.canvas.repaint()
+        print ("Changing view range: ", t0, t1)
+        self.axes.figure.canvas.draw()
+        self.repaint()
+        #self.update_figure()
+

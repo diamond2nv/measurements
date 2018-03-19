@@ -24,6 +24,13 @@ class QPLviewGUI(QtWidgets.QMainWindow):
         self._stream_dict = stream_dict
         self._available_chs = self._stream_dict['plot-channels']
 
+        self.ui.canvas._colors = self._stream_dict['plot-colors']
+        self.ui.canvas._channels = self._stream_dict['plot-channels']
+        self.ui.canvas._labels = self._stream_dict['plot-labels']
+        self.ui.canvas.upload_stream (self._stream_dict['rep_0'])
+        self._max_t = self._stream_dict['rep_0'].get_max_time()
+        self._view_range = [0, self._max_t]
+
         # setup transparent rectangle for zoom
         self.rect = Rectangle((0,0), 0, 0, alpha=0.3)
         self.x0 = None
@@ -34,13 +41,6 @@ class QPLviewGUI(QtWidgets.QMainWindow):
 
         #SETTINGS EVENTS
         self.ui.sb_rep_nr.setRange(1, 999)
-        self.ui.dsb_t0.setRange (0.001, 99.)
-        self.ui.dsb_t0.setDecimals(3)
-        self.ui.dsb_t1.setRange (0.001, 99.)
-        self.ui.dsb_t1.setDecimals(3)
-        for j in ['ns', 'us', 'ms', 's']:
-            self.ui.comboBox_units_t1.addItem (j)
-            self.ui.comboBox_units_t0.addItem (j)
          
         # connect to mouse events for zoom
         self.ui.canvas.mpl_connect('button_press_event', self.mouseClick)
@@ -57,38 +57,29 @@ class QPLviewGUI(QtWidgets.QMainWindow):
             a = getattr (self.ui, 'cb_'+ch, None)
             a.setChecked (True)
         self.ui.canvas.set_view_channels (np.ones(len(self._available_chs)))
-        self._t0_units = 1
-        self._t1_units = 1
-        self._t0 = 0
-        self._t1 = 0
+        self.ui.Hscrollbar.setMinimum(0)
+        self.ui.Hscrollbar.setMaximum(0)
+        self.ui.Hscrollbar.setPageStep(self._max_t)
 
         #CONNECT SIGNALS TO EVENTS
         self.ui.sb_rep_nr.valueChanged.connect (self._set_curr_rep)
-        self.ui.dsb_t0.valueChanged.connect (self._set_t0)
-        self.ui.dsb_t1.valueChanged.connect (self._set_t1)
-        self.ui.comboBox_units_t0.currentIndexChanged.connect (self._set_units_t0)
-        self.ui.comboBox_units_t1.currentIndexChanged.connect (self._set_units_t1)
         # connect checkbox signals for available checkboxes
         for ch in self._available_chs:
             a = getattr (self.ui, 'cb_'+ch, None)
             fn = getattr (self, '_view_'+ch, None)
             if callable (fn):
                 a.stateChanged.connect (fn)
+        self.ui.botton_zoom_in.clicked.connect (self._zoom_in)
+        self.ui.button_full_view.clicked.connect (self._zoom_full)
+        self.ui.button_zoom_out.clicked.connect (self._zoom_out)
+        self.ui.Hscrollbar.valueChanged.connect (self._slider_changed)
         #self.ui.button_save.clicked.connect(self._save_view)
         #self.ui.lineEdit_fileName.textChanged.connect(self.set_file_tag)
 
         #INITIALIZATIONS:
         self.units_list = ['ns','us', 'ms', 's']
         self._total_reps = self._stream_dict['nr_reps']
-        self._set_curr_rep(1)
-
         self.ui.sb_rep_nr.setValue(1)
-
-        self.ui.canvas._colors = self._stream_dict['plot-colors']
-        self.ui.canvas._channels = self._stream_dict['plot-channels']
-        self.ui.canvas._labels = self._stream_dict['plot-labels']
-        print (self._stream_dict)
-        #self.ui.canvas.update_figure()
 
     def resizeEvent( self, event ):
         QtWidgets.QWidget.resizeEvent (self, event )
@@ -120,63 +111,28 @@ class QPLviewGUI(QtWidgets.QMainWindow):
         self.ui.canvas._view_chs[index] = value
         self.ui.canvas.update_figure()
 
-    def _find_t_scaling (self):
-        dt = self._time_window[1]
-        q = 10
-        i = 0
-        d = dt
-        while ((q>0) and (i<3)):
-            d = d/1000
-            q = int(d)
-            i += 1
-            #r = dt - q*i*1000
-        return (i-1)
-
     def _update_figure (self):
-        i = self._find_t_scaling()
-        self.time_unit = self.units_list[i]
-        self.scaling_factor = 10**(i*3)
-        self.ui.canvas.time_unit = self.time_unit
-        self.ui.canvas.scaling_factor = self.scaling_factor
-        self.ui.canvas.set_time_range (self._time_window[0], self._time_window[1])
-        # updates hscrollbar
-    
+        self.ui.canvas.update_figure()
+        self._update_view()
+
+    def _update_view(self):
+        self.ui.canvas.set_time_range (self._view_range[0],
+                                            self._view_range[1])
+        self.ui.Hscrollbar.setPageStep(self._view_range[1]-self._view_range[0])
+        self.ui.Hscrollbar.setMinimum (self._view_range[0])
+
     def _set_curr_rep (self, n):
         if ((n>0) and ( n < self._total_reps+1)):
+            print ("Setting rep ", n)
             self._curr_rep = n-1
             self._max_t = self._stream_dict['rep_'+str(self._curr_rep)].get_max_time()
-            self.ui.canvas.upload_stream (self._stream_dict['rep_'+str(self._curr_rep)])
-            self._set_t0 (0)
-            self._set_units_t0 ('ns')
-            self._set_t1 (self._max_t)
-            self._set_units_t1 ('ns')            
+            self.ui.canvas.upload_stream (self._stream_dict['rep_'+str(self._curr_rep)])    
+            self.set_view_range (0, self._max_t)
             self._update_figure()
             self.ui.sb_rep_nr.setValue(n)
         else:
             self._set_curr_rep(self._total_reps)
         
-    def _set_t0 (self, t):
-        self._t0 = t
-        self._time_window = [self._t0*self._t0_units, self._t1*self._t1_units]
-
-    def _set_units_t0 (self, index):
-        i = self.units_list.index(index)
-        a = self.ui.comboBox_units_t0.itemText (i)
-        exp_list = [1, 1e3, 1e6, 1e9]
-        self._t0_units = exp_list[i]
-        self._time_window = [self._t0*self._t0_units, self._t1*self._t1_units]
-
-    def _set_t1 (self, t):
-        self._t1 = t
-        self._time_window = [self._t0*self._t0_units, self._t1*self._t1_units]
-
-    def _set_units_t1 (self, index):
-        i = self.units_list.index(index)
-        a = self.ui.comboBox_units_t1.itemText (i)
-        exp_list = [1, 1e3, 1e6, 1e9]
-        self._t1_units = exp_list[i]
-        self._time_window = [self._t0*self._t0_units, self._t1*self._t1_units]
-
     def fileQuit(self):
         self.close()
 
@@ -208,11 +164,47 @@ class QPLviewGUI(QtWidgets.QMainWindow):
                 self.x1 = event.xdata
                 if (event.ydata != None):
                     self.y1 = event.ydata
+            print ("Mouse released!")
 
         self.mouse_clicked = False
         self.rect.set_width(0)
         self.rect.set_height(0)
+        self.set_view_range(self.x0, self.x1)
         self.ui.canvas.set_time_range (self.x0, self.x1)
+
+    def _slider_changed (self, event):
+        print ("slider value:", event)
+
+    def set_view_range (self, t0, t1):
+        self._view_range = [t0, t1]
+
+    def _zoom_full (self):
+        self.set_view_range (0, self._max_t)
+        self._update_view()
+
+    def _zoom_funct (self, alpha):
+        x0 = self._view_range[0]
+        x1 = self._view_range[1]
+        d0 = 0.5*(x0+x1)-alpha*(x1-x0)
+        d1 = 0.5*(x0+x1)+alpha*(x1-x0)
+        if (d0<0):
+            d0 = 0
+        if (d1>self._max_t):
+            d1 = self._max_t
+        return d0, d1
+
+    def _zoom_out (self):
+        d0, d1 = self._zoom_funct (alpha=1.)
+        self.set_view_range (d0, d1)
+        self._update_view()
+
+    def _zoom_in (self):
+        d0, d1 = self._zoom_funct (alpha=0.25)
+        self.set_view_range (d0, d1)
+        self._update_view()
+
+
+
 
 
 

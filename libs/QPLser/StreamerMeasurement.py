@@ -380,7 +380,7 @@ class Stream ():
         Prints content of pulse library
         channel can be 'dig', 'anlg', 'all' or a list of channels, as in ['D0', 'A1'], etc
         """
-        if isinstance (channel, basestring):
+        if isinstance (channel, str):
             if (channel == 'dig'):
                 print('Digital Channels D0..D8:')
                 print(self.dig_outputs)
