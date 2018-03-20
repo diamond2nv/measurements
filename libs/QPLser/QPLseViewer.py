@@ -72,7 +72,7 @@ class QPLviewGUI(QtWidgets.QMainWindow):
         self.ui.botton_zoom_in.clicked.connect (self._zoom_in)
         self.ui.button_full_view.clicked.connect (self._zoom_full)
         self.ui.button_zoom_out.clicked.connect (self._zoom_out)
-        self.ui.Hscrollbar.valueChanged.connect (self._slider_changed)
+        self.ui.Hscrollbar.sliderMoved.connect (self._slider_changed)
         #self.ui.button_save.clicked.connect(self._save_view)
         #self.ui.lineEdit_fileName.textChanged.connect(self.set_file_tag)
 
@@ -80,6 +80,8 @@ class QPLviewGUI(QtWidgets.QMainWindow):
         self.units_list = ['ns','us', 'ms', 's']
         self._total_reps = self._stream_dict['nr_reps']
         self.ui.sb_rep_nr.setValue(1)
+
+        self.ui.canvas.update_figure()
 
     def resizeEvent( self, event ):
         QtWidgets.QWidget.resizeEvent (self, event )
@@ -119,11 +121,11 @@ class QPLviewGUI(QtWidgets.QMainWindow):
         self.ui.canvas.set_time_range (self._view_range[0],
                                             self._view_range[1])
         self.ui.Hscrollbar.setPageStep(self._view_range[1]-self._view_range[0])
-        self.ui.Hscrollbar.setMinimum (self._view_range[0])
+        self.ui.Hscrollbar.setMinimum (self._view_range[1]-self._view_range[0])
+        self.ui.Hscrollbar.setMaximum(self._max_t-(self._view_range[1]-self._view_range[0]))
 
     def _set_curr_rep (self, n):
         if ((n>0) and ( n < self._total_reps+1)):
-            print ("Setting rep ", n)
             self._curr_rep = n-1
             self._max_t = self._stream_dict['rep_'+str(self._curr_rep)].get_max_time()
             self.ui.canvas.upload_stream (self._stream_dict['rep_'+str(self._curr_rep)])    
@@ -164,7 +166,6 @@ class QPLviewGUI(QtWidgets.QMainWindow):
                 self.x1 = event.xdata
                 if (event.ydata != None):
                     self.y1 = event.ydata
-            print ("Mouse released!")
 
         self.mouse_clicked = False
         self.rect.set_width(0)
@@ -173,10 +174,20 @@ class QPLviewGUI(QtWidgets.QMainWindow):
         self.ui.canvas.set_time_range (self.x0, self.x1)
 
     def _slider_changed (self, event):
-        print ("slider value:", event)
+        D = self._view_range[1] - self._view_range[0]
+        self.set_view_range (t0=event-D, t1=event)
+        self._update_view()
 
     def set_view_range (self, t0, t1):
-        self._view_range = [t0, t1]
+        try:
+            if (t1>t0):
+                if (t0<0):
+                    t0 = 0
+                if (t1>self._max_t):
+                    t1 = self._max_t
+                self._view_range = [t0, t1]
+        except:
+            pass
 
     def _zoom_full (self):
         self.set_view_range (0, self._max_t)

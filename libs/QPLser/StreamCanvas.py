@@ -112,8 +112,6 @@ class StreamCanvas(MplCanvas):
 
     def set_time_range(self, t0, t1):
         self.axes.set_xlim ([t0, t1])
-        print ("Changing view range: ", t0, t1)
         self.axes.figure.canvas.draw()
         self.repaint()
-        #self.update_figure()
 
