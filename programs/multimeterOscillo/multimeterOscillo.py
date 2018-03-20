@@ -272,7 +272,7 @@ def multimeter_oscillo_run(config):
     except:
         raise
     finally:
-        window.closeInstruments()
+        window.close_instruments()
 
 if __name__ == "__main__":
     config = {"keithleyVisaId": "GPIB1::1::INSTR"}
