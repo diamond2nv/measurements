@@ -200,9 +200,11 @@ class XYScan ():
             print("No counts available.. use APD")
 
 
-    def save_to_txt(self, file_name, flatten=True):
+    def save_to_txt(self, file_name, array=None, flatten=True):
+        if array is None:
+            array = self.counts
         if flatten:
-            pl.savetxt(file_name, np.array(self.counts).flatten().transpose())
+            pl.savetxt(file_name, np.array(array).flatten().transpose())
         else:
-            pl.savetxt(file_name, self.counts)
+            pl.savetxt(file_name, array)
         print("\nPower as volts saved in file.")

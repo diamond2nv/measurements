@@ -155,6 +155,7 @@ def move_smooth(scanner_axes, targets=[]):
     nb_steps_list = []
     from_pos_list = []
     for s_axis, smooth_step, to_pos in zip(scanner_axes, smooth_steps, to_pos_list):
+        
         from_pos = s_axis.get()
         from_pos_list.append(from_pos)
         # print(from_pos,to_pos,axis)
@@ -347,11 +348,11 @@ class Keithley2220(ScannerCtrl):
         if axis is not None and mode in {'voltage', 'current'}:
             self._axes_modes = mode
 
-    def _move(self, value, axis):
+    def _move(self, target, axis):
         if self._axes_modes[axis] == 'voltage':
-            self._Keithley_handle.setVoltage(channel=self._channels[axis], voltage=value)
+            self._Keithley_handle.setVoltage(channel=self._channels[axis], voltage=target)
         elif self._axes_modes[axis] == 'current':
-            self._Keithley_handle.setCurrent(channel=self._channels[axis], voltage=value)
+            self._Keithley_handle.setCurrent(channel=self._channels[axis], voltage=target)
 
     def get_set_value(self, axis):
         if axis is not None:
@@ -383,17 +384,17 @@ class Keithley2220_neg_pos(Keithley2220):
     def __init__(self, VISA_address, ch_neg, ch_pos):
         super().__init__(VISA_address, channels=[ch_neg,ch_pos])
 
-    def _move(self, value, axis=0):
-        if value < 0:
-            super().move(-value, axis=0)
-            super().move(0, axis=1)
+    def _move(self, target, axis=0):
+        if target < 0:
+            super()._move(-target, axis=0)
+            super()._move(0, axis=1)
         else:
-            super().move(value, axis=1)
-            super().move(0, axis=0)
+            super()._move(target, axis=1)
+            super()._move(0, axis=0)
 
     def _get(self, axis=0):
-        neg_bias = super().get(0)
-        pos_bias = super().get(1)
+        neg_bias = super()._get(0)
+        pos_bias = super()._get(1)
         return pos_bias-neg_bias
 
 

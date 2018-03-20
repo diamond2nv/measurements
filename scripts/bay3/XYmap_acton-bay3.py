@@ -35,19 +35,19 @@ voltsDirectory = r'C:\Users\QPL\Desktop\temporary_meas'
 
 #######################
 # instruments
-attoCtrl = mscan.AttocubeVISA(VISA_address=r'ASRL6::INSTR', axisX=5, axisY=4)
+attoCtrl = mscan.AttocubeVISA(VISA_address=r'ASRL6::INSTR', chX=5, chY=4)
 spectroCtrl = mdet.ActonLockinCtrl(lockinVisaAddress=r"GPIB0::14::INSTR")
-voltmeterCtrl = mdet.VoltmeterCtrl(VISA_address=r'GPIB0::22::INSTR')
+voltmeterCtrl = mdet.MultimeterCtrl(VISA_address=r'GPIB0::22::INSTR')
 
 d = datetime.datetime.now()
 voltsFilePath = os.path.join(voltsDirectory, 'powerInVolts_{:%Y-%m-%d_%H-%M-%S}.txt'.format(d))
 
 # Scanning program
-XYscan = mapper.XYScan(scanner=attoCtrl, detectors=[spectroCtrl, voltmeterCtrl])
+XYscan = mapper.XYScan(scanner_axes=attoCtrl, detectors=[spectroCtrl, voltmeterCtrl])
 XYscan.set_range(xLims=xLims, xStep=xStep, yLims=yLims, yStep=yStep)
 XYscan.set_delays(between_points=delayBetweenPoints, between_rows=delayBetweenRows)
 #XYscan.set_back_to_zero()
 XYscan.run_scan()
 
-XYscan.save_volts(XYscan.counts[1], voltsFilePath, flatten=True)
+XYscan.save_to_txt(voltsFilePath, array=XYscan.counts[1], flatten=True)
 

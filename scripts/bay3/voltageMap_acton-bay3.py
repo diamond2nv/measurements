@@ -39,18 +39,18 @@ psuCtrl = mscan.Keithley2220_neg_pos(VISA_address=r'GPIB0::10::INSTR', ch_neg=1,
 psuCtrl.set_smooth_delay(0.5)
 
 spectroCtrl = mdet.ActonLockinCtrl(lockinVisaAddress=r"GPIB0::14::INSTR")
-voltmeterCtrl = mdet.VoltmeterCtrl(VISA_address=r'GPIB0::22::INSTR')
+multimeterCtrl = mdet.MultimeterCtrl(VISA_address=r'GPIB0::22::INSTR')
 
 d = datetime.datetime.now()
 voltsFilePath = os.path.join(voltsDirectory, 'powerInVolts_{:%Y-%m-%d_%H-%M-%S}.txt'.format(d))
 
 # Scanning program
-volts_scan = mapper.XYScan(scanner=psuCtrl, detectors=[spectroCtrl, voltmeterCtrl])
+volts_scan = mapper.XYScan(scanner_axes=[psuCtrl[0]], detectors=[spectroCtrl, multimeterCtrl])
 volts_scan.set_range(xLims=xLims, xStep=xStep)
 volts_scan.set_delays(between_points=delayBetweenPoints, between_rows=delayBetweenRows)
 volts_scan.set_back_to_zero()
 
 volts_scan.run_scan()
 
-volts_scan.save_volts(volts_scan.counts[1], voltsFilePath)
+volts_scan.save_to_txt(voltsFilePath, array=volts_scan.counts[1])
 
