@@ -189,22 +189,23 @@ class APDCounterCtrl (DetectorCtrl):
         self._ctr.clear()
 
 
-class VoltmeterCtrl (DetectorCtrl):
+class MultimeterCtrl (DetectorCtrl):
 
-    def __init__(self, VISA_address, work_folder=None):
-        self.string_id = 'Voltmeter'
+    def __init__(self, VISA_address, mode='voltage', work_folder=None):
+        self.string_id = 'Keithley multimeter'
         self._VISA_address = VISA_address
         self.delay_after_readout = 0.
         self._wfolder = work_folder
+        self.mode = mode
 
     def initialize(self):
         try:
-            self._voltmeter = KeithleyMultimeter(self._VISA_address)
+            self._multimeter = KeithleyMultimeter(self._VISA_address, measConfig=self.mode)
         except visa.VisaIOError as err:
             self.visa_error_handling(err)
 
     def readout(self):
-        return self._voltmeter.read()
+        return self._multimeter.read()
 
     def _close(self):
-        self._voltmeter.close()
+        self._multimeter.close()

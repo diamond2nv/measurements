@@ -105,11 +105,12 @@ class ScannerCtrl (mgen.DeviceCtrl):
 
     def _close(self):
         # here, call device close function
-        self._dev_closed = True
+        pass
 
     def close(self):
         if not self._dev_closed:
             super().close()
+            self._dev_closed = True
 
     def set_smooth_delay(self, value):
         self.smooth_delay = value

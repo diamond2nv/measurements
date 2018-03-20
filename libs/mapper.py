@@ -122,7 +122,10 @@ class XYScan ():
                     idx += 1
                     
                     self._scanner_axes[0].move(x)
-                    self._scanner_axes[1].move(y)
+                    try:
+                        self._scanner_axes[1].move(y)
+                    except IndexError:
+                        pass
 
                     # display update
                     print('{}/{} \t{:.1f} \t{:.1f}'.format(idx, self.totalNbOfSteps, x, y))
@@ -197,9 +200,9 @@ class XYScan ():
             print("No counts available.. use APD")
 
 
-    def save_volts(self, counts_array, filename, flatten=True):
+    def save_to_txt(self, file_name, flatten=True):
         if flatten:
-            pl.savetxt(filename, counts_array.flatten().transpose())
+            pl.savetxt(file_name, np.array(self.counts).flatten().transpose())
         else:
-            pl.savetxt(filename, counts_array)
+            pl.savetxt(file_name, self.counts)
         print("\nPower as volts saved in file.")
