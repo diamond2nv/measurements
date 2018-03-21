@@ -16,6 +16,9 @@ class KeithleyMultimeter():
         rm = visa.ResourceManager()    # open management indicating the visa path 
         self.keithley = rm.open_resource(VISA_address)
         
+        if not self.is_keithley():
+            self.close()
+            raise IOError('This device is not an KeithleyMultimeter.')
         if meas_mode == 'voltage':
             self.configureVoltageMeas()
         elif meas_mode == 'current':
@@ -29,7 +32,7 @@ class KeithleyMultimeter():
 
     def is_keithley(self):
         self.keithley.write('*IDN?')
-        if 'KEITHLEY' in self.read():
+        if 'KEITHLEY' in self.keithley.read():
             return True
         else:
             return False
@@ -46,23 +49,28 @@ class KeithleyMultimeter():
         self.keithley.write(":initiate:continuous ON")
     
     def close(self):
-        self.keithley.write(":system:key 17")  # restore local operation
-        self.keithley.close()
-  
-  
+        try:
+            self.keithley.write(":system:key 17")  # restore local operation
+            self.keithley.close()
+        except visa.InvalidSession:  # resource already closed
+            pass
+
+ 
 if __name__ == "__main__":
     
     # to time the execution of one measurement    
     
-    import time 
-    numberOfTries = 500
+    import time
+    numberOfTries = 10
     
-    with KeithleyMultimeter(r'GPIB0::13::INSTR') as dev:
+    with KeithleyMultimeter(r'ASRL17::INSTR') as dev:
+        print(dev.is_keithley())
         startTime = time.time()
         value = 0
         for i in range(numberOfTries):
             value += dev.read()
         endTime = time.time()
+        dev.close()
     value /= numberOfTries
     print((endTime - startTime) / numberOfTries, 's')
     print('mean value: {}'.format(value))

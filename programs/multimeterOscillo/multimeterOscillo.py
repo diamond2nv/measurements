@@ -17,13 +17,14 @@ from measurements.instruments.AgilentMultimeter import AgilentMultimeter
 import pylab as py
 import threading
 import time
-from UiMultimeterOscillo import Ui_multimeterOscillo
+from measurements.programs.multimeterOscillo.UiMultimeterOscillo import Ui_multimeterOscillo
 
 # For working with python, pythonw and ipython
 import sys, os
 if sys.executable.endswith("pythonw.exe"):  # this allows pythonw not to quit immediately
     sys.stdout = open(os.devnull, "w")
     sys.stderr = open(os.path.join(os.getenv("TEMP"), "stderr-"+os.path.basename(sys.argv[0])), "w")
+
 
 class VoltmeterThread (threading.Thread):
     def __init__(self, VISA_address=r'ASRL15::INSTR', timeStep=1):
@@ -106,7 +107,7 @@ class VoltmeterRead(QWidget):
         
         # open instrument using config dict
         try:
-            self.voltmeter = VoltmeterThread(VISA_address=config['multimeterVisaId'], timeStep=self.timeStep)     
+            self.voltmeter = VoltmeterThread(VISA_address=config['multimeterVisaId'], timeStep=self.timeStep)
         except visa.VisaIOError as e:
             errorMessageWindow(self, 'Problem connecting with the multimeter', 'The program could not connect with the multimeter. The following VISA error was generated:\n{}\n\nPlease check the address of the device in the config dictionary of your script.'.format(e))
             raise
@@ -248,7 +249,7 @@ class VoltmeterRead(QWidget):
             self.plotMin.setPen(pg.mkPen(None))
 
     def close_instruments(self):
-        self.voltmeter.close()
+        self.voltmeter.stop()
           
 def errorMessageWindow(parentWindow, winTitle, winText):
     """ Displays a QT error message box, with title, text and OK button. """
@@ -276,5 +277,5 @@ def multimeter_oscillo_run(config):
         window.close_instruments()
 
 if __name__ == "__main__":
-    config = {"keithleyVisaId": "GPIB1::1::INSTR"}
+    config = {"multimeterVisaId": "GPIB1::1::INSTR"}
     multimeter_oscillo_run(config)

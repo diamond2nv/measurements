@@ -15,7 +15,10 @@ class AgilentMultimeter():
     def __init__(self, VISA_address, meas_mode='voltage'):
         rm = visa.ResourceManager()    # open management indicating the visa path 
         self.agilent = rm.open_resource(VISA_address)
-        
+
+        if not self.is_agilent():
+            self.close()
+            raise IOError('This device is not an AgilentMultimeter.')
         if meas_mode == 'voltage':
             self.configureVoltageMeas()
         elif meas_mode == 'current':
@@ -29,7 +32,7 @@ class AgilentMultimeter():
 
     def is_agilent(self):
         self.agilent.write('*IDN?')
-        if 'HEWLETT' in self.read():
+        if 'HEWLETT' in self.agilent.read():
             return True
         else:
             return False
@@ -46,23 +49,25 @@ class AgilentMultimeter():
         self.agilent.write(r'CURR:DC:resolution MAX')
     
     def close(self):
-        #self.agilent.write(":system:key 17")  # restore local operation
-        self.agilent.close()
-  
-  
+        try:
+            self.agilent.close()
+        except visa.InvalidSession:  # resource already closed
+            pass
+
+
 if __name__ == "__main__":
     
     # to time the execution of one measurement    
     
-    import time 
+    import time
     numberOfTries = 10
     
-    with AgilentMultimeter(r'GPIB0::23::INSTR') as dev:
+    with AgilentMultimeter(r'ASRL17::INSTR') as dev:
         startTime = time.time()
         value = 0
-        for i in xrange(numberOfTries):
+        for i in range(numberOfTries):
             value += dev.read()
         endTime = time.time()
     value /= numberOfTries
-    print (endTime - startTime) / numberOfTries, 's'
-    print 'mean value: {}'.format(value)
+    print((endTime - startTime) / numberOfTries, 's')
+    print('mean value: {}'.format(value))
