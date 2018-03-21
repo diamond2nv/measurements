@@ -12,13 +12,13 @@ import visa
 
 class AgilentMultimeter():
 
-    def __init__(self, visaAddress, measConfig='voltage'):
+    def __init__(self, VISA_address, meas_mode='voltage'):
         rm = visa.ResourceManager()    # open management indicating the visa path 
-        self.agilent = rm.open_resource(visaAddress)
+        self.agilent = rm.open_resource(VISA_address)
         
-        if measConfig == 'voltage':
+        if meas_mode == 'voltage':
             self.configureVoltageMeas()
-        elif measConfig == 'current':
+        elif meas_mode == 'current':
             self.configureCurrentMeas()
     
     def __enter__(self):
@@ -26,6 +26,13 @@ class AgilentMultimeter():
     
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.close()
+
+    def is_agilent(self):
+        self.agilent.write('*IDN?')
+        if 'HEWLETT' in self.read():
+            return True
+        else:
+            return False
         
     def read(self):
         return self.agilent.query_ascii_values(':read?')[0]

@@ -12,7 +12,8 @@ from PyQt5.QtCore import QTimer
 import json
 import visa
 import pyqtgraph as pg
-from Keithley import Keithley
+from measurements.instruments.KeithleyMultimeter import KeithleyMultimeter
+from measurements.instruments.AgilentMultimeter import AgilentMultimeter
 import pylab as py
 import threading
 import time
@@ -25,12 +26,15 @@ if sys.executable.endswith("pythonw.exe"):  # this allows pythonw not to quit im
     sys.stderr = open(os.path.join(os.getenv("TEMP"), "stderr-"+os.path.basename(sys.argv[0])), "w")
 
 class VoltmeterThread (threading.Thread):
-    def __init__(self, GPIBAddress=r'ASRL15::INSTR', timeStep=1):
+    def __init__(self, VISA_address=r'ASRL15::INSTR', timeStep=1):
         threading.Thread.__init__(self)
         self._stop = threading.Event()
         self.timeStep = timeStep
         try:
-            self.voltmeter = Keithley(GPIBAddress)
+            self.voltmeter = KeithleyMultimeter(VISA_address=VISA_address)
+            if not self.voltmeter.is_keithley():
+                self.voltmeter.close()
+                self.voltmeter = AgilentMultimeter(VISA_address=VISA_address)
         except:
             self.stop(errorHappened=True)
             raise
@@ -68,9 +72,7 @@ class VoltmeterThread (threading.Thread):
         return self._stop.isSet()
 
     
-    
 class VoltmeterRead(QWidget):
-    
     
     def __init__(self, app, config):
         self.dialog = QWidget.__init__(self)
@@ -104,12 +106,11 @@ class VoltmeterRead(QWidget):
         
         # open instrument using config dict
         try:
-            self.voltmeter = VoltmeterThread(GPIBAddress=config['multimeterVisaId'], timeStep=self.timeStep)     
-        except visa.VisaIOError:
-            errorMessageWindow(self, 'Problem connecting with the multimeter', 'The program could not connect with the multimeter.\nPlease check the address of the device in the config dictionary of your script.')
+            self.voltmeter = VoltmeterThread(VISA_address=config['multimeterVisaId'], timeStep=self.timeStep)     
+        except visa.VisaIOError as e:
+            errorMessageWindow(self, 'Problem connecting with the multimeter', 'The program could not connect with the multimeter. The following VISA error was generated:\n{}\n\nPlease check the address of the device in the config dictionary of your script.'.format(e))
             raise
             
-        
         self.acquire = True
         self.timeParamsChanged = True
         self.scaleRefresh = True
