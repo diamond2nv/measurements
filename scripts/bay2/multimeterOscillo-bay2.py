@@ -6,6 +6,6 @@ Created on 01/02/2018
 
 from measurements.programs.multimeterOscillo.multimeterOscillo import multimeter_oscillo_run
 
-config = {"multimeterVisaId": "ASRL17::INSTR"}
+config = {"multimeterVisaId": "ASRL17::INSTR", "meas_mode": "voltage"}
 
 multimeter_oscillo_run(config)

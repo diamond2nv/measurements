@@ -63,7 +63,7 @@ if __name__ == "__main__":
     import time
     numberOfTries = 10
     
-    with KeithleyMultimeter(r'ASRL17::INSTR') as dev:
+    with KeithleyMultimeter(r'ASRL17::INSTR', meas_mode='current') as dev:
         print(dev.is_keithley())
         startTime = time.time()
         value = 0

@@ -27,15 +27,15 @@ if sys.executable.endswith("pythonw.exe"):  # this allows pythonw not to quit im
 
 
 class VoltmeterThread (threading.Thread):
-    def __init__(self, VISA_address=r'ASRL15::INSTR', timeStep=1):
+    def __init__(self, VISA_address=r'ASRL15::INSTR', meas_mode='voltage', timeStep=1):
         threading.Thread.__init__(self)
         self._stop = threading.Event()
         self.timeStep = timeStep
         try:
-            self.voltmeter = KeithleyMultimeter(VISA_address=VISA_address)
+            self.voltmeter = KeithleyMultimeter(VISA_address=VISA_address, meas_mode=meas_mode)
             if not self.voltmeter.is_keithley():
                 self.voltmeter.close()
-                self.voltmeter = AgilentMultimeter(VISA_address=VISA_address)
+                self.voltmeter = AgilentMultimeter(VISA_address=VISA_address, meas_mode=meas_mode)
         except:
             self.stop(errorHappened=True)
             raise
@@ -107,11 +107,18 @@ class VoltmeterRead(QWidget):
         
         # open instrument using config dict
         try:
-            self.voltmeter = VoltmeterThread(VISA_address=config['multimeterVisaId'], timeStep=self.timeStep)
+            self.voltmeter = VoltmeterThread(VISA_address=config['multimeterVisaId'], meas_mode=config['meas_mode'], timeStep=self.timeStep)
         except visa.VisaIOError as e:
             errorMessageWindow(self, 'Problem connecting with the multimeter', 'The program could not connect with the multimeter. The following VISA error was generated:\n{}\n\nPlease check the address of the device in the config dictionary of your script.'.format(e))
             raise
-            
+        
+        self.meas_mode = config['meas_mode']
+        if self.meas_mode == 'current':
+            self.ui.label_5.setText("mA")
+            self.ui.label.setText("Min (mA)")
+            self.ui.label_2.setText("Max (mA)")
+            self.ui.label_6.setText("Factor (display = mA * factor)")
+
         self.acquire = True
         self.timeParamsChanged = True
         self.scaleRefresh = True
@@ -150,7 +157,10 @@ class VoltmeterRead(QWidget):
         
         labelStyle = {'color': '#FFF', 'font-size': '20pt'}
         bottom.setLabel(text='Time', units='s', **labelStyle)
-        left.setLabel(text='Voltage', units='V', **labelStyle)
+        if self.meas_mode == 'current':
+            left.setLabel(text='Current', units='mA', **labelStyle)
+        else:
+            left.setLabel(text='Voltage', units='V', **labelStyle)
         bottom.setHeight(100)
         left.setWidth(120)
         self.ui.graphicsView.setYRange(self.voltMin, self.voltMax)
@@ -168,10 +178,13 @@ class VoltmeterRead(QWidget):
                 measurementArray = py.zeros(nbOfSteps)
                 
                 self.timeParamsChanged = False
-            
+
             if self.voltmeter.measToRead:
                 self.voltmeter.measToRead = False
-                measurementArray[0] = self.scalingFactor * self.voltmeter.measurementPoint
+                if self.meas_mode == 'current':
+                    measurementArray[0] = self.scalingFactor * self.voltmeter.measurementPoint * 1000
+                else:
+                    measurementArray[0] = self.scalingFactor * self.voltmeter.measurementPoint
                 measurementArray = py.roll(measurementArray, -1)
                 plot.setData(timeArray, measurementArray)
                 self.ui.nbReading.display('{:.5f}'.format(measurementArray[-1]))
