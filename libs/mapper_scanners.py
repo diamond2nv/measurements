@@ -350,31 +350,31 @@ class Keithley2220(ScannerCtrl):
 
     def _move(self, target, axis):
         if self._axes_modes[axis] == 'voltage':
-            self._Keithley_handle.setVoltage(channel=self._channels[axis], voltage=target)
+            self._Keithley_handle.set_voltage(channel=self._channels[axis], voltage=target)
         elif self._axes_modes[axis] == 'current':
-            self._Keithley_handle.setCurrent(channel=self._channels[axis], voltage=target)
+            self._Keithley_handle.set_current(channel=self._channels[axis], voltage=target)
 
     def get_set_value(self, axis):
         if axis is not None:
             if self._axes_modes[axis] == 'voltage':
-                return self._Keithley_handle.readSetVoltage(channel=self._channels[axis])
+                return self._Keithley_handle.read_set_voltage(channel=self._channels[axis])
             elif self._axes_modes[axis] == 'current':
-                return self._Keithley_handle.readSetCurrent(channel=self._channels[axis])
+                return self._Keithley_handle.read_set_current(channel=self._channels[axis])
         else:
             return None
 
     def _get(self, axis=None):
         if self._axes_modes[axis] == 'voltage':
-            return self._Keithley_handle.readVoltage(channel=self._channels[axis])
+            return self._Keithley_handle.read_voltage(channel=self._channels[axis])
         elif self._axes_modes[axis] == 'current':
-            return self._Keithley_handle.readCurrent(channel=self._channels[axis])
+            return self._Keithley_handle.read_current(channel=self._channels[axis])
 
     def channel_combine(self, combMode=KeithleyPSU2220.Keithley2220channelModes.OFF):
         # 'off', 'parallel' or 'series'
-        self._Keithley_handle.channelCombine(combMode)
+        self._Keithley_handle.channel_combine(combMode)
 
     def output_switch(self, on=True):
-        self._Keithley_handle.outputOn(state=on)
+        self._Keithley_handle.output_on(state=on)
 
     def _close(self):
         self._Keithley_handle.close()
