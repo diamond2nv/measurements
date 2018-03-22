@@ -133,8 +133,8 @@ class Keithley2220:
         Enables the specified channel.
         
         Args:
-            state (bool): True if you want to enable the channel, False otherwise. Default is True.
             channel (int, optional): channel identifier, 0 for both channels.
+            state (bool, optional): True if you want to enable the channel, False otherwise. Default is True.
         """
         if channel == 0:
             ch = [1, 2]
@@ -149,13 +149,19 @@ class Keithley2220:
                 self.write('OUTPUT:ENABLE OFF')
     
     def output_is_on(self):
-        """ Checks if the output is on (if there is actual voltage applied on the output). 
-        True for output on, False for output off. """
+        """Checks if the output is on (if there is actual voltage applied on the output). 
+        
+        Returns:
+            bool: True for output on, False for output off. 
+        """
         return bool(int(self.query('OUTPUT?')))
         
-    def output_on(self, state):
-        """ Switches on or off the output voltage.
-        True for output on, False for output off."""
+    def output_on(self, state=True):
+        """Switches on or off the output voltage.
+        
+        Args:
+            state (bool, optional): True for output on, False for output off. Default is True.
+        """
         if state:
             self.write('OUTPUT ON')
         else:
@@ -163,7 +169,12 @@ class Keithley2220:
             
 
     def set_voltage(self, channel, voltage):
-        """ sets voltage in V to specified channel """
+        """Sets voltage in V to specified channel 
+        
+        Args:
+            channel (int): channel identifier
+            voltage (float): voltage value to set, in volts.
+        """
         try:
             self.channel_select(channel)
         except AssertionError:
@@ -172,7 +183,14 @@ class Keithley2220:
             self.write('VOLT {}V'.format(voltage))
     
     def read_set_voltage(self, channel):
-        """ reads voltage set to specified channel, in V """
+        """Reads voltage set to specified channel, in V 
+        
+        Args:
+            channel (int): channel identifier
+        
+        Returns:
+            float: set voltage in volts of specified channel (may differ from actual voltage, see read_voltage())
+        """
         try:
             self.channel_select(channel)
         except AssertionError:
@@ -181,8 +199,15 @@ class Keithley2220:
             return float(self.query('VOLT?'))
     
     def read_voltage(self, channel, repeat=1):
-        """ measures voltage from specified channel, in V.
-        repeat is the number of measurements (default 1), then meaning val taken. """
+        """measures voltage from specified channel, in V.
+        
+        Args:
+            channel (int): channel identifier
+            repeat (int, optional): number of measurements (default 1), then mean val returned. 
+        
+        Returns:
+            float: measured voltage in volts of specified channel (may differ from set voltage, see read_set_voltage())
+        """
         try:
             self.channel_select(channel)
         except AssertionError:
@@ -196,7 +221,12 @@ class Keithley2220:
         
     
     def set_current(self, channel, current):
-        """ sets current in A to specified channel """
+        """sets current in A to specified channel 
+        
+        Args:
+            channel (int): channel identifier
+            current (float): current value to set, in amperes.
+        """
         try:
             self.channel_select(channel)
         except AssertionError:
@@ -205,7 +235,14 @@ class Keithley2220:
             self.write('CURR {}A'.format(current))
     
     def read_set_current(self, channel):
-        """ reads current set to specified channel, in A """
+        """reads current set to specified channel, in A 
+        
+        Args:
+            channel (int): channel identifier
+        
+        Returns:
+            float: set current in amperes of specified channel (may differ from actual voltage, see read_current())
+        """
         try:
             self.channel_select(channel)
         except AssertionError:
@@ -214,8 +251,15 @@ class Keithley2220:
             return float(self.query('CURR?'))
     
     def read_current(self, channel, repeat=1):
-        """ measures current from specified channel, in A.
-        repeat is the number of measurements (default 1), then meaning val taken. """
+        """measures current from specified channel, in A.
+        
+        Args:
+            channel (int): channel identifier
+            repeat (int, optional): number of measurements (default 1), then mean val returned. 
+        
+        Returns:
+            float: measured current in amperes of specified channel (may differ from set value, see read_set_current())
+        """
         try:
             self.channel_select(channel)
         except AssertionError:
@@ -233,6 +277,12 @@ class Keithley2220:
         To set channel combination mode. Default is no combination.
         Be aware that this also has the effect of switching the output off,
         thus it needs to be followed by an outputOn() call to apply voltage.
+        
+        Args:
+            combMode (str, optional): mode identifier string. Possible values are given by self.chMode:
+                self.chMode.OFF: no combination, channels are independent.
+                self.chMode.PARALLEL: channels are controlled as one channel, set in parallel, delivering the same voltage.
+                self.chMode.SERIES: channels are controlled as one channel delivering the sum of the voltages.
         """
         if combMode == self.chMode.OFF:
             self.write('INST:COM:OFF')
@@ -243,6 +293,7 @@ class Keithley2220:
             
             
     def close(self):
+        """ Closes the communication with the device. """
         self.dev.close()
 
   

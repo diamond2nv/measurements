@@ -7,7 +7,7 @@ import visa
 from measurements.libs import mapper_general as mgen
 
 from measurements.instruments import NIBox
-from measurements.instruments.LockIn7265GPIB import LockIn7265
+from measurements.instruments.LockIn7265 import LockIn7265
 from measurements.instruments.pylonWeetabixTrigger import trigSender, trigReceiver
 from measurements.instruments.KeithleyMultimeter import KeithleyMultimeter
 if sys.version_info.major == 3:
@@ -133,9 +133,9 @@ class ActonLockinCtrl (DetectorCtrl):
 
     def first_point(self):
         if not self.measurement_started_flag:
-            self._lockin.sendPulse()
+            self._lockin.send_pulse()
             time.sleep(0.1)
-            if self._lockin.readADCdigital():
+            if self._lockin.read_ADC_digital():
                 self.measurement_started_flag = True
         if self.measurement_started_flag:
             return True
