@@ -255,73 +255,42 @@ class AttocubeVISA (ScannerCtrl):
         self._ANChandle.close()
 
 
-# class AttocubeVISAstepper (ScannerCtrl):
+class AttocubeVISAstepper (ScannerCtrl):
     
-#     def __init__ (self, VISA_address, channels):
-#         super().__init__()
-#         self.string_id = 'Attocube ANC steppers controlled by VISA'
-#         self._VISA_address = VISA_address
-#         try:
-#             channels = list(channels)
-#         except TypeError:
-#             channels = [channels]
-#         if len(channels) == 1:
-#             channels.append(None)
-
-#         self._channels = channels
-        
-#         self._curr_position = [0, 0]
+    def __init__ (self, VISA_address, channels, nb_of_clicks_per_deg=928./5):
+        super().__init__(channels=channels)
+        self.string_id = 'Attocube ANC steppers controlled by VISA'
+        self._VISA_address = VISA_address
        
-#     def _initialize (self):
-#         try:
-#             self._ANChandle = attoANC.AttocubeANC(self._VISA_address)
-#         except visa.VisaIOError as err:
-#             self.visa_error_handling(err)
-
-#         self._attoAxis = attoANC.ANCaxis(self._channels[0], self._ANChandle)
-
-#     def move(self, target, axis=0):
-
-#         move_by_deg = target - self._curr_position[0]
-#         move_by_clicks = int(py.floor(stepSizeInDeg * nbOfClicksPerDeg))
-#         if move_by_clicks < 0:
-#             self._attoAxis.stepUp(-move_by_clicks)
-#         else:
-#             self._attoAxis.stepDown(move_by_clicks)
-
-
-
-
-
-
-
-#         if axis == 0:
-#             self.moveX(target)
-#         elif axis == 1:
-#             self.moveY(target)
-
-#     def moveX (self, value):
-#         self._ANChandle.setOffset(value, self._channels[0])
-#         self._currX = value
-
-#     def moveY (self, value):
-#         self._ANChandle.setOffset(value, self._channels[1])
-#         self._currY = value
-
-#     def _close(self):
-#         self._ANChandle.close()
-
-#     def get(self, axis=0):
-#         if axis == 0:
-#             return self.getX()
-#         elif axis == 1:
-#             return self.getY()
-
-#     def getX (self):
-#         return self._ANChandle.getOffset(self._channels[0])
+        self._channels = channels[0:1]
+        self.number_of_axes = 1
         
-#     def getY (self):
-#         return self._ANChandle.getOffset(self._channels[1])
+        self._curr_position = [0]
+
+        self.nb_of_clicks_per_deg = nb_of_clicks_per_deg
+       
+    def _initialize (self):
+        self._ANChandle = attoANC.AttocubeANC(self._VISA_address)
+
+        self._attoAxis = attoANC.ANCaxis(self._channels[0], self._ANChandle)
+
+    def _move(self, target, axis=0):
+
+        move_by_deg = target - self._curr_position[0]
+        move_by_clicks = int(py.floor(move_by_deg * self.nb_of_clicks_per_deg))
+        if move_by_clicks < 0:
+            self._attoAxis.stepDown(-move_by_clicks)
+        else:
+            self._attoAxis.stepUp(move_by_clicks)
+
+        self._curr_position[0] += move_by_deg
+
+    def _get(self, axis=0):
+        return self._curr_position[0]
+
+    def _close(self):
+        self._ANChandle.close()
+
 
 
 class Keithley2220(ScannerCtrl):

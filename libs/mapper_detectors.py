@@ -143,13 +143,13 @@ class ActonLockinCtrl (DetectorCtrl):
             return False
 
     def is_ready(self):
-        return not self._lockin.readADCdigital()
+        return not self._lockin.read_ADC_digital()
 
     def readout(self):
         if self.first_point_flag:
             self.first_point_flag = False
         else:
-            self._lockin.sendPulse()
+            self._lockin.send_pulse()
         return 0
 
     def _close(self):
@@ -200,7 +200,7 @@ class MultimeterCtrl (DetectorCtrl):
 
     def initialize(self):
         try:
-            self._multimeter = KeithleyMultimeter(self._VISA_address, measConfig=self.mode)
+            self._multimeter = KeithleyMultimeter(self._VISA_address, meas_mode=self.mode)
         except visa.VisaIOError as err:
             self.visa_error_handling(err)
 
