@@ -12,6 +12,7 @@ from measurements.instruments import NIBox
 from measurements.instruments import AttocubeANCV1 as attoANC
 from measurements.instruments.pylonWeetabixTrigger import voltOut
 from measurements.instruments import KeithleyPSU2220
+from measurements.instruments import solstis
 
 if sys.version_info.major == 3:
     from importlib import reload
@@ -365,6 +366,49 @@ class Keithley2220_neg_pos(Keithley2220):
         neg_bias = super()._get(0)
         pos_bias = super()._get(1)
         return pos_bias-neg_bias
+
+class SolstisLaserScanner(ScannerCtrl):
+    def __init__(self, laser_ip_address, pc_ip_address, port_number, timeout=40, finish_range_radius=0.01, max_nb_of_fails=10):
+        super().__init__([0])
+
+        self.string_id = 'Solstis Laser'
+        self.laser_ip_address = laser_ip_address
+        self.pc_ip_address = pc_ip_address
+        self.port_number = port_number
+        self.timeout = timeout
+        self.finish_range_radius = finish_range_radius
+        self.max_nb_of_fails = max_nb_of_fails
+        self.problematic_wavelengths = []
+        
+    def _initialize(self, switch_on_output=False):
+
+        self._laser_handle = solstis.SolstisLaser(laser_ip_address=self.laser_ip_address, pc_ip_address=self.pc_ip_address, port_number=self.port_number)
+   
+    def _move(self, target, axis):
+        self._laser_handle.set_wavelength(target)
+        
+        nb_of_fails = 0
+        while True:
+            try:
+                self._laser_handle.wait_for_tuning(timeout=self.timeout, finishRangeRadius=self.finish_range_radius)
+            except solstis.SolstisError:
+                nb_of_fails += 1
+                if nb_of_fails > self.max_nb_of_fails:
+                    self.problematic_wavelengths.append(target)
+                    break
+                else:
+                    print 'Laser failed to tune to {}, retrying {}/{}'.format(target, nb_of_fails, self.max_nb_of_fails)
+                    self._laser_handle.set_wavelength(target)
+            else:
+                break
+
+    def _get(self, axis):
+        return self._laser_handle.get_wavelength()
+
+    def _close(self):
+        self._laser_handle.close()
+
+
 
 
 if __name__ == '__main__':

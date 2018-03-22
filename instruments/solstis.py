@@ -18,7 +18,7 @@ class SolstisError(Exception):
     def __str__(self):
         return repr(self.value)
         
-class solstisLaser():
+class SolstisLaser():
 
     TUNING_NOT_ACTIVE = 0
     NO_LINK_TO_WAVEMETER = 1
@@ -178,7 +178,7 @@ class solstisLaser():
         pass
 
 if __name__ == "__main__":
-    toto = solstisLaser(laserIpAddress='192.168.1.222', pcIpAddress='192.168.1.120', portNumber=39933)
+    toto = SolstisLaser(laser_ip_address='192.168.1.222', pc_ip_address='192.168.1.120', port_number=39933)
 #    messageDict = {"op":"ping","parameters":{"text_in":"ABCDEFabcdef"}}
 #    returnMessage = toto._send_message(messageDict)
 #    print returnMessage
