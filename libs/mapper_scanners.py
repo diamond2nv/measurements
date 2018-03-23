@@ -370,6 +370,7 @@ class Keithley2220_neg_pos(Keithley2220):
 class SolstisLaserScanner(ScannerCtrl):
     def __init__(self, laser_ip_address, pc_ip_address, port_number, timeout=40, finish_range_radius=0.01, max_nb_of_fails=10):
         super().__init__([0])
+        self.smooth_step = 1000.  # This high value is to prevent the move_smooth
 
         self.string_id = 'Solstis Laser'
         self.laser_ip_address = laser_ip_address
@@ -397,7 +398,7 @@ class SolstisLaserScanner(ScannerCtrl):
                     self.problematic_wavelengths.append(target)
                     break
                 else:
-                    print 'Laser failed to tune to {}, retrying {}/{}'.format(target, nb_of_fails, self.max_nb_of_fails)
+                    print ('Laser failed to tune to {}, retrying {}/{}'.format(target, nb_of_fails, self.max_nb_of_fails))
                     self._laser_handle.set_wavelength(target)
             else:
                 break
