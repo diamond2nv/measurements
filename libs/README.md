@@ -36,11 +36,13 @@ From `DeviceCtrl` are defined `ScannerCtrl` and `DetectorCtrl`:
 
 * `Saxis` is a class specifically defined for scanners (`Saxis`= Scanner axis). It does not directly inherit from `ScannerCtrl`, but is tighlty related to it as it will construct the objects summoned by `__getitem__()` and will then have the `move()` and `get()` functions manually inherited from its parent `ScannerCtrl`-type class. This allows for calls like `scanner[1].move(22)` instead of `scanner.move(target=22, axis=1)`. In this example, `scanner[1]` is an `Saxis` object which can be passed as an independent object. The `ScannerCtrl` object can also be looped on with a for-loop to address all the individual axes. Finally, `initialize()` and `close()` functions are integrated to `Saxis` and just call the ones of their parent `ScannerCtrl`. A redundancy flag prevents multiple initializations or terminations of the communication so there is no issue in calling `close()` or `initialize()` repeatedly.
 
-__Important note:__ in this library, the term `channel` and the term `axis` have specific and different meanings:
+__Important note:__ in this library, the terms `channel`, `axis` and `s-axis` have specific and different meanings:
 
 * `channel` designates a variable used to identify physically the channel to move or read on the device – by extension we also will say “channel” for the physical channel being modified or moved on the device. It usually is a string or an integer, but it could be something else. This variable is passed directly to the instruments library which handles the communication with the device.
 
-* `axis` is an integer which identifies the channel inside the `ScannerCtrl` class. If the channels are given in a list to `ScannerCtrl`, then `axis` corresponds to the indices of the list. `axis` is used to tell the `ScannerCtrl` object which channel it is supposed to talk to.
+* `axis` is an integer which identifies an `s-axis` (see below) inside the `ScannerCtrl` class. For a usual scanner device where each channel is controlled independently, then `axis` corresponds to the indices of the list of `channels`. `axis` is used to tell the `ScannerCtrl` object which `s-axis` it is supposed to talk to.
+
+* `s-axis` is the abbreviation for "Scanner-axis" and is built upon the `Saxis` class. The `s-axis` is a virtual channel, it is identified by its `axis` number inside the `ScannerCtrl` object which generated it, but can be used exclusively and independently from the `ScannerCtrl` object, once it has been constructed. In particular, an `s-axis`
 
 
 ### `mapper.py` library
