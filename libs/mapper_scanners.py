@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-import pylab as pl
+import pylab as np
 import time
 import sys
 import visa
@@ -163,15 +163,15 @@ def move_smooth(scanner_axes, targets=[]):
         if from_pos is None:
             nb_steps_list.append(0)
         else:
-            nb_steps_list.append(int(abs(pl.floor((from_pos - to_pos) / float(smooth_step))) + 1))
+            nb_steps_list.append(int(abs(np.floor((from_pos - to_pos) / float(smooth_step))) + 1))
 
     total_nb_of_steps = max(nb_steps_list)
     smooth_positions = []
     for to_pos, from_pos, nb_steps in zip(to_pos_list, from_pos_list, nb_steps_list):
         if from_pos is None:
             from_pos = 0
-        smooth_positions.append(pl.append(pl.linspace(from_pos, to_pos, nb_steps), 
-                                          pl.zeros(total_nb_of_steps - nb_steps) + to_pos))
+        smooth_positions.append(np.append(np.linspace(from_pos, to_pos, nb_steps), 
+                                          np.zeros(total_nb_of_steps - nb_steps) + to_pos))
 
     for i in range(total_nb_of_steps):
         for s_axis, pos in zip(scanner_axes, smooth_positions):
@@ -278,7 +278,7 @@ class AttocubeVISAstepper (ScannerCtrl):
     def _move(self, target, axis=0):
 
         move_by_deg = target - self._curr_position[0]
-        move_by_clicks = int(py.floor(move_by_deg * self.nb_of_clicks_per_deg))
+        move_by_clicks = int(np.floor(move_by_deg * self.nb_of_clicks_per_deg))
         if move_by_clicks < 0:
             self._attoAxis.stepDown(-move_by_clicks)
         else:
@@ -367,6 +367,25 @@ class Keithley2220_neg_pos(Keithley2220):
         pos_bias = super()._get(1)
         return pos_bias-neg_bias
 
+class Keithley2220_negpos(ScannerCtrl):
+    def __init__(self, VISA_address, ch_neg, ch_pos):
+        super().__init__(channels=[0])
+        self.keithley = Keithley2220(VISA_address, channels=[ch_neg,ch_pos])
+
+    def _move(self, target, axis=0):
+        if target < 0:
+            self.keithley._move(-target, axis=0)
+            self.keithley._move(0, axis=1)
+        else:
+            self.keithley._move(target, axis=1)
+            self.keithley._move(0, axis=0)
+
+    def _get(self, axis=0):
+        neg_bias = self.keithley._get(0)
+        pos_bias = self.keithley._get(1)
+        return pos_bias-neg_bias
+        
+
 class SolstisLaserScanner(ScannerCtrl):
     def __init__(self, laser_ip_address, pc_ip_address, port_number, timeout=40, finish_range_radius=0.01, max_nb_of_fails=10):
         super().__init__([0])
@@ -398,7 +417,7 @@ class SolstisLaserScanner(ScannerCtrl):
                     self.problematic_wavelengths.append(target)
                     break
                 else:
-                    print ('Laser failed to tune to {}, retrying {}/{}'.format(target, nb_of_fails, self.max_nb_of_fails))
+                    print('Laser failed to tune to {}, retrying {}/{}'.format(target, nb_of_fails, self.max_nb_of_fails))
                     self._laser_handle.set_wavelength(target)
             else:
                 break
