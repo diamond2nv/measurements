@@ -24,7 +24,7 @@ This series of libraries define `DeviceCtrl` classes which provide a standard in
 
 The `DeviceCtrl` classes inherit each other this way:
 
-[class-inheritance](doc-figs/class-inheritance.png?raw=true "Class inheritance from DeviceCtrl").
+![class-inheritance](doc-figs/class-inheritance.png "Class inheritance from DeviceCtrl").
 
 `DeviceCtrl` serves as a generic base used for any device and will define default attributes like `string_id`, error handling functions and a `close()` function.
 
