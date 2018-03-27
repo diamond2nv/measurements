@@ -31,13 +31,7 @@ class QPLviewGUI(QtWidgets.QMainWindow):
         self._max_t = self._stream_dict['rep_0'].get_max_time()
         self._view_range = [0, self._max_t]
 
-        # setup transparent rectangle for zoom
-        self.rect = Rectangle((0,0), 0, 0, alpha=0.3)
-        self.x0 = None
-        self.y0 = None
-        self.x1 = None
-        self.y1 = None
-        self.ui.canvas.axes.add_patch(self.rect)
+        self.add_zoom_rect()
 
         #SETTINGS EVENTS
         self.ui.sb_rep_nr.setRange(1, 999)
@@ -90,6 +84,15 @@ class QPLviewGUI(QtWidgets.QMainWindow):
         self.w = w
         self.h = h
         self.ui.canvas.resize_canvas (w=w, h=h*0.8)
+
+    def add_zoom_rect(self):
+        # setup transparent rectangle for zoom
+        self.rect = Rectangle((0,0), 0, 0, alpha=0.3)
+        self.x0 = None
+        self.y0 = None
+        self.x1 = None
+        self.y1 = None
+        self.ui.canvas.axes.add_patch(self.rect)
 
     def _make_view_channel (self, ch):
         
@@ -147,6 +150,7 @@ class QPLviewGUI(QtWidgets.QMainWindow):
             if (event.ydata != None):
                 self.y0 = event.ydata
                 self.mouse_clicked = True
+                self.add_zoom_rect()
 
     def mouseMove(self, event):
         if self.mouse_clicked:
