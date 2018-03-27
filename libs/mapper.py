@@ -96,7 +96,7 @@ class XYScan ():
             for scanner_axis in scanner_axes:
                 scanner_axis.initialize()
 
-    def run_scan(self):
+    def run_scan(self, close_instruments=True, silence_errors=True):
         try:
             self.init_detectors(self._detectors)
             self.init_scanners(self._scanner_axes)
@@ -111,7 +111,7 @@ class XYScan ():
 
             move_smooth(self._scanner_axes, targets=[self.xPositions[0], self.yPositions[0]])
 
-            print('\nScanners are at start position. Waiting for spectrometer acquisition.\n')
+            print('\nScanners are at start position. Waiting for acquisition.\n')
 
             print('step \tx (V)\ty (V)')
 
@@ -175,11 +175,23 @@ class XYScan ():
 
         except KeyboardInterrupt:
             print('\n####  Program interrupted by user.  ####')
+            close_instruments = True
+        except:
+            close_instruments = True
+            if not silence_errors:
+                raise
         finally:
-            for scanner in self._scanner_axes:
-                scanner.close()
-            for detector in self._detectors:
-                detector.close()
+            if close_instruments:
+                self.close_instruments()
+
+
+    def close_instruments(self):
+        for scanner in self._scanner_axes:
+            scanner.close()
+        for detector in self._detectors:
+            detector.close()
+
+
 
     def save_to_hdf5(self, file_name=None):
 
