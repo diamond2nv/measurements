@@ -452,10 +452,7 @@ class Keithley2220(ScannerCtrl):
         self._axes_modes = ['voltage' for ch in self._channels]
 
     def _initialize(self, switch_on_output=False):
-        try:
-            self._Keithley_handle = KeithleyPSU2220.Keithley2220(self._VISA_address)
-        except visa.VisaIOError as err:
-            self.visa_error_handling(err)
+        self._Keithley_handle = KeithleyPSU2220.Keithley2220(self._VISA_address)
         if switch_on_output:
             self.output_switch(on=True)
 
@@ -517,6 +514,14 @@ class Keithley2220_negpos(ScannerCtrl):
         super().__init__(channels=[0])
         self.keithley = Keithley2220(VISA_address, channels=[ch_neg,ch_pos])
 
+        self.string_id = r'Keithley PSU2220 DC power supply controlled by VISA - negative/positive control'
+
+        self.smooth_step = 0.5
+        self.smooth_delay = 0.05
+
+    def _initialize(self, switch_on_output=False):
+        self.keithley._initialize(switch_on_output)
+
     def _move(self, target, axis=0):
         if target < 0:
             self.keithley._move(-target, axis=0)
@@ -529,6 +534,9 @@ class Keithley2220_negpos(ScannerCtrl):
         neg_bias = self.keithley._get(0)
         pos_bias = self.keithley._get(1)
         return pos_bias-neg_bias
+
+    def _close(self):
+        self.keithley._close()
 
 
 class SolstisLaserScanner(ScannerCtrl):
