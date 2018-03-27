@@ -26,7 +26,8 @@ class ScannerCtrl (mgen.DeviceCtrl):
     string_id = 'Unknown scanner'
 
     def initialize(self):
-        pass
+        self._x = 0
+        self._y = 0
 
     def moveX (self, value):
         pass
@@ -35,10 +36,10 @@ class ScannerCtrl (mgen.DeviceCtrl):
         pass
 
     def getX (self):
-        return None
+        return self._x
 
     def getY (self):
-        return None
+        return self._y
 
     def _close(self):
         pass

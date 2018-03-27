@@ -1,10 +1,3 @@
-# -*- coding: utf-8 -*-
-
-# Form implementation generated from reading ui file 'QPLser_view.ui'
-#
-# Created by: PyQt5 UI code generator 5.6
-#
-# WARNING! All changes made in this file will be lost!
 
 from PyQt5 import QtCore, QtGui, QtWidgets
 import numpy as np
@@ -21,6 +14,9 @@ class MplCanvas(Canvas):
         self._w_inches = width
         self._h_inches = height
         self._dpi = dpi
+        self.fig.subplots_adjust(left=0.05,right=0.95,
+                            bottom=0.1,top=0.98,
+                            hspace=0,wspace=0)
 
         Canvas.__init__(self, self.fig)
         self.setParent(parent)
@@ -33,9 +29,7 @@ class MplCanvas(Canvas):
     def update (self):
         pass
 
-
 class StreamCanvas(MplCanvas):
-    """A canvas that updates itself every second with a new plot."""
 
     def __init__(self, *args, **kwargs):
         MplCanvas.__init__(self, *args, **kwargs)
@@ -44,6 +38,7 @@ class StreamCanvas(MplCanvas):
         self._channels = None
         self._labels = None
         self._colors = None
+        self.scaling_factor = 1
 
     def upload_stream (self, stream):
         self._stream = stream
@@ -53,12 +48,17 @@ class StreamCanvas(MplCanvas):
 
     def set_view_channels(self, channels_idx):
         self._view_chs = channels_idx
-        self.draw()
+        self.axes.figure.canvas.draw()
 
     def set_time_interval (self, t):
         self._t = t
 
+    def clear (self):
+        self.axes.clear()
+
     def _plot_channels (self):
+
+        self.axes.cla()
 
         if (self._pdict == None):
             self._pdict = self._stream.get_plot_dict()
@@ -71,7 +71,7 @@ class StreamCanvas(MplCanvas):
 
             if (int(self._view_chs[ind]) == 1):
 
-                t = self._pdict[ch]['time']
+                t = self._pdict[ch]['time']*1000
                 y = self._pdict[ch]['y']
                 c = self._pdict[ch]['color']
 
@@ -97,12 +97,12 @@ class StreamCanvas(MplCanvas):
 
         for label in (self.axes.get_xticklabels() + self.axes.get_yticklabels()):
             #label.set_fontname('Arial')
-            label.set_fontsize(10)
+            label.set_fontsize(6)
         
     def update_figure (self):
-        self.axes.cla()
         self._plot_channels()
-        self.draw()
+        self.axes.figure.canvas.draw()
+        self.repaint()
 
     def resize_canvas (self, w, h):
         self._w_inches = w/float(self._dpi)
@@ -110,23 +110,8 @@ class StreamCanvas(MplCanvas):
         self.fig.set_size_inches (self._w_inches, self._h_inches)
         self.update_figure()
 
-
-class TestCanvas(MplCanvas):
-    """A canvas that updates itself every second with a new plot."""
-
-    def __init__(self, *args, **kwargs):
-        MplCanvas.__init__(self, *args, **kwargs)
-        timer = QtCore.QTimer(self)
-        timer.timeout.connect(self.update_figure)
-        timer.start(1000)
-
-    def compute_initial_figure(self):
-        self.axes.plot([0, 1, 2, 3], [1, 2, 0, 4], 'r')
-
-    def update_figure(self):
-        # Build a list of 4 random integers between 0 and 10 (both inclusive)
-        l = [random.randint(0, 10) for i in range(4)]
-        self.axes.cla()
-        self.axes.plot([0, 1, 2, 3], l, 'r')
-        self.draw()
+    def set_time_range(self, t0, t1):
+        self.axes.set_xlim ([t0, t1])
+        self.axes.figure.canvas.draw()
+        self.repaint()
 

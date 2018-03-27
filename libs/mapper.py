@@ -8,7 +8,7 @@ Created on Wed Nov 22 09:23:52 2017
 import pylab as pl
 import time
 from tools import data_object as DO
-
+import numpy as np
 
 class XYScan ():
     def __init__(self, scanner=None, detectors=None):
@@ -56,6 +56,8 @@ class XYScan ():
             self.counts = None
         else:
             self.counts = [pl.zeros ([self.xNbOfSteps, self.yNbOfSteps]) for detector in self._detectors]
+            #print(self.counts)
+        
 
     def set_trigger(self, trigger=True, feedback=True):
         self.trigger_active = trigger
@@ -120,11 +122,10 @@ class XYScan ():
                 firstInRow = True
                 
                 for id_x, x in enumerate(self.xPositions):
-                    idx += 1
+                    idx = idx + 1
                     
                     self._scanner.moveX(x)
                     self._scanner.moveY(y)
-
                     # display update
                     print('{}/{} \t{:.1f} \t{:.1f}'.format(idx, self.totalNbOfSteps, x, y))
 
@@ -150,6 +151,7 @@ class XYScan ():
                         if self._detectors is not None:
                             for counts, detector in zip(self.counts, self._detectors):
                                 counts[id_x, id_y] = detector.readout()   # POSSIBLE BLOCKING BEHAVIOUR HERE! put non blocking (spectros...) before blocking (apds...) in the detectors list
+                                #print(counts)
 
                     time.sleep(self.max_delay_after_readout)  # some old devices will not react immediately to say they are integrating
 
@@ -173,6 +175,16 @@ class XYScan ():
         except KeyboardInterrupt:
             print('\n####  Program interrupted by user.  ####')
         finally:
+
+            self.counts = np.zeros ([int(len(self.xPositions)), int(len(self.yPositions))])
+
+            #recast counts array
+            for x in np.arange(len(self.xPositions)):
+                for y in np.arange(len(self.yPositions)):
+                   self.counts[x,y] = int(counts[x,y])
+
+            #print ("Counts:")
+            #print(self.counts)
             self._scanner.close()
             for detector in self._detectors:
                 detector.close()
@@ -182,6 +194,14 @@ class XYScan ():
         d_obj = DO.DataObjectHDF5()
         d_obj.save_object_to_file (self, file_name)
         print("File saved")
+
+    def save_to_npz(self, file_name):
+        np.savez (file_name+'.npz', xPos = self.xPositions, yPos = self.yPositions, counts = self.counts)
+
+    def save_to_txt(self, file_name):
+        np.savetxt (file_name+'_x.txt', self.xPositions)
+        np.savetxt (file_name+'_y.txt', self.yPositions)
+        np.savetxt (file_name+'_cts.txt', self.counts)
 
     def plot_counts(self):
 
