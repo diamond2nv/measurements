@@ -41,6 +41,7 @@ class QPLviewGUI(QtWidgets.QMainWindow):
         self.ui.canvas.mpl_connect('motion_notify_event', self.mouseMove)
         self.ui.canvas.mpl_connect('button_release_event', self.mouseRelease)
         self.mouse_clicked = False
+        #self.ui.canvas.reset(nr_panels=1)
 
         # initialize values
         for ch in self._available_chs:
@@ -75,8 +76,10 @@ class QPLviewGUI(QtWidgets.QMainWindow):
         self._total_reps = self._stream_dict['nr_reps']
         self.ui.sb_rep_nr.setValue(1)
 
-        self.ui.canvas.update_figure()
+        #self.ui.canvas.update_figure()
+        self.ui.canvas.reset_canvas(5)
 
+        
     def resizeEvent( self, event ):
         QtWidgets.QWidget.resizeEvent (self, event )
         w = event.size().width()

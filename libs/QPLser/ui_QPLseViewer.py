@@ -16,7 +16,7 @@ class Ui_Panel(object):
         Panel.resize(1155, 754)
         self.vbl = QtWidgets.QVBoxLayout(Panel)
         self.vbl.setContentsMargins(0,0,0,0)
-        self.canvas = SC.StreamCanvas(Panel, width=7, height=3, dpi=200)
+        self.canvas = SC.MultiStreamCanvas(Panel, width=7, height=3, dpi=200)
         self.vbl.addWidget (self.canvas)
         self.Hscrollbar = QtWidgets.QScrollBar(Panel)
         self.Hscrollbar.setGeometry(QtCore.QRect(10, 590, 1131, 21))

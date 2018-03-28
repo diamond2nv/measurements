@@ -102,7 +102,7 @@ class StreamCanvas(MplCanvas):
         
     def update_figure (self):
         self._plot_channels()
-        self.axes.figure.canvas.draw()
+        self.axes.figure.canvas.draw_idle()
         self.repaint()
 
     def resize_canvas (self, w, h):
@@ -121,9 +121,32 @@ class MultiStreamCanvas (StreamCanvas):
     def __init__(self, *args, **kwargs):
         StreamCanvas.__init__(self, *args, **kwargs)
 
-    def _define_canvas_plots (self):
-        self.fig, self.axes = plt.subplots (self._nr_chans_in_view, sharex = True)
+    def reset_canvas (self, nr_panels):
+        self.fig.clf()
+        self.axes = []
+        self._nr_panels = nr_panels
+
+        for i in range(nr_panels):
+            num = nr_panels*100+10+i+1
+            self.axes.append(self.fig.add_subplot (num))
         self.fig.subplots_adjust(hspace=0)
+
+    def update_figure (self):
+        self.clear()
+        self._plot_channels()
+        for i in range(self._nr_panels):
+            self.axes[i].figure.canvas.draw_idle()
+        self.repaint()
+
+    def clear (self):
+        for i in range(self._nr_panels):
+            self.axes[i].cla()
+
+    def set_time_range(self, t0, t1):
+        for i in range(self._nr_panels):
+            self.axes[i].set_xlim ([t0, t1])
+            self.axes[i].figure.canvas.draw_idle()
+        self.repaint()
 
     def _plot_channels (self):
 
@@ -131,7 +154,7 @@ class MultiStreamCanvas (StreamCanvas):
         # with its own y-axis scal (0 to 1, or -1 to +1)
         # and a grid for easier viewing
 
-        self.fig.clf()
+        self.clear()
 
         if (self._pdict == None):
             self._pdict = self._stream.get_plot_dict()
@@ -155,10 +178,10 @@ class MultiStreamCanvas (StreamCanvas):
                 elif (ch[0] == 'A'):
                     self.axes[ind].plot (t, y, linewidth = 3, color = c)
                     self.axes[ind].set_ylim ([-1.1, 1.1])
+                self.axes[ind].grid(which='both', color='crimson')
          
         #self.axes.yaxis.set_ticks([0, len(self._stream.labels_list)]) 
         #self.axes.yaxis.set(ticks=tick_pos, ticklabels=self._stream.labels_list)
 
-        for label in (self.axes.get_xticklabels() + self.axes.get_yticklabels()):
-            #label.set_fontname('Arial')
-            label.set_fontsize(6)
+        #for label in (self.axes.get_xticklabels() + self.axes.get_yticklabels()):
+        #    label.set_fontsize(6)
