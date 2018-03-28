@@ -48,6 +48,7 @@ class StreamCanvas(MplCanvas):
 
     def set_view_channels(self, channels_idx):
         self._view_chs = channels_idx
+        self._nr_chans_in_view = sum(self._view_chs)
         self.axes.figure.canvas.draw()
 
     def set_time_interval (self, t):
@@ -115,3 +116,49 @@ class StreamCanvas(MplCanvas):
         self.axes.figure.canvas.draw()
         self.repaint()
 
+class MultiStreamCanvas (StreamCanvas):
+
+    def __init__(self, *args, **kwargs):
+        StreamCanvas.__init__(self, *args, **kwargs)
+
+    def _define_canvas_plots (self):
+        self.fig, self.axes = plt.subplots (self._nr_chans_in_view, sharex = True)
+        self.fig.subplots_adjust(hspace=0)
+
+    def _plot_channels (self):
+
+        # make each channel on an independent subplot
+        # with its own y-axis scal (0 to 1, or -1 to +1)
+        # and a grid for easier viewing
+
+        self.fig.clf()
+
+        if (self._pdict == None):
+            self._pdict = self._stream.get_plot_dict()
+        
+        curr_offset = 0
+        tick_pos = []
+        offset = 2
+
+        for ind, ch in enumerate(self._stream.ch_list):
+
+            if (int(self._view_chs[ind]) == 1):
+
+                t = self._pdict[ch]['time']*1000
+                y = self._pdict[ch]['y']
+                c = self._pdict[ch]['color']
+
+                if (ch[0] == 'D'):
+                    self.axes[ind].plot (t, y, linewidth = 3, color = c)
+                    self.axes[ind].fill_between (t, 0, y, color = c, alpha=0.2)
+                    self.axes[ind].set_ylim ([-0.1, 1.1])
+                elif (ch[0] == 'A'):
+                    self.axes[ind].plot (t, y, linewidth = 3, color = c)
+                    self.axes[ind].set_ylim ([-1.1, 1.1])
+         
+        #self.axes.yaxis.set_ticks([0, len(self._stream.labels_list)]) 
+        #self.axes.yaxis.set(ticks=tick_pos, ticklabels=self._stream.labels_list)
+
+        for label in (self.axes.get_xticklabels() + self.axes.get_yticklabels()):
+            #label.set_fontname('Arial')
+            label.set_fontsize(6)

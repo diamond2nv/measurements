@@ -107,7 +107,7 @@ class Monitor ():
 
         try:
             while True:
-                time.sleep(5)
+                time.sleep(1)
         except (KeyboardInterrupt, SystemExit):
             # Not strictly necessary if daemonic mode is enabled but should be done if possible
             self._scheduler.shutdown()
