@@ -52,6 +52,7 @@ class QPLviewGUI(QtWidgets.QMainWindow):
             a = getattr (self.ui, 'cb_'+ch, None)
             a.setChecked (True)
         self.ui.canvas.set_view_channels (np.ones(len(self._available_chs)))
+        self.ui.canvas.set_time_range (0, self._max_t)
         self.ui.Hscrollbar.setMinimum(0)
         self.ui.Hscrollbar.setMaximum(0)
         self.ui.Hscrollbar.setPageStep(self._max_t)
@@ -76,10 +77,9 @@ class QPLviewGUI(QtWidgets.QMainWindow):
         self._total_reps = self._stream_dict['nr_reps']
         self.ui.sb_rep_nr.setValue(1)
 
-        #self.ui.canvas.update_figure()
-        self.ui.canvas.reset_canvas(5)
+        self._zoom_full()
+        self.ui.canvas.update_figure()
 
-        
     def resizeEvent( self, event ):
         QtWidgets.QWidget.resizeEvent (self, event )
         w = event.size().width()
@@ -87,6 +87,7 @@ class QPLviewGUI(QtWidgets.QMainWindow):
         self.w = w
         self.h = h
         self.ui.canvas.resize_canvas (w=w, h=h*0.8)
+        self._zoom_full()
 
     def add_zoom_rect(self):
         # setup transparent rectangle for zoom
@@ -117,6 +118,7 @@ class QPLviewGUI(QtWidgets.QMainWindow):
 
     def set_switch_ch_check (self, index, value):
         self.ui.canvas._view_chs[index] = value
+        self.ui.canvas.reset_canvas()
         self.ui.canvas.update_figure()
 
     def _update_figure (self):
