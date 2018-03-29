@@ -48,6 +48,7 @@ class StreamCanvas(MplCanvas):
 
     def set_view_channels(self, channels_idx):
         self._view_chs = channels_idx
+        self._nr_chans_in_view = sum(self._view_chs)
         self.axes.figure.canvas.draw()
 
     def set_time_interval (self, t):
@@ -101,7 +102,7 @@ class StreamCanvas(MplCanvas):
         
     def update_figure (self):
         self._plot_channels()
-        self.axes.figure.canvas.draw()
+        self.axes.figure.canvas.draw_idle()
         self.repaint()
 
     def resize_canvas (self, w, h):
@@ -114,4 +115,103 @@ class StreamCanvas(MplCanvas):
         self.axes.set_xlim ([t0, t1])
         self.axes.figure.canvas.draw()
         self.repaint()
+
+class MultiStreamCanvas (StreamCanvas):
+
+    def __init__(self, *args, **kwargs):
+        StreamCanvas.__init__(self, *args, **kwargs)
+
+    def reset_canvas (self):
+        self.fig.clf()
+        self.axes = []
+        self._nr_chans_in_view = int(sum(self._view_chs))
+        print ("Resetting canvas: ", self._nr_chans_in_view)
+
+        for i in range(self._nr_chans_in_view):
+            num = self._nr_chans_in_view*100+10+i+1
+            self.axes.append(self.fig.add_subplot (num))
+        self.fig.subplots_adjust(hspace=0)
+
+    def set_view_channels(self, channels_idx):
+        self._view_chs = channels_idx
+        print ("Modified view channels: ", self._view_chs)
+        self.reset_canvas ()
+
+    def update_figure (self):
+        self.clear()
+        self._plot_channels()
+        for i in range(self._nr_chans_in_view):
+            self.axes[i].figure.canvas.draw_idle()
+        self.repaint()
+
+    def clear (self):
+        for i in range(self._nr_chans_in_view):
+            self.axes[i].cla()
+
+    def set_time_range(self, t0, t1):
+        self._x_min = t0
+        self._x_max = t1
+        for i in range(self._nr_chans_in_view):
+            self.axes[i].set_xlim ([t0, t1])
+            self.axes[i].figure.canvas.draw_idle()
+        self.repaint()
+
+    def _plot_channels (self):
+
+        # make each channel on an independent subplot
+        # with its own y-axis scal (0 to 1, or -1 to +1)
+        # and a grid for easier viewing
+
+        print ("Plotting...", self._view_chs)
+        self.clear()
+
+        if (self._pdict == None):
+            self._pdict = self._stream.get_plot_dict()
+        
+        curr_offset = 0
+        tick_pos = []
+        offset = 2
+
+        i = 0 #index that runs over the axes that are actually plotted
+        for ind, ch in enumerate(self._stream.ch_list):
+
+            print (" --- processisng  ind = ", ind)
+
+            if (int(self._view_chs[ind]) == 1):
+                print ("       **** plotting! ")
+                t = self._pdict[ch]['time']*1000
+                y = self._pdict[ch]['y']
+                c = self._pdict[ch]['color']
+
+                self.axes[i].set_facecolor('k')
+                if (ch[0] == 'D'):
+                    self.axes[i].plot (t, y, linewidth = 2, color = c)
+                    self.axes[i].fill_between (t, 0, y, color = c, alpha=0.2)
+                    self.axes[i].set_ylim ([-0.1, 1.1])
+                    ymin=0
+                    ymax=1
+                elif (ch[0] == 'A'):
+                    self.axes[i].plot (t, y, linewidth = 2, color = c)
+                    self.axes[i].set_ylim ([-1.1, 1.1])
+                    ymin = -1
+                    ymax = 1
+                if (ind%2==1):
+                    self.axes[i].yaxis.tick_right()
+                
+                xticks = self.axes[i].get_xticks()
+                d = xticks[1]-xticks[0]
+                xminor_ticks = np.arange (self._x_min, self._x_max, d/4)
+                self.axes[i].set_xticks(xminor_ticks, minor=True)
+                yticks = self.axes[i].get_yticks()
+                d = yticks[1]-yticks[0]
+                yminor_ticks = np.arange (ymin, ymax, d/4)
+                self.axes[i].set_yticks(yminor_ticks, minor=True)
+                self.axes[i].grid(which='major', color='white', linestyle='--', alpha = 0.3)
+                self.axes[i].grid(which='minor', color='lightyellow', linestyle=':', alpha = 0.15)
+
+                for label in (self.axes[i].get_xticklabels() + self.axes[i].get_yticklabels()):
+                    label.set_fontsize(7)
+
+                i += 1
+
 
