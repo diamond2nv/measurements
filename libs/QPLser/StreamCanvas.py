@@ -49,7 +49,7 @@ class StreamCanvas(MplCanvas):
     def set_view_channels(self, channels_idx):
         self._view_chs = channels_idx
         self._nr_chans_in_view = sum(self._view_chs)
-        self.axes.figure.canvas.draw()
+        self.axes.figure.canvas.draw_idle()
 
     def set_time_interval (self, t):
         self._t = t
@@ -113,7 +113,7 @@ class StreamCanvas(MplCanvas):
 
     def set_time_range(self, t0, t1):
         self.axes.set_xlim ([t0, t1])
-        self.axes.figure.canvas.draw()
+        self.axes.figure.canvas.draw_idle()
         self.repaint()
 
 class MultiStreamCanvas (StreamCanvas):
@@ -125,7 +125,6 @@ class MultiStreamCanvas (StreamCanvas):
         self.fig.clf()
         self.axes = []
         self._nr_chans_in_view = int(sum(self._view_chs))
-        print ("Resetting canvas: ", self._nr_chans_in_view)
 
         for i in range(self._nr_chans_in_view):
             num = self._nr_chans_in_view*100+10+i+1
@@ -134,7 +133,6 @@ class MultiStreamCanvas (StreamCanvas):
 
     def set_view_channels(self, channels_idx):
         self._view_chs = channels_idx
-        print ("Modified view channels: ", self._view_chs)
         self.reset_canvas ()
 
     def update_figure (self):
@@ -158,11 +156,6 @@ class MultiStreamCanvas (StreamCanvas):
 
     def _plot_channels (self):
 
-        # make each channel on an independent subplot
-        # with its own y-axis scal (0 to 1, or -1 to +1)
-        # and a grid for easier viewing
-
-        print ("Plotting...", self._view_chs)
         self.clear()
 
         if (self._pdict == None):
@@ -175,10 +168,7 @@ class MultiStreamCanvas (StreamCanvas):
         i = 0 #index that runs over the axes that are actually plotted
         for ind, ch in enumerate(self._stream.ch_list):
 
-            print (" --- processisng  ind = ", ind)
-
             if (int(self._view_chs[ind]) == 1):
-                print ("       **** plotting! ")
                 t = self._pdict[ch]['time']*1000
                 y = self._pdict[ch]['y']
                 c = self._pdict[ch]['color']
@@ -186,7 +176,7 @@ class MultiStreamCanvas (StreamCanvas):
                 self.axes[i].set_facecolor('k')
                 if (ch[0] == 'D'):
                     self.axes[i].plot (t, y, linewidth = 2, color = c)
-                    self.axes[i].fill_between (t, 0, y, color = c, alpha=0.2)
+                    self.axes[i].fill_between (t, 0, y, color = c, alpha=0.3)
                     self.axes[i].set_ylim ([-0.1, 1.1])
                     ymin=0
                     ymax=1

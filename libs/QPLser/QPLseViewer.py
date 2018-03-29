@@ -41,7 +41,6 @@ class QPLviewGUI(QtWidgets.QMainWindow):
         self.ui.canvas.mpl_connect('motion_notify_event', self.mouseMove)
         self.ui.canvas.mpl_connect('button_release_event', self.mouseRelease)
         self.mouse_clicked = False
-        #self.ui.canvas.reset(nr_panels=1)
 
         # initialize values
         for ch in self._available_chs:
@@ -73,7 +72,7 @@ class QPLviewGUI(QtWidgets.QMainWindow):
         #self.ui.lineEdit_fileName.textChanged.connect(self.set_file_tag)
 
         #INITIALIZATIONS:
-        self.units_list = ['ns','us', 'ms', 's']
+        #self.units_list = ['ns','us', 'ms', 's']
         self._total_reps = self._stream_dict['nr_reps']
         self.ui.sb_rep_nr.setValue(1)
 
@@ -152,35 +151,21 @@ class QPLviewGUI(QtWidgets.QMainWindow):
     def mouseClick(self, event):
         if (event.xdata != None):
             self.x0 = event.xdata
-            if (event.ydata != None):
-                self.y0 = event.ydata
-                self.mouse_clicked = True
-                self.add_zoom_rect()
+            self.mouse_clicked = True
 
     def mouseMove(self, event):
         if self.mouse_clicked:
             if (event.xdata != None):
                 self.x1 = event.xdata
-                if (event.ydata != None):
-                    self.y1 = event.ydata
-            self.rect.set_width(self.x1 - self.x0)
-            self.rect.set_height(self.y1 - self.y0)
-            self.rect.set_xy((self.x0, self.y0))
-            self.ui.canvas.axes.figure.canvas.draw()
-            self.ui.canvas.repaint()
 
     def mouseRelease(self, event):
         if self.mouse_clicked:
             if (event.xdata != None):
                 self.x1 = event.xdata
-                if (event.ydata != None):
-                    self.y1 = event.ydata
 
         self.mouse_clicked = False
-        self.rect.set_width(0)
-        self.rect.set_height(0)
         self.set_view_range(self.x0, self.x1)
-        self.ui.canvas.set_time_range (self.x0, self.x1)
+        self._update_view()
 
     def _slider_changed (self, event):
         D = self._view_range[1] - self._view_range[0]
@@ -222,10 +207,4 @@ class QPLviewGUI(QtWidgets.QMainWindow):
         d0, d1 = self._zoom_funct (alpha=0.25)
         self.set_view_range (d0, d1)
         self._update_view()
-
-
-
-
-
-
 
