@@ -221,7 +221,11 @@ class ScannerCtrl (mgen.DeviceCtrl):
                 object.
             targets (list, optional): list of target positions.
         """
-        move_smooth(scanner_axes=scanner_axes, targets=targets)
+
+        # move_smooth(scanner_axes=scanner_axes, targets=targets)
+        
+        for scanner_axis, target in zip(scanner_axes, targets):
+            move_smooth_simple(scanner_axis, target)
 
     def close_error_handling(self):
         """ Warning message generated for an error at communication
@@ -333,6 +337,26 @@ def move_smooth(scanner_axes, targets=[]):
     for i in range(total_nb_of_steps):
         for s_axis, pos in zip(scanner_axes, smooth_positions):
             s_axis.move(pos[i])
+        time.sleep(smooth_delay)
+
+def move_smooth_simple(scanner_axis, target):
+    """ Moves one s-axis smoothly to target position.
+    
+    Args:
+        scanner_axis (Saxis): s-axis to move
+        target (float): target position for the s-axis
+    """
+    smooth_step = scanner_axis.scanner.smooth_step
+    smooth_delay = scanner_axis.scanner.smooth_delay
+
+    to_pos = target
+    from_pos = scanner_axis.get()
+    nb_steps = int(abs(np.floor((from_pos - to_pos) / float(smooth_step))) + 1)
+
+    smooth_positions = np.linspace(from_pos, to_pos, nb_steps)
+
+    for pos in smooth_positions:
+        scanner_axis.move(pos)
         time.sleep(smooth_delay)
 
 
