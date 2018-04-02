@@ -40,6 +40,9 @@ class StreamCanvas(MplCanvas):
         self._colors = None
         self.scaling_factor = 1
 
+        self._slider_x0 = 0
+        self._slider_x1 = 0
+
     def upload_stream (self, stream):
         self._stream = stream
         self._stream.set_plot(channels = self._channels,
@@ -113,8 +116,14 @@ class StreamCanvas(MplCanvas):
 
     def set_time_range(self, t0, t1):
         self.axes.set_xlim ([t0, t1])
+        self._slider_x0 = t0
+        self._slider_x1 = t1
+        self._draw_sliders()
         self.axes.figure.canvas.draw_idle()
         self.repaint()
+
+    def _draw_sliders (self):
+        pass
 
 class MultiStreamCanvas (StreamCanvas):
 
@@ -123,6 +132,14 @@ class MultiStreamCanvas (StreamCanvas):
 
     def reset_canvas (self):
         self.fig.clf()
+
+        # phantom axis to draw sliders, zoom rectangle, etc..
+        self.ax = self.fig.add_axes([0,0,1,1])
+        self.ax.xaxis.set_visible(False)
+        self.ax.yaxis.set_visible(False)
+        self.ax.set_zorder(1000)
+        self.ax.patch.set_alpha(0.1)
+        
         self.axes = []
         self._nr_chans_in_view = int(sum(self._view_chs))
 
@@ -130,6 +147,11 @@ class MultiStreamCanvas (StreamCanvas):
             num = self._nr_chans_in_view*100+10+i+1
             self.axes.append(self.fig.add_subplot (num))
         self.fig.subplots_adjust(hspace=0)
+
+    def _draw_sliders (self):
+        print ("Drawing sliders..", self._slider_x0, self._slider_x1)
+        self.ax.vlines (x=self._slider_x0, ymin = 0, ymax=1, color='yellow')
+        self.ax.vlines (x=self._slider_x1, ymin = 0, ymax=1, color='yellow')
 
     def set_view_channels(self, channels_idx):
         self._view_chs = channels_idx
@@ -152,6 +174,7 @@ class MultiStreamCanvas (StreamCanvas):
         for i in range(self._nr_chans_in_view):
             self.axes[i].set_xlim ([t0, t1])
             self.axes[i].figure.canvas.draw_idle()
+        self._draw_sliders()
         self.repaint()
 
     def _plot_channels (self):
