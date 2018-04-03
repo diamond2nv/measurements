@@ -4,7 +4,8 @@ import numpy as np
 import h5py
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as Canvas
 from matplotlib.figure import Figure
-import random
+from matplotlib.patches import Rectangle
+
 
 class MplCanvas(Canvas):
 
@@ -40,8 +41,8 @@ class StreamCanvas(MplCanvas):
         self._colors = None
         self.scaling_factor = 1
 
-        self._slider_x0 = 0
-        self._slider_x1 = 0
+        self._cursor_x0 = 0
+        self._cursor_x1 = 0
 
     def upload_stream (self, stream):
         self._stream = stream
@@ -116,29 +117,43 @@ class StreamCanvas(MplCanvas):
 
     def set_time_range(self, t0, t1):
         self.axes.set_xlim ([t0, t1])
-        self._slider_x0 = t0
-        self._slider_x1 = t1
-        self._draw_sliders()
+        self._cursor_x0 = t0
+        self._scursor_x1 = t1
+        self._draw_cursors()
         self.axes.figure.canvas.draw_idle()
         self.repaint()
 
-    def _draw_sliders (self):
+    def _draw_cursors (self):
         pass
+
+    def make_phantom_axis(self):
+        # phantom axis to draw sliders, zoom rectangle, etc..
+        self.phax = self.fig.add_axes([0,0,1.,1.])
+        self.phax.xaxis.set_visible(False)
+        self.phax.yaxis.set_visible(False)
+        self.phax.set_zorder(1000)
+        self.phax.patch.set_alpha(0.1)
+
+    def add_zoom_rect(self):
+        pass
+
+    def draw_1D_zoom_rect (self, x0, x1):
+        pass
+
+    def close_zoom_rect(self):
+        pass
+
 
 class MultiStreamCanvas (StreamCanvas):
 
     def __init__(self, *args, **kwargs):
         StreamCanvas.__init__(self, *args, **kwargs)
+        self._lines0 = []
 
     def reset_canvas (self):
         self.fig.clf()
 
-        # phantom axis to draw sliders, zoom rectangle, etc..
-        self.ax = self.fig.add_axes([0,0,1,1])
-        self.ax.xaxis.set_visible(False)
-        self.ax.yaxis.set_visible(False)
-        self.ax.set_zorder(1000)
-        self.ax.patch.set_alpha(0.1)
+        self.make_phantom_axis()
         
         self.axes = []
         self._nr_chans_in_view = int(sum(self._view_chs))
@@ -148,10 +163,34 @@ class MultiStreamCanvas (StreamCanvas):
             self.axes.append(self.fig.add_subplot (num))
         self.fig.subplots_adjust(hspace=0)
 
-    def _draw_sliders (self):
-        print ("Drawing sliders..", self._slider_x0, self._slider_x1)
-        self.ax.vlines (x=self._slider_x0, ymin = 0, ymax=1, color='yellow')
-        self.ax.vlines (x=self._slider_x1, ymin = 0, ymax=1, color='yellow')
+    def set_cursor (self, cursor, position):
+        position = int(position)
+        if (cursor == "c0"):
+            self._cursor_x0 = position
+            self._draw_cursor0()
+        elif (cursor == "c1"):
+            self._cursor_x1 = position
+            self._draw_cursor1()
+        print ("Modified cursor position: ", cursor, position)
+
+    def get_cursors (self):
+        return self._cursor_x0, self._cursor_x1
+
+    def _draw_cursor0 (self):
+        try:
+            self._lines0.pop().remove()
+        except:
+            pass
+        self._lines0.append(self.phax.vlines (x=self._cursor_x0, ymin = 0, ymax=1, color='yellow'))
+        self.repaint()
+
+    def _draw_cursor1 (self):
+        try:
+            self._lines1.pop().remove()
+        except:
+            pass
+        self._lines1.append(self.phax.vlines (x=self._cursor_x1, ymin = 0, ymax=1, color='yellow'))
+        self.repaint()
 
     def set_view_channels(self, channels_idx):
         self._view_chs = channels_idx
@@ -174,7 +213,8 @@ class MultiStreamCanvas (StreamCanvas):
         for i in range(self._nr_chans_in_view):
             self.axes[i].set_xlim ([t0, t1])
             self.axes[i].figure.canvas.draw_idle()
-        self._draw_sliders()
+        self.phax.set_xlim([t0, t1])
+        #self._draw_cursors()
         self.repaint()
 
     def _plot_channels (self):

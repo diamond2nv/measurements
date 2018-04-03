@@ -1071,7 +1071,7 @@ class StreamController ():
             qApp = QtWidgets.QApplication(sys.argv)
 
         gui = QPLseViewer.QPLviewGUI (stream_dict = self._stream_dict)
-        gui.setWindowTitle('QPLseViewer')
+        gui.setWindowTitle('QPLseViewer:PulseStreamers')
         gui.show()
         sys.exit(qApp.exec_())
 

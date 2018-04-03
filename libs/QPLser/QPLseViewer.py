@@ -7,7 +7,6 @@ import numpy as np
 import h5py
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
-from matplotlib.patches import Rectangle
 from PyQt5 import QtCore, QtGui, QtWidgets
 from measurements.libs.QPLser import ui_QPLseViewer as uM
 from importlib import reload
@@ -31,8 +30,6 @@ class QPLviewGUI(QtWidgets.QMainWindow):
         self._max_t = self._stream_dict['rep_0'].get_max_time()
         self._view_range = [0, self._max_t]
 
-        self.add_zoom_rect()
-
         #SETTINGS EVENTS
         self.ui.sb_rep_nr.setRange(1, 999)
          
@@ -41,6 +38,7 @@ class QPLviewGUI(QtWidgets.QMainWindow):
         self.ui.canvas.mpl_connect('motion_notify_event', self.mouseMove)
         self.ui.canvas.mpl_connect('button_release_event', self.mouseRelease)
         self.mouse_clicked = False
+        self.cursor_clicked = False
 
         # initialize values
         for ch in self._available_chs:
@@ -68,8 +66,6 @@ class QPLviewGUI(QtWidgets.QMainWindow):
         self.ui.button_full_view.clicked.connect (self._zoom_full)
         self.ui.button_zoom_out.clicked.connect (self._zoom_out)
         self.ui.Hscrollbar.sliderMoved.connect (self._slider_changed)
-        #self.ui.button_save.clicked.connect(self._save_view)
-        #self.ui.lineEdit_fileName.textChanged.connect(self.set_file_tag)
 
         #INITIALIZATIONS:
         #self.units_list = ['ns','us', 'ms', 's']
@@ -78,6 +74,8 @@ class QPLviewGUI(QtWidgets.QMainWindow):
 
         self._zoom_full()
         self.ui.canvas.update_figure()
+        self.ui.canvas.add_zoom_rect()
+
 
     def resizeEvent( self, event ):
         QtWidgets.QWidget.resizeEvent (self, event )
@@ -88,14 +86,6 @@ class QPLviewGUI(QtWidgets.QMainWindow):
         self.ui.canvas.resize_canvas (w=w, h=h*0.8)
         self._zoom_full()
 
-    def add_zoom_rect(self):
-        # setup transparent rectangle for zoom
-        self.rect = Rectangle((0,0), 0, 0, alpha=0.3)
-        self.x0 = None
-        self.y0 = None
-        self.x1 = None
-        self.y1 = None
-        self.ui.canvas.axes.add_patch(self.rect)
 
     def _make_view_channel (self, ch):
         
@@ -146,26 +136,55 @@ class QPLviewGUI(QtWidgets.QMainWindow):
         self.close()
 
     def closeEvent(self, ce):
-        self.fileQuit()
+        print ("Close window...")
+        ce.accept()
 
     def mouseClick(self, event):
-        if (event.xdata != None):
-            self.x0 = event.xdata
-            self.mouse_clicked = True
+        x = event.xdata
+        if (x != None):
+            self.cursor_clicked = self._is_click_near_cursor(x)
+            if (self.cursor_clicked == False):
+                self.x0 = event.xdata
+                self.mouse_clicked = True
 
     def mouseMove(self, event):
         if self.mouse_clicked:
             if (event.xdata != None):
                 self.x1 = event.xdata
+                self.ui.canvas.draw_1D_zoom_rect (self.x0, self.x1)
 
     def mouseRelease(self, event):
-        if self.mouse_clicked:
-            if (event.xdata != None):
-                self.x1 = event.xdata
+        if (event.xdata != None):
+            x = event.xdata
 
-        self.mouse_clicked = False
-        self.set_view_range(self.x0, self.x1)
+            c = self.cursor_clicked
+            if (c == False):
+                self.x1 = x
+                if self.mouse_clicked:
+                    self.mouse_clicked = False
+                    self.ui.canvas.close_zoom_rect()
+                    self.set_view_range(self.x0, self.x1)
+            else:
+                self._set_cursor (cursor = c, position =x)
+
         self._update_view()
+
+    def _set_cursor (self, cursor, position):
+        self.ui.canvas.set_cursor (cursor=cursor, position=position)
+
+    def _is_click_near_cursor (self, x):
+        xA, xB = self.ui.canvas.get_cursors()
+        vr = self.get_view_range()
+        R = abs(vr[1]-vr[0])
+        if (abs(x-xA)/R<0.02):
+            a = "c0"
+        elif (abs(x-xB)/R<0.02):
+            a = "c1"
+        else:
+            a = False
+        print ("Click near cursor: ", a)
+        return a 
+
 
     def _slider_changed (self, event):
         D = self._view_range[1] - self._view_range[0]
@@ -182,6 +201,9 @@ class QPLviewGUI(QtWidgets.QMainWindow):
                 self._view_range = [t0, t1]
         except:
             pass
+
+    def get_view_range (self):
+        return self._view_range
 
     def _zoom_full (self):
         self.set_view_range (0, self._max_t)
