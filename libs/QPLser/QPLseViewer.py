@@ -65,6 +65,7 @@ class QPLviewGUI(QtWidgets.QMainWindow):
         self.ui.botton_zoom_in.clicked.connect (self._zoom_in)
         self.ui.button_full_view.clicked.connect (self._zoom_full)
         self.ui.button_zoom_out.clicked.connect (self._zoom_out)
+        self.ui.button_cursors.clicked.connect (self._zoom_cursors)
         self.ui.Hscrollbar.sliderMoved.connect (self._slider_changed)
 
         #INITIALIZATIONS:
@@ -75,7 +76,8 @@ class QPLviewGUI(QtWidgets.QMainWindow):
         self._zoom_full()
         self.ui.canvas.update_figure()
         self.ui.canvas.add_zoom_rect()
-
+        self._set_cursor ("c0", 0)
+        self._set_cursor ("c1", self._max_t)
 
     def resizeEvent( self, event ):
         QtWidgets.QWidget.resizeEvent (self, event )
@@ -171,6 +173,10 @@ class QPLviewGUI(QtWidgets.QMainWindow):
 
     def _set_cursor (self, cursor, position):
         self.ui.canvas.set_cursor (cursor=cursor, position=position)
+        xA, xB = self.ui.canvas.get_cursors()
+        self.ui.text_c0.setText (str(int(xA))+ " nm")
+        self.ui.text_c1.setText (str(int(xB))+ " nm")
+        self.ui.text_diff.setText (str(int(xB-xA))+ " nm")
 
     def _is_click_near_cursor (self, x):
         xA, xB = self.ui.canvas.get_cursors()
@@ -184,7 +190,6 @@ class QPLviewGUI(QtWidgets.QMainWindow):
             a = False
         print ("Click near cursor: ", a)
         return a 
-
 
     def _slider_changed (self, event):
         D = self._view_range[1] - self._view_range[0]
@@ -207,6 +212,11 @@ class QPLviewGUI(QtWidgets.QMainWindow):
 
     def _zoom_full (self):
         self.set_view_range (0, self._max_t)
+        self._update_view()
+
+    def _zoom_cursors (self):
+        xA, xB = self.ui.canvas.get_cursors()
+        self.set_view_range (xA*0.95, xB*1.05)
         self._update_view()
 
     def _zoom_funct (self, alpha):

@@ -149,6 +149,7 @@ class MultiStreamCanvas (StreamCanvas):
     def __init__(self, *args, **kwargs):
         StreamCanvas.__init__(self, *args, **kwargs)
         self._lines0 = []
+        self._lines1 = []
 
     def reset_canvas (self):
         self.fig.clf()
@@ -171,7 +172,6 @@ class MultiStreamCanvas (StreamCanvas):
         elif (cursor == "c1"):
             self._cursor_x1 = position
             self._draw_cursor1()
-        print ("Modified cursor position: ", cursor, position)
 
     def get_cursors (self):
         return self._cursor_x0, self._cursor_x1
@@ -214,7 +214,6 @@ class MultiStreamCanvas (StreamCanvas):
             self.axes[i].set_xlim ([t0, t1])
             self.axes[i].figure.canvas.draw_idle()
         self.phax.set_xlim([t0, t1])
-        #self._draw_cursors()
         self.repaint()
 
     def _plot_channels (self):
