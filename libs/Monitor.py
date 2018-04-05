@@ -1,6 +1,7 @@
 
 import numpy as np
 import pylab as plt
+import sys
 import time
 import msvcrt
 import getpass
@@ -12,17 +13,20 @@ from tools import QPLemail
 reload (LS335)
 reload (QPLemail)
 
-class Monitor ():
+class TemperatureMonitor ():
 
-    def __init__ (self, bay = 2, temperature_ctrl = None):
+    def __init__ (self, bay = 2, temperature_ctrl = None, wait_email = 60, wait_T_readout=600):
         self._bay = bay
         self._name = 'bay'+str(bay)
         self._notifications = True
-        self._wait_email = 300
-        self._wait_T_readout = 1200
         self._offset = 100
         self._pwd = None
+        self._wait_email = wait_email
+        self._wait_T_readout = wait_T_readout
 
+        print ("QPL TEMPERATURE MONITOR")
+        print ("-----------------------")
+        print ("")
         if temperature_ctrl:
             self._Tctrl = temperature_ctrl
         else:
@@ -33,16 +37,19 @@ class Monitor ():
 
         self._scheduler = BlockingScheduler()
         self._scheduler.configure(timezone='UTC')
-        self._scheduler.add_job(self._check_email, 'interval', seconds=10)
-        self._scheduler.add_job(self._get_temperature, 'interval', seconds=3)
+        self._scheduler.add_job(self._check_email, 'interval', seconds=self._wait_email)
+        self._scheduler.add_job(self._get_temperature, 'interval', seconds=self._wait_T_readout)
 
     def login (self):
         try:
            print ("Enter password...")
            self._pwd = getpass.getpass()
            self._email = QPLemail.QPLmail(bay=self._bay, password=self._pwd)
+           print ("Login succesful.")
         except:
             print ("Login failed!")
+            e = sys.exc_info()[0]
+            print ( "Error: %s" %e)
 
     def set_max_temperature (self, T=10):
         self._max_T = T
@@ -52,11 +59,11 @@ class Monitor ():
 
         for msg in msg_dict:
             body = msg['body'][0].as_string()
-            print (msg)
+            #print (msg)
             sender = msg['mail_from'][0]
             sender_addr = msg['mail_from'][1]
-            print (sender)
-            print (sender_addr)
+            #print (sender)
+            #print (sender_addr)
 
             if (body.find ('notifications-off')>0):
                 self._deactivate(sender)
@@ -76,6 +83,7 @@ class Monitor ():
     def _send_alarm_email (self):
         self._email.send (to=['cb76@hw.ac.uk'], subject='Help!', 
                                 message='Current temperature: '+str(self.curr_T)+'K')
+        print ("ALARM! Email sent.")
 
     def _activate(self, sender):
         self._notifications = True
@@ -102,15 +110,18 @@ class Monitor ():
         pass
 
     def start (self):
-        self._scheduler.start()
-        print('Press Ctrl+{0} to exit'.format('Break' if os.name == 'nt' else 'C'))
 
         try:
+            print ("")
+            print ("Scheduler initialized. Press [Ctrl+C] to terminate.")
+            self._scheduler.start()
+            
             while True:
                 time.sleep(1)
-        except (KeyboardInterrupt, SystemExit):
-            # Not strictly necessary if daemonic mode is enabled but should be done if possible
+        
+        except KeyboardInterrupt:       
             self._scheduler.shutdown()
+            print ("Scheduler terminated.")
 
 
 
