@@ -428,8 +428,6 @@ class Stream ():
             self.labels_list = self.ch_list
             self.color_list = color_list_D + color_list_A           
 
-
-        print(self.ch_list)
         d = int(self.get_max_time())
         
         plot_dict = {}

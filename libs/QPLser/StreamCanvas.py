@@ -150,11 +150,22 @@ class MultiStreamCanvas (StreamCanvas):
         StreamCanvas.__init__(self, *args, **kwargs)
         self._lines0 = []
         self._lines1 = []
+        self._cursors_enabled = False
+
+    def reset_cursors(self):
+        self._cursor_x0 = self._x_min + 5
+        self._cursor_x1 = self._x_max - 5
+
+        self._draw_cursor0()
+        self._draw_cursor1()
+
+    def enable_cursors (self, value):
+        self._cursors_enabled = value
 
     def reset_canvas (self):
         self.fig.clf()
 
-        self.make_phantom_axis()
+        #self.make_phantom_axis()
         
         self.axes = []
         self._nr_chans_in_view = int(sum(self._view_chs))
@@ -177,19 +188,48 @@ class MultiStreamCanvas (StreamCanvas):
         return self._cursor_x0, self._cursor_x1
 
     def _draw_cursor0 (self):
+
         try:
-            self._lines0.pop().remove()
+            while (len(self._lines0)>0):
+                self._lines0.pop().remove()
         except:
             pass
-        self._lines0.append(self.phax.vlines (x=self._cursor_x0, ymin = 0, ymax=1, color='yellow'))
+
+        if self._cursors_enabled:
+            print ("drawing cursor 0!!")
+            if (self._pdict == None):
+                self._pdict = self._stream.get_plot_dict()
+
+            i = 0
+            for ind, ch in enumerate(self._stream.ch_list):
+
+                if (int(self._view_chs[ind]) == 1):
+                    self._lines0.append(self.axes[i].axvline(x=self._cursor_x0, color='yellow', linestyle='--'))
+                    i+=1
+
         self.repaint()
 
     def _draw_cursor1 (self):
+
         try:
-            self._lines1.pop().remove()
+            while (len(self._lines1)>0):
+                self._lines1.pop().remove()
         except:
             pass
-        self._lines1.append(self.phax.vlines (x=self._cursor_x1, ymin = 0, ymax=1, color='yellow'))
+
+        if self._cursors_enabled:
+            print ("drawing cursor 0!!")
+
+            if (self._pdict == None):
+                self._pdict = self._stream.get_plot_dict()
+
+            i = 0
+            for ind, ch in enumerate(self._stream.ch_list):
+
+                if (int(self._view_chs[ind]) == 1):
+                    self._lines1.append(self.axes[i].axvline(x=self._cursor_x1, color='yellow', linestyle='--'))
+                    i+=1
+
         self.repaint()
 
     def set_view_channels(self, channels_idx):
@@ -213,7 +253,7 @@ class MultiStreamCanvas (StreamCanvas):
         for i in range(self._nr_chans_in_view):
             self.axes[i].set_xlim ([t0, t1])
             self.axes[i].figure.canvas.draw_idle()
-        self.phax.set_xlim([t0, t1])
+        #self.phax.set_xlim([t0, t1])
         self.repaint()
 
     def _plot_channels (self):
@@ -226,6 +266,18 @@ class MultiStreamCanvas (StreamCanvas):
         curr_offset = 0
         tick_pos = []
         offset = 2
+
+        try:
+            while (len(self._lines0)>0):
+                self._lines0.pop().remove()
+        except:
+            pass
+
+        try:
+            while (len(self._lines1)>0):
+                self._lines1.pop().remove()
+        except:
+            pass
 
         i = 0 #index that runs over the axes that are actually plotted
         for ind, ch in enumerate(self._stream.ch_list):
@@ -260,6 +312,10 @@ class MultiStreamCanvas (StreamCanvas):
                 self.axes[i].set_yticks(yminor_ticks, minor=True)
                 self.axes[i].grid(which='major', color='white', linestyle='--', alpha = 0.3)
                 self.axes[i].grid(which='minor', color='lightyellow', linestyle=':', alpha = 0.15)
+
+                if self._cursors_enabled:
+                    self._lines0.append(self.axes[i].axvline(x=self._cursor_x0, color='yellow', linestyle='--'))
+                    self._lines1.append(self.axes[i].axvline(x=self._cursor_x1, color='yellow', linestyle='--'))
 
                 for label in (self.axes[i].get_xticklabels() + self.axes[i].get_yticklabels()):
                     label.set_fontsize(7)

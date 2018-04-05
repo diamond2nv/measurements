@@ -67,6 +67,7 @@ class QPLviewGUI(QtWidgets.QMainWindow):
         self.ui.button_zoom_out.clicked.connect (self._zoom_out)
         self.ui.button_cursors.clicked.connect (self._zoom_cursors)
         self.ui.Hscrollbar.sliderMoved.connect (self._slider_changed)
+        self.ui.radioButton.toggled.connect (self._cursor_button)
 
         #INITIALIZATIONS:
         #self.units_list = ['ns','us', 'ms', 's']
@@ -79,7 +80,17 @@ class QPLviewGUI(QtWidgets.QMainWindow):
         self._set_cursor ("c0", 0)
         self._set_cursor ("c1", self._max_t)
 
-    def resizeEvent( self, event ):
+    def _cursor_button (self, enabled):
+        print ("radio button: ", enabled)
+        if enabled:
+            self.ui.canvas.enable_cursors(True)
+        else:
+            self.ui.canvas.enable_cursors(False)
+        self.ui.canvas.reset_cursors()
+        self._update_view()
+        #self._zoom_cursors()
+
+    def resizeEvent (self, event):
         QtWidgets.QWidget.resizeEvent (self, event )
         w = event.size().width()
         h = event.size().height()
@@ -188,7 +199,6 @@ class QPLviewGUI(QtWidgets.QMainWindow):
             a = "c1"
         else:
             a = False
-        print ("Click near cursor: ", a)
         return a 
 
     def _slider_changed (self, event):
