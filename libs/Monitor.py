@@ -1,6 +1,7 @@
 
 import numpy as np
 import pylab as plt
+import os
 import time
 import msvcrt
 import getpass
@@ -102,10 +103,12 @@ class Monitor ():
         pass
 
     def start (self):
-        self._scheduler.start()
-        print('Press Ctrl+{0} to exit'.format('Break' if os.name == 'nt' else 'C'))
+
+        print('Press Ctrl+C to exit')
 
         try:
+            self._scheduler.start()
+
             while True:
                 time.sleep(1)
         except (KeyboardInterrupt, SystemExit):
