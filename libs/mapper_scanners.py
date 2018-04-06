@@ -91,7 +91,9 @@ class ScannerCtrl (mgen.DeviceCtrl):
         if type(key) is not int:
             raise TypeError('Axis number should be an integer.')
         if not 0 <= key < self.number_of_axes:
-            raise IndexError(f'The addressed axis does not exist (out of bounds). This device has {self.number_of_axes} axes defined, you tried accessing axis {key}.')
+            raise IndexError('The addressed axis does not exist (out of bounds). ' +
+                             f'This device has {self.number_of_axes} axes defined, ' +
+                             f'you tried accessing axis {key}.')
         return Saxis(self, key)
 
     def __len__(self):
@@ -210,13 +212,20 @@ class ScannerCtrl (mgen.DeviceCtrl):
     def move_smooth(self, scanner_axes, targets=[]):
         """ Move smoothly the specified axis to the target. Should be
         called preferentially to move() when the step is big.
+        IMPORTANT: Note this construction through the scanner object 
+        allows the user to overloard move_smooth() for a specific 
+        scanner.
         
         Args:
             scanner_axes (list): list of Saxis objects or ScannerCtrl
                 object.
             targets (list, optional): list of target positions.
         """
-        move_smooth(scanner_axes=scanner_axes, targets=targets)
+
+        # move_smooth(scanner_axes=scanner_axes, targets=targets)
+        
+        for scanner_axis, target in zip(scanner_axes, targets):
+            move_smooth_simple(scanner_axis, target)
 
     def close_error_handling(self):
         """ Warning message generated for an error at communication
@@ -258,7 +267,7 @@ class Saxis():
         """ Moves s-axis to target.
         
         Args:
-            target (float): target to move to.
+            target (float): target position to move to.
         """
         self.scanner.move(target=target, axis=self.axis)
 
@@ -271,20 +280,33 @@ class Saxis():
         return self.scanner.get(axis=self.axis)
 
     def move_smooth(self, target):
-        """ Moves smoothly s-axis to target.
+        """ Moves smoothly s-axis to target. See move_smooth() for more.
         
         Args:
-            target (TYPE): Description
+            target (float): target position to move to.
         """
-        # note this construction through the scanner object allows the user to overload move_smooth() for a specific scanner
         self.scanner.move_smooth(scanner_axes=[self], targets=[target])
+
     def initialize(self):
+        """ Initializes the communication with the instrument. """
         self.scanner.initialize()
+
     def close(self):
+        """ Closes the communication with the instrument. """
         self.scanner.close()
 
 
 def move_smooth(scanner_axes, targets=[]):
+    """ Moves s-axes smoothly to target positions. The function
+        calculates the most efficient trajectory through the different
+        positions, moving all axes silmutaneously with their respective
+        smooth_step and using the longest smooth_delay among the s-axes.
+    
+    Args:
+        scanner_axes (Saxis list): list of s-axes to move
+        targets (list, optional): list of floats, respective target
+            positions for the s-axes
+    """
     smooth_steps = [s_axis.scanner.smooth_step for s_axis in scanner_axes]
     smooth_delay = 0
     for s_axis in scanner_axes:
@@ -315,6 +337,26 @@ def move_smooth(scanner_axes, targets=[]):
     for i in range(total_nb_of_steps):
         for s_axis, pos in zip(scanner_axes, smooth_positions):
             s_axis.move(pos[i])
+        time.sleep(smooth_delay)
+
+def move_smooth_simple(scanner_axis, target):
+    """ Moves one s-axis smoothly to target position.
+    
+    Args:
+        scanner_axis (Saxis): s-axis to move
+        target (float): target position for the s-axis
+    """
+    smooth_step = scanner_axis.scanner.smooth_step
+    smooth_delay = scanner_axis.scanner.smooth_delay
+
+    to_pos = target
+    from_pos = scanner_axis.get()
+    nb_steps = int(abs(np.floor((from_pos - to_pos) / float(smooth_step))) + 1)
+
+    smooth_positions = np.linspace(from_pos, to_pos, nb_steps)
+
+    for pos in smooth_positions:
+        scanner_axis.move(pos)
         time.sleep(smooth_delay)
 
 
@@ -452,10 +494,7 @@ class Keithley2220(ScannerCtrl):
         self._axes_modes = ['voltage' for ch in self._channels]
 
     def _initialize(self, switch_on_output=False):
-        try:
-            self._Keithley_handle = KeithleyPSU2220.Keithley2220(self._VISA_address)
-        except visa.VisaIOError as err:
-            self.visa_error_handling(err)
+        self._Keithley_handle = KeithleyPSU2220.Keithley2220(self._VISA_address)
         if switch_on_output:
             self.output_switch(on=True)
 
@@ -517,6 +556,15 @@ class Keithley2220_negpos(ScannerCtrl):
         super().__init__(channels=[0])
         self.keithley = Keithley2220(VISA_address, channels=[ch_neg,ch_pos])
 
+        self.string_id = 'Keithley PSU2220 DC power supply controlled by VISA ' +\
+                         '- negative/positive control'
+
+        self.smooth_step = 0.5
+        self.smooth_delay = 0.05
+
+    def _initialize(self, switch_on_output=False):
+        self.keithley._initialize(switch_on_output)
+
     def _move(self, target, axis=0):
         if target < 0:
             self.keithley._move(-target, axis=0)
@@ -530,9 +578,13 @@ class Keithley2220_negpos(ScannerCtrl):
         pos_bias = self.keithley._get(1)
         return pos_bias-neg_bias
 
+    def _close(self):
+        self.keithley._close()
+
 
 class SolstisLaserScanner(ScannerCtrl):
-    def __init__(self, laser_ip_address, pc_ip_address, port_number, timeout=40, finish_range_radius=0.01, max_nb_of_fails=10):
+    def __init__(self, laser_ip_address, pc_ip_address, port_number, timeout=40, 
+                 finish_range_radius=0.01, max_nb_of_fails=10):
         super().__init__([0])
         self.smooth_step = 1000.  # This high value is to prevent the move_smooth
 
@@ -547,7 +599,9 @@ class SolstisLaserScanner(ScannerCtrl):
         
     def _initialize(self, switch_on_output=False):
 
-        self._laser_handle = solstis.SolstisLaser(laser_ip_address=self.laser_ip_address, pc_ip_address=self.pc_ip_address, port_number=self.port_number)
+        self._laser_handle = solstis.SolstisLaser(laser_ip_address=self.laser_ip_address, 
+                                                  pc_ip_address=self.pc_ip_address, 
+                                                  port_number=self.port_number)
    
     def _move(self, target, axis):
         self._laser_handle.set_wavelength(target)
@@ -555,14 +609,16 @@ class SolstisLaserScanner(ScannerCtrl):
         nb_of_fails = 0
         while True:
             try:
-                self._laser_handle.wait_for_tuning(timeout=self.timeout, finishRangeRadius=self.finish_range_radius)
+                self._laser_handle.wait_for_tuning(timeout=self.timeout, 
+                                                   finishRangeRadius=self.finish_range_radius)
             except solstis.SolstisError:
                 nb_of_fails += 1
                 if nb_of_fails > self.max_nb_of_fails:
                     self.problematic_wavelengths.append(target)
                     break
                 else:
-                    print('Laser failed to tune to {}, retrying {}/{}'.format(target, nb_of_fails, self.max_nb_of_fails))
+                    print(f'Laser failed to tune to {target}, ' +
+                          f'retrying {nb_of_fails}/{self.max_nb_of_fails}')
                     self._laser_handle.set_wavelength(target)
             else:
                 break

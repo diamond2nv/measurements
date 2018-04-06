@@ -109,7 +109,9 @@ class XYScan ():
             first_point = True
             idx = 0
 
-            move_smooth(self._scanner_axes, targets=[self.xPositions[0], self.yPositions[0]])
+            self._scanner_axes[0].move_smooth(self.xPositions[0])
+            self._scanner_axes[1].move_smooth(self.yPositions[0])
+            # move_smooth(self._scanner_axes, targets=[self.xPositions[0], self.yPositions[0]])
 
             print('\nScanners are at start position. Waiting for acquisition.\n')
 
@@ -166,7 +168,8 @@ class XYScan ():
             if self._back_to_zero:
                 print('\nGoing back to 0 V on scanners...')
 
-                move_smooth(self._scanner_axes, targets=[0, 0])
+                self._scanner_axes[0].move_smooth(0)
+                self._scanner_axes[1].move_smooth(0)
 
             print('\nSCAN COMPLETED\n' +
                   'X from {:.2f} V to {:.2f} V with step size {:.2f} V (nb of steps: {})\n'.format(self.xPositions[0], self.xPositions[-1], self.xStep, self.xNbOfSteps) +
