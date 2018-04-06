@@ -25,7 +25,7 @@ reload(mdet)
 delayBetweenPoints = 0.5
 delayBetweenRows = 0.
 
-xLims = (60, 0)  # (0, 5)
+xLims = (0, 60)  # (0, 5)
 xStep = 0.5
 
 voltsDirectory = r'C:\Users\QPL\Desktop\temp_measurements'
