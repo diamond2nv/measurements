@@ -25,17 +25,17 @@ reload(mdet)
 delayBetweenPoints = 0.5
 delayBetweenRows = 0.5
 
-xLims = (65, 70)  # (10, 100)
-xStep = 1
+xLims = (110, 124)  # (10, 100)
+xStep = 0.5
 
-yLims = (65, 67)  # (10, 140)
-yStep = 1
+yLims = (50, 64)  # (10, 140)
+yStep = 0.5
 
 voltsDirectory = r'C:\Users\QPL\Desktop\temp_measurements'
 
 #######################
 # instruments
-attoCtrl = mscan.AttocubeVISA(VISA_address=r'ASRL11::INSTR', chX=2, chY=1)
+attoCtrl = mscan.AttocubeVISA(VISA_address=r'ASRL13::INSTR', chX=1, chY=2)
 spectroCtrl = mdet.ActonNICtrl(sender_port="/Weetabix/port2/line0",
                                receiver_port="/Weetabix/port2/line4")
 multimeterCtrl = mdet.MultimeterCtrl(VISA_address=r'GPIB0::13::INSTR')
