@@ -7,7 +7,7 @@ import visa
 
 from measurements.libs import mapper_general as mgen
 
-#from measurements.instruments.LockIn7265GPIB import LockIn7265
+from measurements.instruments.LockIn7265GPIB import LockIn7265
 from measurements.instruments import NIBox
 from measurements.instruments import AttocubeANCV1 as attoANC
 from measurements.instruments.pylonWeetabixTrigger import voltOut
@@ -372,23 +372,24 @@ def move_smooth_simple(scanner_axis, target):
 
 class TestScanner (ScannerCtrl):
 
-    def __init__(self, address, channels=[2,3]):
+    def __init__(self, channels=[2,3]):
         super().__init__(channels=channels)
         self.string_id = 'Test device'
-        self.address = address
 
         self.smooth_step = 0.5
         self.smooth_delay = 0.5
+        self._curr_pos = np.zeros(len(channels)) + 2
 
     def _initialize(self):
         print('Device initialized')
 
     def _move(self, target, axis=0):
+        self._curr_pos[axis] = target
         print(f'Move axis {axis} to target {target}')
 
     def _get(self, axis=0):
         print(f'Got value from axis {axis}')
-        return 1.1
+        return self._curr_pos[axis]
 
     def _close(self):
         print('Closing test device')

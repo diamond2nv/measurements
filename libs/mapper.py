@@ -25,8 +25,12 @@ class XYScan ():
         self._back_to_zero = False
 
         # determine the longest test delay in the detectors
-        self.max_delay_state_check = max([detector.delay_state_check for detector in self._detectors])
-        self.max_delay_after_readout = max([detector.delay_after_readout for detector in self._detectors])
+        if self._detectors is not None:
+            self.max_delay_state_check = max([detector.delay_state_check for detector in self._detectors])
+            self.max_delay_after_readout = max([detector.delay_after_readout for detector in self._detectors])
+        else:
+            self.max_delay_state_check = 0
+            self.max_delay_after_readout = 0
 
     def set_delays(self, between_points, between_rows):
         self.delayBetweenPoints = between_points
@@ -191,8 +195,9 @@ class XYScan ():
     def close_instruments(self):
         for scanner in self._scanner_axes:
             scanner.close()
-        for detector in self._detectors:
-            detector.close()
+        if self._detectors is not None:
+            for detector in self._detectors:
+                detector.close()
 
 
 
