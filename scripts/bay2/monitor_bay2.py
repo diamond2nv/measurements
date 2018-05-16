@@ -7,7 +7,14 @@ from measurements.libs import Monitor
 reload (LS335)
 reload (Monitor)
 
-bay2_monitor = Monitor.TemperatureMonitor (bay=2, wait_email = 6, wait_T_readout = 15)
-bay2_monitor.set_max_temperature(10)
+
+tCtrl = LS335.Lakeshore335('ASRL19::INSTR')
+tCtrl.id()
+t = tCtrl.get_kelvin(channel=2)
+print ("Temperature: ", float(t), " kelvin")
+
+bay2_monitor = Monitor.Monitor (bay=2, temperature_ctrl=tCtrl, wait_email=30, wait_T_readout=900)
+bay2_monitor.set_max_temperature (10)
+bay2_monitor.set_channel(2)
 bay2_monitor.login()
 bay2_monitor.start()

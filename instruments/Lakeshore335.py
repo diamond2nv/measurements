@@ -12,7 +12,7 @@ class Lakeshore335():
         rm = visa.ResourceManager()
         self._instr = rm.open_resource(visaAddress)
         self._instr.baud_rate = 57600
-        self._instr.data_bits = 1
+        self._instr.data_bits = 7
         self._instr.parity = visa.constants.Parity.odd
         self._instr.stop_bits = visa.constants.StopBits.one
 
@@ -26,7 +26,7 @@ class Lakeshore335():
         print(self._instr.ask ('*IDN?'))
 
     def get_kelvin (self, channel):
-        return instr.ask ('KRDG? '+str(channel))
+        return float(self._instr.ask ('KRDG? '+str(channel)))
 
     def close(self):
         self._instr.close()
