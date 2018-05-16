@@ -27,7 +27,7 @@ class Lakeshore335():
         print(self._instr.ask ('*IDN?'))
 
     def get_kelvin (self, channel):
-        return self._instr.ask ('KRDG? '+str(channel))
+        return float(self._instr.ask ('KRDG? '+str(channel)))
 
     def close(self):
         self._instr.close()

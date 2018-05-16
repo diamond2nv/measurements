@@ -7,8 +7,8 @@ import numpy as np
 
 from measurements.libs import mapper_general as mgen
 
-# from measurements.instruments.LockIn7265GPIB import LockIn7265
 from measurements.instruments import NIBox
+from measurements.instruments.LockIn7265 import LockIn7265
 from measurements.instruments.pylonWeetabixTrigger import trigSender, trigReceiver
 from measurements.instruments.KeithleyMultimeter import KeithleyMultimeter
 if sys.version_info.major == 3:
@@ -24,19 +24,19 @@ class DetectorCtrl (mgen.DeviceCtrl):
     delay_after_readout = 0.
     delay_state_check = 0.
 
-    def __init__(self, work_folder):
+    def __init__(self, work_folder=None):
         self._wfolder = work_folder
 
-    def initialize (self):
+    def initialize(self):
         pass
 
-    def readout (self):
+    def readout(self):
         return None
 
-    def is_ready (self):
+    def is_ready(self):
         return True
 
-    def first_point (self):
+    def first_point(self):
         return True
 
     def _close(self):
@@ -48,24 +48,25 @@ class DetectorCtrl (mgen.DeviceCtrl):
 
 class PylonNICtrl (DetectorCtrl):
 
-    def __init__(self, work_folder, sender_port="/Weetabix/port1/line3", receiver_port = "/Weetabix/port1/line2"):
+    def __init__(self, sender_port="/Weetabix/port1/line3", receiver_port="/Weetabix/port1/line2", work_folder=None):
         self.string_id = 'Pylon (new spectro) camera - NI box control'
         self._wfolder = work_folder
         self._sender_port = sender_port
         self._receiver_port = receiver_port
 
-    def initialize (self):
+    def initialize(self):
         self.senderTask = trigSender(self._sender_port)
         self.senderTask.StartTask()
         self.receiverTask = trigReceiver(self._receiver_port)
         self.receiverTask.StartTask()
 
-    def wait_for_ready (self):
-        CCDready = 0
-        while CCDready == 0:
-            CCDready = self.receiverTask.listen()
+    def first_point(self):
+        return self.receiverTask.listen()
 
-    def readout (self):
+    def is_ready(self):
+        return self.receiverTask.listen()
+
+    def readout(self):
         self.senderTask.emit()
         return 0
 
@@ -76,46 +77,43 @@ class PylonNICtrl (DetectorCtrl):
 
 class ActonNICtrl (DetectorCtrl):
 
-    def __init__(self, sender_port, receiver_port):
+    def __init__(self, sender_port, receiver_port, work_folder=None):
         self.string_id = 'Acton (old spectro) camera - NI box control'
         self._sender_port = sender_port
         self._receiver_port = receiver_port
         self.delay_after_readout = 0.5
         # self.expect_not_scan = True
+        self.measurement_started_flag = False
         self.first_point_flag = True
+        self._wfolder = work_folder
 
-    def initialize (self):
+    def initialize(self):
         self.senderTask = trigSender(self._sender_port)
         self.senderTask.StartTask()
         self.receiverTask = trigReceiver(self._receiver_port)
         self.receiverTask.StartTask()
 
-    def first_point (self):
+    def first_point(self):
 
-        if self.first_point_flag:
+        if not self.measurement_started_flag:
             self.senderTask.emit()
             time.sleep(0.1)
             if self.receiverTask.listen():
-                self.first_point_flag = False
-        if not self.first_point_flag:
+                self.measurement_started_flag = True
+        if self.measurement_started_flag:
             return True
         else:
             return False
 
-    def is_ready (self):
-        # if self.expect_not_scan:  # wait for CCD 'NOT SCAN' signal (device scanning)
-        #     if self.receiverTask.listen():
-        #         self.expect_not_scan = False
-        # if not self.expect_not_scan:
-        #     if not self.receiverTask.listen():
-        #         return True
-        # return False
-
+    def is_ready(self):
         return not self.receiverTask.listen()  # when NOT SCAN signal is down -> detector ready
 
-    def readout (self):
-        self.senderTask.emit()
-        self.expect_not_scan = True
+    def readout(self):
+        if self.first_point_flag:
+            self.first_point_flag = False
+        else:
+            self.senderTask.emit()
+            # self.expect_not_scan = True
         return 0
 
     def _close(self):
@@ -125,68 +123,70 @@ class ActonNICtrl (DetectorCtrl):
 
 class ActonLockinCtrl (DetectorCtrl):
 
-    def __init__(self, work_folder, lockinVisaAddress):
+    def __init__(self, lockinVisaAddress, work_folder=None):
         self.string_id = 'Acton (old spectro) camera - Lockin control'
         self._wfolder = work_folder
         self._lockin = LockIn7265(lockinVisaAddress)
         self.delay_after_readout = 0.5
         self.delay_state_check = 0.1 
+        self.measurement_started_flag = False
         self.first_point_flag = True
 
-    def first_point (self):
-        if self.first_point_flag:
-            self._lockin.sendPulse()
+    def first_point(self):
+        if not self.measurement_started_flag:
+            self._lockin.send_pulse()
             time.sleep(0.1)
-            if self._lockin.readADCdigital():
-                self.first_point_flag = False
-        if not self.first_point_flag:
+            if self._lockin.read_ADC_digital():
+                self.measurement_started_flag = True
+        if self.measurement_started_flag:
             return True
         else:
             return False
-        
 
-    def is_ready (self):
-        return not self._lockin.readADCdigital()
+    def is_ready(self):
+        return not self._lockin.read_ADC_digital()
 
-    def readout (self):
-        self.lockin.sendPulse()
+    def readout(self):
+        if self.first_point_flag:
+            self.first_point_flag = False
+        else:
+            self._lockin.send_pulse()
         return 0
 
     def _close(self):
-        self.lockin.close()
+        self._lockin.close()
 
 
 class APDCounterCtrl (DetectorCtrl):
 
-    def __init__(self, work_folder, ctr_port, debug = False):
+    def __init__(self, ctr_port, debug=False, work_folder=None):
         self.string_id = 'APD NI box counter'
         self._wfolder = work_folder
         self._ctr_port = ctr_port
         self.delay_after_readout = 0.
         self._debug = debug
-        
-    def set_integration_time_ms (self, t):
+
+    def set_integration_time_ms(self, t):
         self._ctr_time_ms = t
 
-    def initialize (self):
+    def initialize(self):
         self._ctr = NIBox.NIBoxCounter(dt=self._ctr_time_ms)
-        self._ctr.set_port (self._ctr_port)
+        self._ctr.set_port(self._ctr_port)
 
-    def readout (self):
+    def readout(self):
         self._ctr.start()
-        c = self._ctr.get_counts ()
+        c = self._ctr.get_counts()
         self._ctr.stop()
 
         if self._debug:
-            print ("APD counts: ", c)
+            print("APD counts: ", c)
 
         return c
 
-    def first_point (self):
-        self.readout()
+    def first_point(self):
         return True
 
-    def _close (self):
+    def _close(self):
         self._ctr.clear()
 
 class dummyAPD (DetectorCtrl):
@@ -221,22 +221,23 @@ class dummyAPD (DetectorCtrl):
     def _close (self):
         pass
 
-class VoltmeterCtrl (DetectorCtrl):
+class MultimeterCtrl (DetectorCtrl):
 
-    def __init__(self, VISA_address):
-        self.string_id = 'Voltmeter'
+    def __init__(self, VISA_address, mode='voltage', work_folder=None):
+        self.string_id = 'Keithley multimeter'
         self._VISA_address = VISA_address
         self.delay_after_readout = 0.
+        self._wfolder = work_folder
+        self.mode = mode
 
-    def initialize (self):
+    def initialize(self):
         try:
-            self._voltmeter = KeithleyMultimeter(self._VISA_address)
+            self._multimeter = KeithleyMultimeter(self._VISA_address, meas_mode=self.mode)
         except visa.VisaIOError as err:
             self.visa_error_handling(err)
 
-    def readout (self):
-        return self._voltmeter.read()
+    def readout(self):
+        return self._multimeter.read()
 
-    def _close (self):
-        self._voltmeter.close()
-
+    def _close(self):
+        self._multimeter.close()

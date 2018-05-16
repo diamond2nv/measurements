@@ -270,8 +270,8 @@ class AttoPos(QWidget):
                 self.attoScanners = AttocubeANC(visaResourceId=visaScannersId)
                 self.scannersAndPositionersOnSameDevice = False
                 
-        except visa.VisaIOError:
-            errorMessageWindow(self, 'Problem connecting with the controller', 'The program could not connect with the Attocube controller.\nPlease check the address of the device in the config of the script.')
+        except visa.VisaIOError as e:
+            errorMessageWindow(self, 'Problem connecting with the controller', 'The program could not connect with the Attocube controller and raised the following VISA error:\n{}\n\nPlease check the config address of the device in the script.'.format(e))
             raise
         
         try:

@@ -3,6 +3,8 @@
 Created on Mon Oct 31 14:34:49 2016
 
 @author: Raphael Proux, Quantum Photonics Lab, Heriot-Watt University
+
+Library to handle communication with Starlight cameras.
 """
 
 import pylab as pl
@@ -16,6 +18,13 @@ def bytesToPx(data):
     return pl.array(struct.unpack(r'<{}H'.format(int(len(data)/2)), data))
    
 class StarlightCCDs():
+
+    """ Class used to get the list of all Starlight cameras connected (for now only fully works for an Ultrastar and a Lodestar X2)
+    
+    Attributes:
+        devices (list): list of devices found (pyusb instrument handlers)
+        models (list): list of model string identifiers
+    """
     
     def __init__(self):
         self.devices = []
@@ -41,6 +50,8 @@ class StarlightCCDs():
     
    
 class StarlightCamUSB(StarlightCCDs):
+
+    """ Low-level handling of the communication with the camera, initialising CCD, reading, exposing, etc. """
     
     # Commands (to be passed in cmd)
     GET_FIRMWARE_VERSION = 255

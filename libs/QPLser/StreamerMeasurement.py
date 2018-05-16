@@ -428,8 +428,6 @@ class Stream ():
             self.labels_list = self.ch_list
             self.color_list = color_list_D + color_list_A           
 
-
-        print(self.ch_list)
         d = int(self.get_max_time())
         
         plot_dict = {}
@@ -1071,7 +1069,7 @@ class StreamController ():
             qApp = QtWidgets.QApplication(sys.argv)
 
         gui = QPLseViewer.QPLviewGUI (stream_dict = self._stream_dict)
-        gui.setWindowTitle('QPLseViewer')
+        gui.setWindowTitle('QPLseViewer:PulseStreamers')
         gui.show()
         sys.exit(qApp.exec_())
 

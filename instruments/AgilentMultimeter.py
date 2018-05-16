@@ -1,25 +1,25 @@
 # -*- coding: utf-8 -*-
 """
 Created on June 2016
-Last modified on 14/02/2017 by Raphael Proux
+Last modified on 20/02/2017 by Raphael Proux
 
 @author: ted santana and raphael proux
 
-Library to handle the Keithley 2000 Multimeter (table-top)
+Library to handle the Agilent 34401A Multimeter (table-top)
 """
 
 import visa
 
-class KeithleyMultimeter():
+class AgilentMultimeter():
 
-    """ Drives Keithley 2000 benchtop multimeter.
+    """ Drives Agilent 34401A benchtop multimeter.
     
     Attributes:
-        keithley (pyvisa.resources.Resource): pyvisa instrument used for communication
+        agilent (pyvisa.resources.Resource): pyvisa instrument used for communication
     """
-
+    
     def __init__(self, VISA_address, meas_mode='voltage'):
-        """ Constructs a driving library for the Keithley 2000 benchtop multimeter.
+        """ Constructs a driving library for the Agilent 34401A benchtop multimeter.
         
         Args:
             VISA_address (str): String containing the visa address (e.g. 'ASRL17::INSTR')
@@ -27,15 +27,15 @@ class KeithleyMultimeter():
                     Determines what is measured by the multimeter then, when calling read, etc.
         
         Raises:
-            IOError: error raised if the device is not detected as a Keithley multimeter. 
-                    Used mostly to differentiate it from the Agilent multimeters.
+            IOError: error raised if the device is not detected as an Agilent multimeter. 
+                    Used mostly to differentiate it from the Keithley multimeters.
         """
         rm = visa.ResourceManager()    # open management indicating the visa path 
-        self.keithley = rm.open_resource(VISA_address)
-        
-        if not self.is_keithley():
+        self.agilent = rm.open_resource(VISA_address)
+
+        if not self.is_agilent():
             self.close()
-            raise IOError('This device is not an KeithleyMultimeter.')
+            raise IOError('This device is not an AgilentMultimeter.')
         if meas_mode == 'voltage':
             self.configureVoltageMeas()
         elif meas_mode == 'current':
@@ -49,14 +49,14 @@ class KeithleyMultimeter():
         """ Method used in the 'with...as' structure for destruction, closes the instrument calling the self.close() function. """
         self.close()
 
-    def is_keithley(self):
-        """ Determines whether this device is a Keithley multimeter (in particular, not an Agilent multimeter).
+    def is_agilent(self):
+        """ Determines whether this device is an Agilent multimeter (in particular, not a Keithley multimeter).
         
         Returns:
-            bool: True if this device is a Keithley multimeter, False otherwise.
+            bool: True if this device is an Agilent multimeter, False otherwise.
         """
-        self.keithley.write('*IDN?')
-        if 'KEITHLEY' in self.keithley.read():
+        self.agilent.write('*IDN?')
+        if 'HEWLETT' in self.agilent.read():
             return True
         else:
             return False
@@ -67,27 +67,26 @@ class KeithleyMultimeter():
         Returns:
             float: last value measured (current in amperes or voltage in volts, depending on configured measurement mode)
         """
-        return self.keithley.query_ascii_values(':fetch?')[0]
+        return self.agilent.query_ascii_values(':read?')[0]
         
     def configureVoltageMeas(self):
         """ Sets the device to measure voltage in volts. """
-        self.keithley.write(":configure:voltage:DC")
-        self.keithley.write(":initiate:continuous ON")
+        self.agilent.write(":configure:voltage:DC")
+        self.agilent.write(r'VOLT:DC:resolution MAX')
         
     def configureCurrentMeas(self):
         """ Sets the device to measure current in amperes. """
-        self.keithley.write(":configure:current:DC")
-        self.keithley.write(":initiate:continuous ON")
+        self.agilent.write(":configure:current:DC")
+        self.agilent.write(r'CURR:DC:resolution MAX')
     
     def close(self):
         """ Closes the connection to the instrument. """
         try:
-            self.keithley.write(":system:key 17")  # restore local operation
-            self.keithley.close()
+            self.agilent.close()
         except visa.InvalidSession:  # resource already closed
             pass
 
- 
+
 if __name__ == "__main__":
     
     # to time the execution of one measurement    
@@ -95,15 +94,12 @@ if __name__ == "__main__":
     import time
     numberOfTries = 10
     
-    with KeithleyMultimeter(r'ASRL17::INSTR', meas_mode='current') as dev:
-        print(dev.is_keithley())
+    with AgilentMultimeter(r'ASRL17::INSTR') as dev:
         startTime = time.time()
         value = 0
         for i in range(numberOfTries):
             value += dev.read()
         endTime = time.time()
-        dev.close()
     value /= numberOfTries
     print((endTime - startTime) / numberOfTries, 's')
     print('mean value: {}'.format(value))
-    
