@@ -11,6 +11,7 @@ from tools import data_object as DO
 import numpy as np
 from measurements.libs.mapper_scanners import move_smooth
 
+
 class XYScan ():
     def __init__(self, scanner_axes=None, detectors=None):
         self._scanner_axes = scanner_axes
@@ -112,9 +113,9 @@ class XYScan ():
             first_point = True
             idx = 0
 
-            self._scanner_axes[0].move_smooth(self.xPositions[0])
-            self._scanner_axes[1].move_smooth(self.yPositions[0])
-            # move_smooth(self._scanner_axes, targets=[self.xPositions[0], self.yPositions[0]])
+            #self._scanner_axes[0].move_smooth(self.xPositions[0])
+            #self._scanner_axes[1].move_smooth(self.yPositions[0])
+            move_smooth(self._scanner_axes, targets=[self.xPositions[0], self.yPositions[0]])
 
             print('\nScanners are at start position. Waiting for acquisition.\n')
 
@@ -123,9 +124,13 @@ class XYScan ():
             for id_y, y in enumerate(self.yPositions):
                 firstInRow = True
                 
+                #print ("y = ", y)
+
                 for id_x, x in enumerate(self.xPositions):
-                    idx = idx + 1
+                    idx += 1
                     
+                    #print ("x = ", x)
+
                     self._scanner_axes[0].move(x)
                     try:
                         self._scanner_axes[1].move(y)
@@ -171,8 +176,12 @@ class XYScan ():
             if self._back_to_zero:
                 print('\nGoing back to 0 V on scanners...')
 
-                self._scanner_axes[0].move_smooth(0)
-                self._scanner_axes[1].move_smooth(0)
+                #self._scanner_axes[0].move_smooth(0)
+                #self._scanner_axes[1].move_smooth(0)
+                
+                move_smooth(self._scanner_axes, targets=[0, 0])
+
+                #move_smooth(self._scanner_axes, targets=[self.xPositions[0], self.yPositions[0]])
 
             print('\nSCAN COMPLETED\n' +
                   'X from {:.2f} V to {:.2f} V with step size {:.2f} V (nb of steps: {})\n'.format(self.xPositions[0], self.xPositions[-1], self.xStep, self.xNbOfSteps) +
@@ -208,11 +217,6 @@ class XYScan ():
 
     def save_to_npz(self, file_name):
         np.savez(file_name+'.npz', self.counts)
-
-    def save_to_txt(self, file_name):
-        np.savetxt (file_name+'_x.txt', self.xPositions)
-        np.savetxt (file_name+'_y.txt', self.yPositions)
-        np.savetxt (file_name+'_cts.txt', self.counts)
 
     def plot_counts(self):
 
