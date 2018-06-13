@@ -257,10 +257,10 @@ class XYOptimizer (XYMapper):
             # wait for detector to say it finished
             self.wait_for_ready(self._detectors)
 
-        m, s = self._fit_gaussian (scan_array=scan_array, counts=counts)
-        return counts, m, s
+        fit_params = self._fit_gaussian (scan_array=scan_array, counts=counts)
+        return counts, fit_params
 
-    def _fit_gaussian (self, scan_array, counts):
+    def _fit_gaussian (self, scan_array, counts, do_fit = True):
         p = counts/np.sum(counts)
         x0 = np.sum (p*scan_array)
         v0 = np.sum (p*(scan_array**2)) - x0**2
@@ -268,27 +268,32 @@ class XYOptimizer (XYMapper):
         ampl0 = 0.5*(counts[0]+counts[-1])
         ampl = max(counts)-ampl0
 
-        #for now we just go for the centre of mass
-        
-        '''
-        x = scan_array
-        y = counts
+        fit_params = [ampl0, ampl, x0, s0]
 
         def gaussian(x, A0, A, x0, sigma):
             return A0 + A*np.exp(-(x-x0)**2 / (2*sigma**2))
 
-        gmodel = lmfit.Model(gaussian)
-        result = gmodel.fit(y, x=x, A0=ampl0, A=ampl, x0=x0, sigma=s0)
+        if do_fit:
+            x = scan_array
+            y = counts
+            gmodel = lmfit.Model(gaussian)
+            result = gmodel.fit(y, x=x, A0=ampl0, A=ampl, x0=x0, sigma=s0)
+            A = result.params['A'].value
+            A0 = result.params['A0'].value
+            x0 = result.params['x'].value
+            sigma = result.params['sigma'].value
+            fit_params = [A0, A, x0, sigma]
+            
+            x_fit = np.linspace (x[0], x[-1], 1000)
+            y_fit = gaussian (x_fit)
 
-        print(result.fit_report())
+            #print(result.fit_report())
 
-        pl.plot(x, y, 'bo')
-        pl.plot(x, result.init_fit, 'k--')
-        pl.plot(x, result.best_fit, 'r-')
-        pl.show()
-        '''
+            pl.plot(x, y, 'o', color='royalblue')
+            pl.plot(x_fit, y_fit, color = 'crimson')
+            pl.show()
         
-        return x0, s0
+        return fit_params
     
     def set_scan_range (self, scan_range=10, scan_step=1):
         self._scan_range = scan_range
@@ -342,9 +347,11 @@ class XYOptimizer (XYMapper):
             self._scanner_axes[1].move_smooth([self._y_init])
 
             #print ('Optimizing...')
-            self._xCounts, self._xm, self._sx = self._optimize (axis_id = 0, scan_array = self.xPositions)
+            self._xCounts, [A0x, Ax, x0, sigma_x] = self._xm, self._sx = self._optimize (axis_id = 0, scan_array = self.xPositions)
+            self._xm = x0
             self._scanner_axes[0].move_smooth(self._xm)
-            self._yCounts, self._ym, self._sy = self._optimize (axis_id = 1, scan_array = self.yPositions)
+            self._yCounts, [A0y, Ay, y0, sigma_y] = self._optimize (axis_id = 1, scan_array = self.yPositions)
+            self._ym = y0
             self._scanner_axes[1].move_smooth(self._ym)
 
             #print ('Done!')
