@@ -63,7 +63,8 @@ class PylonNICtrl (DetectorCtrl):
         return self.receiverTask.listen()
 
     def is_ready(self):
-        return self.receiverTask.listen()
+        a = self.receiverTask.listen()
+        return a
 
     def readout(self):
         self.senderTask.emit()
@@ -105,7 +106,8 @@ class ActonNICtrl (DetectorCtrl):
             return False
 
     def is_ready(self):
-        return not self.receiverTask.listen()  # when NOT SCAN signal is down -> detector ready
+        a = not self.receiverTask.listen()  # when NOT SCAN signal is down -> detector ready
+        return a
 
     def readout(self):
         if self.first_point_flag:

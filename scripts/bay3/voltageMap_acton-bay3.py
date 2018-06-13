@@ -25,8 +25,8 @@ reload(mdet)
 delayBetweenPoints = 0.5
 delayBetweenRows = 0.
 
-xLims = (30, -20)  # (0, 5)
-xStep = 0.25
+xLims = (-1, 1)  # (0, 5)
+xStep = 0.5
 
 voltsDirectory = r'C:\Users\QPL\Desktop\temporary_meas'
 
@@ -35,7 +35,16 @@ voltsDirectory = r'C:\Users\QPL\Desktop\temporary_meas'
 
 #psuCtrl = mscan.Keithley2220(VISA_address=r'GPIB0::10::INSTR', channels=1)
 
-psuCtrl = mscan.Keithley2220_neg_pos(VISA_address=r'GPIB0::10::INSTR', ch_neg=1, ch_pos=2)
+#psuCtrl = mscan.Keithley2220_neg_pos(VISA_address=r'GPIB0::10::INSTR', ch_neg=1, ch_pos=2)
+# =============================================================================
+# =============================================================================
+# =============================================================================
+# =============================================================================
+# # # # psuCtrl = mscan.Keithley2220_negpos(VISA_address=r'GPIB0::10::INSTR', ch_neg=1, ch_pos=2)
+# =============================================================================
+# =============================================================================
+# =============================================================================
+# =============================================================================
 psuCtrl.set_smooth_delay(0.5)
 
 spectroCtrl = mdet.ActonLockinCtrl(lockinVisaAddress=r"GPIB0::14::INSTR")

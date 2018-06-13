@@ -7,7 +7,7 @@ import visa
 
 from measurements.libs import mapper_general as mgen
 
-from measurements.instruments.LockIn7265GPIB import LockIn7265
+from measurements.instruments.LockIn7265 import LockIn7265
 from measurements.instruments import NIBox
 from measurements.instruments import AttocubeANCV1 as attoANC
 from measurements.instruments.pylonWeetabixTrigger import voltOut
@@ -393,6 +393,34 @@ class TestScanner (ScannerCtrl):
 
     def _close(self):
         print('Closing test device')
+
+
+# Test class for Galvo mirrors: Daniel White 03/05/2018
+
+class GalvoNI (ScannerCtrl):
+    def __init__(self, chX='/Dev1/ao0', chY='/Dev1/ao1', start_pos=[0,0], conversion_factor=1/15.):
+        super().__init__(channels=[chX, chY])
+        self.string_id = 'Galvo scanners controlled by NI box AO'
+        self.conversion_factor = conversion_factor
+
+        self.smooth_step = 1
+        self.smooth_delay = 0.05
+
+        self._curr_pos = [pos for channel, pos in zip(self._channels, start_pos)]
+
+    def _initialize(self):
+        self.scanners_volt_drives = [voltOut(channel) for channel in self._channels]
+
+    def _move(self, target, axis=0):
+        self.scanners_volt_drives[axis].write(self.conversion_factor * target)
+        self._curr_pos[axis] = target
+
+    def _get(self, axis=0):
+        return self._curr_pos[axis]
+
+    def _close(self):
+        for scanner in self.scanners_volt_drives:
+            scanner.StopTask()
 
 
 class AttocubeNI (ScannerCtrl):
