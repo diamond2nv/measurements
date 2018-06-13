@@ -380,7 +380,7 @@ class Stream ():
         Prints content of pulse library
         channel can be 'dig', 'anlg', 'all' or a list of channels, as in ['D0', 'A1'], etc
         """
-        if isinstance (channel, basestring):
+        if isinstance (channel, str):
             if (channel == 'dig'):
                 print('Digital Channels D0..D8:')
                 print(self.dig_outputs)
@@ -428,8 +428,6 @@ class Stream ():
             self.labels_list = self.ch_list
             self.color_list = color_list_D + color_list_A           
 
-
-        print(self.ch_list)
         d = int(self.get_max_time())
         
         plot_dict = {}
@@ -1071,7 +1069,7 @@ class StreamController ():
             qApp = QtWidgets.QApplication(sys.argv)
 
         gui = QPLseViewer.QPLviewGUI (stream_dict = self._stream_dict)
-        gui.setWindowTitle('QPLseViewer')
+        gui.setWindowTitle('QPLseViewer:PulseStreamers')
         gui.show()
         sys.exit(qApp.exec_())
 

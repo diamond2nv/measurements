@@ -5,6 +5,7 @@ import logging
 from measurements.libs.QPLser import ODMR_streamer as streamer_odmr
 from measurements.libs.QPLser import Sequence as seq
 from measurements.libs.QPLser import StreamerMeasurement as SM
+from importlib import reload
 
 reload(streamer_odmr)
 reload(psLib)

@@ -27,7 +27,7 @@ if sys.executable.endswith("pythonw.exe"):  # this allows pythonw not to quit im
 
 
 class VoltmeterThread (threading.Thread):
-    def __init__(self, VISA_address=r'GPIB0::22::INSTR', meas_mode='voltage', timeStep=1):
+    def __init__(self, VISA_address=r'ASRL15::INSTR', meas_mode='voltage', timeStep=1):
         threading.Thread.__init__(self)
         self._stop = threading.Event()
         self.timeStep = timeStep

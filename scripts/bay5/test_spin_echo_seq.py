@@ -55,4 +55,5 @@ def test_odmr(sequence):
 s = spin_echo_sequence(time = 1500, verbose = True)
 #print "I calculated the sequence!!!"
 strCtrl = test_odmr (sequence = s)
+#strCtrl.view_stream_inline()
 strCtrl.view()

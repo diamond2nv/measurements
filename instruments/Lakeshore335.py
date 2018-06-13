@@ -23,6 +23,7 @@ class Lakeshore335():
         self.close()
 
     def id (self):
+        print ("Lakeshore instrument identification: ")
         print(self._instr.ask ('*IDN?'))
 
     def get_kelvin (self, channel):
