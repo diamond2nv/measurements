@@ -334,6 +334,7 @@ class XYOptimizer (XYMapper):
     def run_optimizer (self, close_instruments=True, silence_errors=True):
         try:
             print ('Running position optimizer...')
+            print ('Current position: ', self._x_int, self._y_init)
             self.init_detectors(self._detectors)
             self.init_scanners(self._scanner_axes)
 
@@ -349,6 +350,7 @@ class XYOptimizer (XYMapper):
 
             self._plot_optimization ()
             self.initialize (x0 = self._xm, y0 = self._ym)
+            print ('New position: ', self._x_int, self._y_init)
 
             # move to the centre of the gaussian
             # here we need to redefine the scan interval
