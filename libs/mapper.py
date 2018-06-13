@@ -337,16 +337,9 @@ class XYOptimizer (XYMapper):
             self.init_detectors(self._detectors)
             self.init_scanners(self._scanner_axes)
 
-            #start_time = 0
-            #first_point = True
-            #idx = 0
-
-            #print ('Moving to start position: ', self._x_init, self._y_init)
-            #move_smooth(self._scanner_axes, targets=[self.xPositions[0], self.yPositions[0]])
             self._scanner_axes[0].move_smooth([self._x_init])
             self._scanner_axes[1].move_smooth([self._y_init])
 
-            #print ('Optimizing...')
             self._xCounts, [A0x, Ax, x0, sigma_x] = self._xm, self._sx = self._optimize (axis_id = 0, scan_array = self.xPositions)
             self._xm = x0
             self._scanner_axes[0].move_smooth(self._xm)
@@ -354,13 +347,10 @@ class XYOptimizer (XYMapper):
             self._ym = y0
             self._scanner_axes[1].move_smooth(self._ym)
 
-            #print ('Done!')
             self._plot_optimization ()
             self.initialize (x0 = self._xm, y0 = self._ym)
 
             # move to the centre of the gaussian
-            #move_smooth(self._scanner_axes, targets=[self.xPositions[0], self.yPositions[0]])
-
             # here we need to redefine the scan interval
 
         except KeyboardInterrupt:
