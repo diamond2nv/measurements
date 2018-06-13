@@ -4,6 +4,8 @@ Created on Thu Jun 16 14:00:22 2016
 
 @author: Raphael Proux, Quantum Photonics Lab, Heriot-Watt University
 
+Library to get images from a Starlight camera given an exposure time.
+
 """
 
 import pylab as py

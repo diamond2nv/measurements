@@ -25,30 +25,30 @@ reload(mdet)
 delayBetweenPoints = 0.5
 delayBetweenRows = 0.5
 
-xLims = (10, 100)  # (10, 100)
-xStep = 1
+xLims = (110, 124)  # (10, 100)
+xStep = 0.5
 
-yLims = (10, 140)  # (10, 140)
-yStep = 1
+yLims = (50, 64)  # (10, 140)
+yStep = 0.5
 
 voltsDirectory = r'C:\Users\QPL\Desktop\temp_measurements'
 
 #######################
 # instruments
-attoCtrl = mscan.AttocubeVISA(VISA_address=r'ASRL11::INSTR', axisX=2, axisY=1)
+attoCtrl = mscan.AttocubeVISA(VISA_address=r'ASRL13::INSTR', chX=1, chY=2)
 spectroCtrl = mdet.ActonNICtrl(sender_port="/Weetabix/port2/line0",
                                receiver_port="/Weetabix/port2/line4")
-voltmeterCtrl = mdet.VoltmeterCtrl(VISA_address=r'GPIB0::13::INSTR')
+multimeterCtrl = mdet.MultimeterCtrl(VISA_address=r'GPIB0::13::INSTR')
 
 d = datetime.datetime.now()
 voltsFilePath = os.path.join(voltsDirectory, 'powerInVolts_{:%Y-%m-%d_%H-%M-%S}.txt'.format(d))
 
 # Scanning program
-XYscan = mapper.XYScan(scanner=attoCtrl, detectors=[spectroCtrl, voltmeterCtrl])
+XYscan = mapper.XYScan(scanner_axes=attoCtrl, detectors=[spectroCtrl, multimeterCtrl])
 XYscan.set_range(xLims=xLims, xStep=xStep, yLims=yLims, yStep=yStep)
 XYscan.set_delays(between_points=delayBetweenPoints, between_rows=delayBetweenRows)
 #XYscan.set_back_to_zero()
 XYscan.run_scan()
 
-XYscan.save_volts(XYscan.counts[1], voltsFilePath, flatten=True)
+XYscan.save_to_txt(voltsFilePath, array=XYscan.counts[1], flatten=True)
 

@@ -10,7 +10,9 @@ You should run `starlightCapture.py`
 ## Install a camera / solve the "camera not recognised" issue
 
 On Windows, the driver provided by Starlight will not work with 
-StarlightCamera. You have to use the `libusb` drivers provided together with this program in the libusb-win32-bin-1.2.6.0 zip archive.
+StarlightCamera. You have to use the `libusb` drivers provided together with this program in the `libusb-win32-bin-1.2.6.0.zip` archive.
+
+__Please note__ that if you are installing this driver for the first time on any computer, it will work only if the camera is plugged on the computer. _Inputting the identifiers by hand will not work._
 
 To install the correct drivers, go in the bin folder and execute `inf-wizard.exe`
 

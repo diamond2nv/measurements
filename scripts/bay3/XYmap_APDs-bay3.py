@@ -31,22 +31,31 @@ yLims = (26, 86)  # (10, 140)
 yStep = 2
 
 voltsDirectory = r'C:\Users\QPL\Desktop\temporary_meas'
+# APD counter integration time (ms)
+ctr_time_ms = 1000
+ctr_port1 = 'pfi0'
+ctr_port2 = 'pfi1'
 
 #######################
 # instruments
 attoCtrl = mscan.AttocubeVISA(VISA_address=r'ASRL6::INSTR', chX=5, chY=4)
+apdCtrl1 = mdet.APDCounterCtrl (ctr_port = ctr_port1,
+                         work_folder = r"C:\Users\ted\Desktop\temporary_meas",
+                         debug = True)
+apdCtrl1.set_integration_time_ms(ctr_time_ms)
+apdCtrl2 = mdet.APDCounterCtrl (ctr_port = ctr_port2,
+                         work_folder = r"C:\Users\ted\Desktop\temporary_meas",
+                         debug = True)
+apdCtrl2.set_integration_time_ms(ctr_time_ms)
 
-#spectroCtrl = mdet.ActonLockinCtrl(lockinVisaAddress=r"GPIB0::14::INSTR")
-spectroCtrl2 = mdet.PylonNICtrl(sender_port="/Weetabix/port1/line3", receiver_port="/Weetabix/port1/line2")
-
-#voltmeterCtrl = mdet.MultimeterCtrl(VISA_address=r'G PIB0::22::INSTR')
 
 d = datetime.datetime.now()
-#voltsFilePath = os.path.join(voltsDirectory, 'powerInVolts_{:%Y-%m-%d_%H-%M-%S}.txt'.format(d))
 
 # Scanning program
-XYscan = mapper.XYScan(scanner_axes=attoCtrl, detectors=[spectroCtrl2]) #voltmeterCtrl])
+XYscan = mapper.XYScan(scanner_axes=attoCtrl, detectors=[apdCtrl1, apdCtrl2]) #voltmeterCtrl])
 XYscan.set_range(xLims=xLims, xStep=xStep, yLims=yLims, yStep=yStep)
 XYscan.set_delays(between_points=delayBetweenPoints, between_rows=delayBetweenRows)
 XYscan.run_scan()
+XYscan.save_to_npz('C:/Users/QPL/Desktop/APD_data')
+
 #XYscan.save_to_txt(voltsFilePath, array=XYscan.counts[1], flatten=True)

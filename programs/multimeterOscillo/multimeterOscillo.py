@@ -12,11 +12,12 @@ from PyQt5.QtCore import QTimer
 import json
 import visa
 import pyqtgraph as pg
-from Keithley import Keithley
+from measurements.instruments.KeithleyMultimeter import KeithleyMultimeter
+from measurements.instruments.AgilentMultimeter import AgilentMultimeter
 import pylab as py
 import threading
 import time
-from UiMultimeterOscillo import Ui_multimeterOscillo
+from measurements.programs.multimeterOscillo.UiMultimeterOscillo import Ui_multimeterOscillo
 
 # For working with python, pythonw and ipython
 import sys, os
@@ -24,13 +25,17 @@ if sys.executable.endswith("pythonw.exe"):  # this allows pythonw not to quit im
     sys.stdout = open(os.devnull, "w")
     sys.stderr = open(os.path.join(os.getenv("TEMP"), "stderr-"+os.path.basename(sys.argv[0])), "w")
 
+
 class VoltmeterThread (threading.Thread):
-    def __init__(self, GPIBAddress=r'ASRL15::INSTR', timeStep=1):
+    def __init__(self, VISA_address=r'GPIB0::22::INSTR', meas_mode='voltage', timeStep=1):
         threading.Thread.__init__(self)
         self._stop = threading.Event()
         self.timeStep = timeStep
         try:
-            self.voltmeter = Keithley(GPIBAddress)
+            self.voltmeter = KeithleyMultimeter(VISA_address=VISA_address, meas_mode=meas_mode)
+            if not self.voltmeter.is_keithley():
+                self.voltmeter.close()
+                self.voltmeter = AgilentMultimeter(VISA_address=VISA_address, meas_mode=meas_mode)
         except:
             self.stop(errorHappened=True)
             raise
@@ -68,11 +73,9 @@ class VoltmeterThread (threading.Thread):
         return self._stop.isSet()
 
     
-    
 class VoltmeterRead(QWidget):
     
-    
-    def __init__(self, app):
+    def __init__(self, app, config):
         self.dialog = QWidget.__init__(self)
         self.app = app
         
@@ -102,25 +105,20 @@ class VoltmeterRead(QWidget):
         self.ui.nbMinReadingReset.clicked.connect(self.nbMinReadingReset)
         self.ui.nbMinEnabled.toggled.connect(self.nbMinEnabledToggled)
         
-        # open instrument using config file
-        
-        # open configuration file
-        try: 
-            with open('CONFIG.txt') as infile:
-                config = json.load(infile)
-            keithleyVisaId = config['keithleyVisaId']
-        except (IOError, ValueError, KeyError):
-            with open('CONFIG.txt', 'w') as text_file:
-                text_file.write('{"keithleyVisaId": "ASRL10::INSTR"}')
-            errorMessageWindow(self, 'Invalid config file', 'The config file is invalid and has been replaced by a new one.\nPlease modify it with the proper parameters and relaunch this program.')
-            raise
+        # open instrument using config dict
         try:
-            self.voltmeter = VoltmeterThread(GPIBAddress=keithleyVisaId, timeStep=self.timeStep)     
-        except visa.VisaIOError:
-            errorMessageWindow(self, 'Problem connecting with the multimeter', 'The program could not connect with the multimeter.\nPlease check the address of the device in the CONFIG.txt file.')
+            self.voltmeter = VoltmeterThread(VISA_address=config['multimeterVisaId'], meas_mode=config['meas_mode'], timeStep=self.timeStep)
+        except visa.VisaIOError as e:
+            errorMessageWindow(self, 'Problem connecting with the multimeter', 'The program could not connect with the multimeter. The following VISA error was generated:\n{}\n\nPlease check the address of the device in the config dictionary of your script.'.format(e))
             raise
-            
         
+        self.meas_mode = config['meas_mode']
+        if self.meas_mode == 'current':
+            self.ui.label_5.setText("mA")
+            self.ui.label.setText("Min (mA)")
+            self.ui.label_2.setText("Max (mA)")
+            self.ui.label_6.setText("Factor (display = mA * factor)")
+
         self.acquire = True
         self.timeParamsChanged = True
         self.scaleRefresh = True
@@ -159,7 +157,10 @@ class VoltmeterRead(QWidget):
         
         labelStyle = {'color': '#FFF', 'font-size': '20pt'}
         bottom.setLabel(text='Time', units='s', **labelStyle)
-        left.setLabel(text='Voltage', units='V', **labelStyle)
+        if self.meas_mode == 'current':
+            left.setLabel(text='Current', units='mA', **labelStyle)
+        else:
+            left.setLabel(text='Voltage', units='V', **labelStyle)
         bottom.setHeight(100)
         left.setWidth(120)
         self.ui.graphicsView.setYRange(self.voltMin, self.voltMax)
@@ -177,10 +178,13 @@ class VoltmeterRead(QWidget):
                 measurementArray = py.zeros(nbOfSteps)
                 
                 self.timeParamsChanged = False
-            
+
             if self.voltmeter.measToRead:
                 self.voltmeter.measToRead = False
-                measurementArray[0] = self.scalingFactor * self.voltmeter.measurementPoint
+                if self.meas_mode == 'current':
+                    measurementArray[0] = self.scalingFactor * self.voltmeter.measurementPoint * 1000
+                else:
+                    measurementArray[0] = self.scalingFactor * self.voltmeter.measurementPoint
                 measurementArray = py.roll(measurementArray, -1)
                 plot.setData(timeArray, measurementArray)
                 self.ui.nbReading.display('{:.5f}'.format(measurementArray[-1]))
@@ -256,6 +260,9 @@ class VoltmeterRead(QWidget):
             self.minReadingReset = True
         else:
             self.plotMin.setPen(pg.mkPen(None))
+
+    def close_instruments(self):
+        self.voltmeter.stop()
           
 def errorMessageWindow(parentWindow, winTitle, winText):
     """ Displays a QT error message box, with title, text and OK button. """
@@ -266,12 +273,22 @@ def errorMessageWindow(parentWindow, winTitle, winText):
     msg.exec_()
     
     
-if __name__ == "__main__":
-        
+def multimeter_oscillo_run(config):
     app = QApplication(sys.argv)
     app.aboutToQuit.connect(app.deleteLater)
     
-    window = VoltmeterRead(app)
-    
-    window.show()
-    app.exec_()
+    window = VoltmeterRead(app, config)
+
+    try:
+        # window.ui.setFocus(True)
+        # window.setFocus(True)
+        window.show()
+        app.exec_()
+    except:
+        raise
+    finally:
+        window.close_instruments()
+
+if __name__ == "__main__":
+    config = {"multimeterVisaId": "GPIB1::1::INSTR"}
+    multimeter_oscillo_run(config)

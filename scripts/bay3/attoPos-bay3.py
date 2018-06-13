@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 """
 Created on 01/02/2018
-
 @author: raphael proux
 """
 
@@ -14,4 +13,3 @@ config = {"attoAxes": {"Px": 1, "Py": 2, "Pz": 3, "Sx": 5, "Sy": 4, "Sz": 0},
 
 
 attopos_run(config)
-
