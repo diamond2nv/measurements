@@ -34,7 +34,6 @@ voltsDirectory = r'C:\Users\QPL\Desktop\temporary_meas'
 # APD counter integration time (ms)
 ctr_time_ms = 1000
 ctr_port1 = 'pfi0'
-ctr_port2 = 'pfi1'
 
 #######################
 # instruments
@@ -43,19 +42,15 @@ apdCtrl1 = mdet.APDCounterCtrl (ctr_port = ctr_port1,
                          work_folder = r"C:\Users\ted\Desktop\temporary_meas",
                          debug = True)
 apdCtrl1.set_integration_time_ms(ctr_time_ms)
-apdCtrl2 = mdet.APDCounterCtrl (ctr_port = ctr_port2,
-                         work_folder = r"C:\Users\ted\Desktop\temporary_meas",
-                         debug = True)
-apdCtrl2.set_integration_time_ms(ctr_time_ms)
-
 
 d = datetime.datetime.now()
 
 # Scanning program
-XYscan = mapper.XYScan(scanner_axes=attoCtrl, detectors=[apdCtrl1, apdCtrl2]) #voltmeterCtrl])
+XYscan = mapper.XYScan(scanner_axes=attoCtrl, detectors=[apdCtrl1]) #voltmeterCtrl])
 XYscan.set_range(xLims=xLims, xStep=xStep, yLims=yLims, yStep=yStep)
 XYscan.set_delays(between_points=delayBetweenPoints, between_rows=delayBetweenRows)
 XYscan.run_scan()
+XYscan.plot_counts()
 XYscan.save_to_npz('C:/Users/QPL/Desktop/APD_data')
 
 #XYscan.save_to_txt(voltsFilePath, array=XYscan.counts[1], flatten=True)

@@ -8,7 +8,7 @@ import numpy as np
 from measurements.libs import mapper_general as mgen
 
 from measurements.instruments import NIBox
-from measurements.instruments.LockIn7265GPIB import LockIn7265
+from measurements.instruments.LockIn7265 import LockIn7265
 from measurements.instruments.pylonWeetabixTrigger import trigSender, trigReceiver
 from measurements.instruments.KeithleyMultimeter import KeithleyMultimeter
 if sys.version_info.major == 3:
@@ -194,7 +194,7 @@ class APDCounterCtrl (DetectorCtrl):
 class dummyAPD (DetectorCtrl):
 
     def __init__(self, work_folder, random_counts = True, debug = False):
-        self.string_id = 'APD NI box counter'
+        self.string_id = 'dummy APD counter'
         self._wfolder = work_folder
         self.delay_after_readout = 0.
         self._debug = debug
