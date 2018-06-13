@@ -351,6 +351,12 @@ def move_smooth_simple(scanner_axis, target):
 
     to_pos = target
     from_pos = scanner_axis.get()
+    
+    if (type(to_pos) is list):
+        to_pos = to_pos[0]
+    if (type(from_pos) is list):
+        from_pos = from_pos[0]
+
     nb_steps = int(abs(np.floor((from_pos - to_pos) / float(smooth_step))) + 1)
 
     smooth_positions = np.linspace(from_pos, to_pos, nb_steps)
