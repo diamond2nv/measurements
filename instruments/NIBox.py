@@ -36,7 +36,7 @@ class Trigger(daq.Task):
 
     def get_term(self):
         """Returns output terminal for trigger pulses."""
-        n = c_char_p(" ")
+        n = c_char_p(" ".encode('utf-8'))
         self.GetCOPulseTerm("/Weetabix/ctr"+self.ctr, n, 20)
         return n.value
 

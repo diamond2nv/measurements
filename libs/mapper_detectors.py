@@ -8,7 +8,7 @@ import numpy as np
 from measurements.libs import mapper_general as mgen
 
 from measurements.instruments import NIBox
-from measurements.instruments.LockIn7265GPIB import LockIn7265
+from measurements.instruments.LockIn7265 import LockIn7265
 from measurements.instruments.pylonWeetabixTrigger import trigSender, trigReceiver
 from measurements.instruments.KeithleyMultimeter import KeithleyMultimeter
 if sys.version_info.major == 3:
@@ -64,7 +64,8 @@ class PylonNICtrl (DetectorCtrl):
         return self.receiverTask.listen()
 
     def is_ready(self):
-        return self.receiverTask.listen()
+        a = self.receiverTask.listen()
+        return a
 
     def readout(self):
         self.senderTask.emit()
@@ -106,7 +107,8 @@ class ActonNICtrl (DetectorCtrl):
             return False
 
     def is_ready(self):
-        return not self.receiverTask.listen()  # when NOT SCAN signal is down -> detector ready
+        a = not self.receiverTask.listen()  # when NOT SCAN signal is down -> detector ready
+        return a
 
     def readout(self):
         if self.first_point_flag:
@@ -184,6 +186,7 @@ class APDCounterCtrl (DetectorCtrl):
         return c
 
     def first_point(self):
+        
         return True
 
     def _close(self):
@@ -192,7 +195,7 @@ class APDCounterCtrl (DetectorCtrl):
 class dummyAPD (DetectorCtrl):
 
     def __init__(self, work_folder, random_counts = True, debug = False):
-        self.string_id = 'APD NI box counter'
+        self.string_id = 'dummy APD counter'
         self._wfolder = work_folder
         self.delay_after_readout = 0.
         self._debug = debug
