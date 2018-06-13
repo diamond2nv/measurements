@@ -222,7 +222,7 @@ class XYScan ():
 
         if (self.detector_type == 'apd'):
             pl.figure(figsize=(10, 10))
-            pl.pcolor(self.counts)
+            pl.pcolor(self.counts[0])
             pl.show()
         else:
             print("No counts available.. use APD")

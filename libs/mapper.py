@@ -210,12 +210,14 @@ class XYScan (XYMapper):
 
     def plot_counts(self):
 
-        if (self.detector_type == 'apd'):
-            pl.figure(figsize=(10, 10))
-            pl.pcolor(self.counts)
-            pl.show()
-        else:
-            print("No counts available.. use APD")
+        #if ('APD' in self.string_id):
+        pl.figure(figsize=(10, 10))
+        [X, Y] = pl.meshgrid (self.xPositions, self.yPositions)
+        pl.pcolor(X, Y, self.counts[0])
+        pl.colorbar()
+        pl.show()
+        #else:
+        #    print("No counts available.. use APD")
 
     def save_to_txt(self, file_name, array=None, flatten=True):
         if array is None:

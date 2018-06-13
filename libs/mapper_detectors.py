@@ -186,6 +186,7 @@ class APDCounterCtrl (DetectorCtrl):
         return c
 
     def first_point(self):
+        
         return True
 
     def _close(self):
