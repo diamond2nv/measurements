@@ -257,10 +257,11 @@ class XYOptimizer (XYMapper):
             # wait for detector to say it finished
             self.wait_for_ready(self._detectors)
 
-        fit_params = self._fit_gaussian (scan_array=scan_array, counts=counts)
+        fit_params, result = self._fit_gaussian (scan_array=scan_array, counts=counts)
         return counts, fit_params
-
-    def _fit_gaussian (self, scan_array, counts, do_fit = True):
+    
+    def _fit_gaussian (self, scan_array, counts, do_fit = True, 
+                       do_plot=True, do_print_fit_report= False):
         p = counts/np.sum(counts)
         x0 = np.sum (p*scan_array)
         v0 = np.sum (p*(scan_array**2)) - x0**2
@@ -270,30 +271,32 @@ class XYOptimizer (XYMapper):
 
         fit_params = [ampl0, ampl, x0, s0]
 
-        def gaussian(x, A0, A, x0, sigma):
-            return A0 + A*np.exp(-(x-x0)**2 / (2*sigma**2))
+        def _gaussian(x, A0, A, x0, sigma):
+            return np.abs(A0) + np.abs(A)*np.exp(-(x-x0)**2 / (2*sigma**2))
 
         if do_fit:
             x = scan_array
             y = counts
-            gmodel = lmfit.Model(gaussian)
+            gmodel = lmfit.Model(_gaussian)
             result = gmodel.fit(y, x=x, A0=ampl0, A=ampl, x0=x0, sigma=s0)
             A = result.params['A'].value
             A0 = result.params['A0'].value
-            x0 = result.params['x'].value
+            x0 = result.params['x0'].value
             sigma = result.params['sigma'].value
             fit_params = [A0, A, x0, sigma]
             
             x_fit = np.linspace (x[0], x[-1], 1000)
-            y_fit = gaussian (x_fit)
+            y_fit = _gaussian (x=x_fit, A0=A0, A=A, x0=x0, sigma=sigma )
 
-            #print(result.fit_report())
+            if do_print_fit_report:
+                print(result.fit_report())
 
-            pl.plot(x, y, 'o', color='royalblue')
-            pl.plot(x_fit, y_fit, color = 'crimson')
-            pl.show()
+            if do_plot:
+                pl.plot(x, y, 'o', color='royalblue')
+                pl.plot(x_fit, y_fit, color = 'crimson')
+                pl.show()
         
-        return fit_params
+        return fit_params, result
     
     def set_scan_range (self, scan_range=10, scan_step=1):
         self._scan_range = scan_range
@@ -310,23 +313,28 @@ class XYOptimizer (XYMapper):
         self._set_range (xLims=xLims, xStep=xStep, yLims=yLims, yStep=yStep)
         
         
-    def _plot_optimization (self):
-        
-        #x = pl.linspace (self.xPositions[0], self.xPositions[-1], 1000)
-        #y = pl.linspace (self.yPositions[0], self.yPositions[-1], 1000)
-        #xFit = pl.exp(-(x-self._xm)**2/(2*self._sx**2))
-        #yFit = pl.exp(-(y-self._xm)**2/(2*self._sx**2))      
+    def _plot_optimization (self, x_pars, y_pars):
+               
+        def _gaussian(x, A0, A, x0, sigma):
+            return np.abs(A0) + np.abs(A)*np.exp(-(x-x0)**2 / (2*sigma**2))
         
         print ('Optimization result: x0 = ', self._xm, ' y0 = ', self._ym)
      
+        Vx = np.linspace (self.xPositions[0], self.xPositions[-1], 1000)
+        x_fit = _gaussian (x=Vx, A0=x_pars[0], A=x_pars[1], x0=x_pars[2], sigma=x_pars[3] )
+        Vy = np.linspace (self.yPositions[0], self.yPositions[-1], 1000)
+        y_fit = _gaussian (x=Vy, A0=y_pars[0], A=y_pars[1], x0=y_pars[2], sigma=y_pars[3] )
+            
         pl.figure (figsize = (8,5))
         pl.subplot(121)
         pl.plot (self.xPositions, self._xCounts, color='RoyalBlue', marker='o')
+        pl.plot (Vx, x_fit, color='crimson')
         pl.vlines (self._xm, 0.9*min (self._xCounts), 1.1*max(self._xCounts), color='crimson', linewidth=2, linestyles='--')
         pl.xlabel ('voltage (V)', fontsize= 15)       
         pl.ylabel ('counts', fontsize=15)
         pl.subplot(122)
         pl.plot (self.yPositions, self._yCounts, color='RoyalBlue', marker='o')
+        pl.plot (Vy, y_fit, color='crimson')
         pl.vlines (self._ym, 0.9*min (self._xCounts), 1.1*max(self._xCounts), color='crimson', linewidth=2, linestyles='--')
         pl.xlabel ('voltage (V)', fontsize= 15)       
         pl.show()
@@ -334,7 +342,7 @@ class XYOptimizer (XYMapper):
     def run_optimizer (self, close_instruments=True, silence_errors=True):
         try:
             print ('Running position optimizer...')
-            print ('Current position: ', self._x_int, self._y_init)
+            print ('Current position: ', self._x_init, self._y_init)
             self.init_detectors(self._detectors)
             self.init_scanners(self._scanner_axes)
 
@@ -348,9 +356,9 @@ class XYOptimizer (XYMapper):
             self._ym = y0
             self._scanner_axes[1].move_smooth(self._ym)
 
-            self._plot_optimization ()
+            self._plot_optimization (x_pars = [A0x, Ax, x0, sigma_x], y_pars = [A0y, Ay, y0, sigma_y])
             self.initialize (x0 = self._xm, y0 = self._ym)
-            print ('New position: ', self._x_int, self._y_init)
+            print ('New position: ', self._x_init, self._y_init)
 
             # move to the centre of the gaussian
             # here we need to redefine the scan interval

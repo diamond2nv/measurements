@@ -25,14 +25,14 @@ reload(mdet)
 delayBetweenPoints = 0.5
 delayBetweenRows = 0.5
 
-xLims = (63, 70)  # (10, 100)
-xStep = 1
-yLims = (83, 90)  # (10, 140)
-yStep = 1
+xLims = (30, 60)  # (10, 100)
+xStep = 2
+yLims = (50, 80)  # (10, 140)
+yStep = 2
 
 voltsDirectory = r'C:\Users\QPL\Desktop\temporary_meas'
 # APD counter integration time (ms)
-ctr_time_ms = 1000
+ctr_time_ms = 300
 ctr_port1 = 'pfi0'
 
 #######################
@@ -51,6 +51,6 @@ XYscan.set_range(xLims=xLims, xStep=xStep, yLims=yLims, yStep=yStep)
 XYscan.set_delays(between_points=delayBetweenPoints, between_rows=delayBetweenRows)
 XYscan.run_scan(silence_errors=False)
 XYscan.plot_counts()
-XYscan.save_to_npz('C:/Users/QPL/Desktop/APD_data/scan01')
+XYscan.save_to_npz('C:/Users/QPL/Desktop/APD_data/scan02')
 
 #XYscan.save_to_txt(voltsFilePath, array=XYscan.counts[1], flatten=True)
