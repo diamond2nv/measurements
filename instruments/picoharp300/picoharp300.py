@@ -97,7 +97,7 @@ class PicoHarp300():
     #sigAnalyzeData = QtCore.Signal(object, object)
     #sigStart = QtCore.Signal()
 
-    def __init__(self, config, **kwargs):
+    def __init__(self, **kwargs):
         self._dll = ctypes.cdll.LoadLibrary('phlib64')
 
         # Just some default values:
@@ -106,6 +106,8 @@ class PicoHarp300():
 
         self._photon_source2 = None #for compatibility reasons with second APD
         self._count_channel = 1
+
+        self._deviceID = 'deviceID'
 
     def on_activate(self):
         """ Activate and establish the connection to Picohard and initialize.
@@ -217,7 +219,8 @@ class PicoHarp300():
         """
 
         if not func_val == 0:
-            self.log.error('Error in PicoHarp300 with errorcode {0}:\n'
+            #self.log.error
+            print ('Error in PicoHarp300 with errorcode {0}:\n'
                         '{1}'.format(func_val, self.errorcode[func_val]))
         return func_val
 
