@@ -1,9 +1,5 @@
 # -*- coding: utf-8 -*-
 """
-
-QPL version, adapted from Qudi:
-https://github.com/Ulm-IQO/qudi
-
 This file contains the Qudi hardware module for the PicoHarp300.
 
 Qudi is free software: you can redistribute it and/or modify
@@ -26,6 +22,14 @@ top-level directory of this distribution and at <https://github.com/Ulm-IQO/qudi
 import ctypes
 import numpy as np
 import time
+from qtpy import QtCore
+
+from core.module import Base, ConfigOption
+from core.util.mutex import Mutex
+from interface.slow_counter_interface import SlowCounterInterface
+from interface.slow_counter_interface import SlowCounterConstraints
+from interface.slow_counter_interface import CountingMode
+from interface.fast_counter_interface import FastCounterInterface
 
 # =============================================================================
 # Wrapper around the PHLib.DLL. The current file is based on the header files
@@ -81,25 +85,36 @@ correspond to standard C/C++ data types as follows:
 #WARNING_OFFSET_UNNECESSARY     = 0x0800    # 2048
 
 
-class PicoHarp300():
+class PicoHarp300(Base, SlowCounterInterface, FastCounterInterface):
     """Hardware class to control the Picoharp 300 from PicoQuant.
 
     This class is written according to the Programming Library Version 3.0
     STABLE AND TESTED VERSION: Alex S.
     """
-    #_modclass = 'PicoHarp300'
-    #_modtype = 'hardware'
+    _modclass = 'PicoHarp300'
+    _modtype = 'hardware'
 
-    #_deviceID = ConfigOption('deviceID', 0, missing='warn')
-    #_mode = ConfigOption('mode', 0, missing='warn')
+    _deviceID = ConfigOption('deviceID', 0, missing='warn')
+    _mode = ConfigOption('mode', 0, missing='warn')
 
-    #sigReadoutPicoharp = QtCore.Signal()
-    #sigAnalyzeData = QtCore.Signal(object, object)
-    #sigStart = QtCore.Signal()
+    sigReadoutPicoharp = QtCore.Signal()
+    sigAnalyzeData = QtCore.Signal(object, object)
+    sigStart = QtCore.Signal()
 
-    def __init__(self, **kwargs):
+    def __init__(self, config, **kwargs):
+        super().__init__(config=config, **kwargs)
 
+        self.errorcode = self._create_errorcode()
+        self._set_constants()
+
+        # the library can communicate with 8 devices:
         self.connected_to_device = False
+
+        #FIXME: Check which architecture the host PC is and choose the dll
+        # according to that!
+
+        # Load the picoharp library file phlib64.dll from the folder
+        # <Windows>/System32/
         self._dll = ctypes.cdll.LoadLibrary('phlib64')
 
         # Just some default values:
@@ -109,9 +124,9 @@ class PicoHarp300():
         self._photon_source2 = None #for compatibility reasons with second APD
         self._count_channel = 1
 
-        self._deviceID = 0
-        self._mode = 0
-        self.errorcode = self._create_errorcode()
+        #locking for thread safety
+        self.threadlock = Mutex()
+
 
     def on_activate(self):
         """ Activate and establish the connection to Picohard and initialize.
@@ -127,9 +142,9 @@ class PicoHarp300():
         # the signal has one argument of type object, which should allow
         # anything to pass through:
 
-        #self.sigStart.connect(self.start_measure)
-        #self.sigReadoutPicoharp.connect(self.get_fresh_data_loop, QtCore.Qt.QueuedConnection) # ,QtCore.Qt.QueuedConnection
-        #self.sigAnalyzeData.connect(self.analyze_received_data, QtCore.Qt.QueuedConnection)
+        self.sigStart.connect(self.start_measure)
+        self.sigReadoutPicoharp.connect(self.get_fresh_data_loop, QtCore.Qt.QueuedConnection) # ,QtCore.Qt.QueuedConnection
+        self.sigAnalyzeData.connect(self.analyze_received_data, QtCore.Qt.QueuedConnection)
         self.result = []
 
 
@@ -138,9 +153,8 @@ class PicoHarp300():
         """
 
         self.close_connection()
-        #self.sigReadoutPicoharp.disconnect()
-        #self.sigAnalyzeData.disconnect()
-
+        self.sigReadoutPicoharp.disconnect()
+        self.sigAnalyzeData.disconnect()
 
     def _create_errorcode(self):
         """ Create a dictionary with the errorcode for the device.
@@ -223,8 +237,7 @@ class PicoHarp300():
         """
 
         if not func_val == 0:
-            #self.log.error
-            print ('Error in PicoHarp300 with errorcode {0}:\n'
+            self.log.error('Error in PicoHarp300 with errorcode {0}:\n'
                         '{1}'.format(func_val, self.errorcode[func_val]))
         return func_val
 
