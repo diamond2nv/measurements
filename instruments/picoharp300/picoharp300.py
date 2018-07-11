@@ -26,6 +26,8 @@ top-level directory of this distribution and at <https://github.com/Ulm-IQO/qudi
 import ctypes
 import numpy as np
 import time
+import os
+import logging
 
 # =============================================================================
 # Wrapper around the PHLib.DLL. The current file is based on the header files
@@ -99,6 +101,9 @@ class PicoHarp300():
 
     def __init__(self, **kwargs):
 
+        self.errorcode = self._create_errorcode()
+        self._set_constants()
+
         self.connected_to_device = False
         self._dll = ctypes.cdll.LoadLibrary('phlib64')
 
@@ -111,7 +116,12 @@ class PicoHarp300():
 
         self._deviceID = 0
         self._mode = 0
-        self.errorcode = self._create_errorcode()
+
+        self.log = logging.getLogger('PH300_logger')
+        logging.basicConfig (level = logging.INFO)
+
+    def set_log_level (self, value):
+        self.log.setLevel(value)
 
     def on_activate(self):
         """ Activate and establish the connection to Picohard and initialize.
@@ -152,9 +162,10 @@ class PicoHarp300():
         with the appropriate integer value.
         """
 
-        maindir = self.get_main_dir()
+        maindir = r'C:\Users\ted\Desktop\LabSharedPrograms\measurements'
+        #self.get_main_dir()
 
-        filename = os.path.join(maindir, 'hardware', 'PicoQuant', 'errorcodes.h')
+        filename = os.path.join(maindir, 'instruments', 'picoharp300', 'errorcodes.h')
         try:
             with open(filename) as f:
                 content = f.readlines()
@@ -223,8 +234,7 @@ class PicoHarp300():
         """
 
         if not func_val == 0:
-            #self.log.error
-            print ('Error in PicoHarp300 with errorcode {0}:\n'
+            self.log.error ('Error in PicoHarp300 with errorcode {0}:\n'
                         '{1}'.format(func_val, self.errorcode[func_val]))
         return func_val
 
@@ -284,7 +294,7 @@ class PicoHarp300():
 
         if not ((mode != self.MODE_HIST) or (mode != self.MODE_T2) or \
                 (mode != self.MODE_T3)):
-            self.log.error('Picoharp: Mode for the device could not be set. '
+            self.log.error ('Picoharp: Mode for the device could not be set. '
                     'It must be {0}=Histogram-Mode, {1}=T2-Mode or '
                     '{2}=T3-Mode, but a parameter {3} was '
                     'passed.'.format(
