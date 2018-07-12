@@ -274,7 +274,6 @@ class PicoHarp300():
     def open_connection(self):
         """ Open a connection to this device. """
 
-
         buf = ctypes.create_string_buffer(16)   # at least 8 byte
         ret = self.check(self._dll.PH_OpenDevice(self._deviceID, ctypes.byref(buf)))
         self._serial = buf.value.decode()   # .decode() converts byte to string
