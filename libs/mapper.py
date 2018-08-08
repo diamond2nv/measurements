@@ -6,11 +6,21 @@ Created on Wed Nov 22 09:23:52 2017
 """
 
 import pylab as pl
-import time
+import time, sys
 from tools import data_object as DO
 import numpy as np
 import lmfit
 from measurements.libs.mapper_scanners import move_smooth
+
+if sys.version_info.major == 3:
+    from importlib import reload
+reload (DO)
+
+#def move_smooth(scanner_axes, targets = []):
+#    pass
+
+#def move_smooth_simple (scanner_axes, targets = []):
+#    pass
 
 class XYMapper ():
     def __init__(self, scanner_axes=None, detectors=None):
@@ -113,10 +123,9 @@ class XYScan (XYMapper):
         if self._detectors is None:
             self.counts = None
         else:
-            self.counts = [pl.zeros([self.xNbOfSteps, self.yNbOfSteps]) for detector in self._detectors]
-            # print(self.counts)
-
-
+            for idx, d in enumerate (self._detectors):
+                setattr (self, 'detector_readout_'+str(idx), 
+                            pl.zeros([self.xNbOfSteps, self.yNbOfSteps]))             
 
     def run_scan(self, close_instruments=True, silence_errors=True):
 
@@ -172,8 +181,8 @@ class XYScan (XYMapper):
 
                     # trigger exposure / detector measurement
                     if self._detectors is not None:
-                        for counts, detector in zip(self.counts, self._detectors):
-                            counts[id_x, id_y] = detector.readout()   # POSSIBLE BLOCKING BEHAVIOUR HERE! put non blocking (spectros...) before blocking (apds...) in the detectors list
+                        for i, detector in enumerate (self._detectors):
+                            getattr (self, 'detector_readout_'+str(i))[id_x, id_y] = detector.readout()
 
                     time.sleep(self.max_delay_after_readout)  # some old devices will not react immediately to say they are integrating
 
@@ -215,20 +224,23 @@ class XYScan (XYMapper):
     def save_to_npz(self, file_name):
         np.savez(file_name+'.npz', self.counts)
 
-    def plot_counts(self):
+    def plot_counts(self, detector_numbers = None):
 
-        #if ('APD' in self.string_id):
-        pl.figure(figsize=(10, 10))
-        [X, Y] = pl.meshgrid (self.xPositions, self.yPositions)
-        pl.pcolor(X, Y, self.counts[0])
-        pl.colorbar()
-        pl.show()
-        #else:
-        #    print("No counts available.. use APD")
+        if (detector_numbers == None):
+            detector_numbers = range(len(self._detectors))
+
+        for i in detector_numbers:
+            pl.figure(figsize=(10, 10))
+            [X, Y] = pl.meshgrid (self.xPositions, self.yPositions)
+            pl.pcolor(X, Y, getattr(self, 'detector_readout_'+str(i)))
+            pl.title ("detector nr "+str(i), fontsize=18)
+            pl.colorbar()
+            pl.show()
 
     def save_to_txt(self, file_name, array=None, flatten=True):
         if array is None:
-            array = self.counts
+            array = self.detector_readout_0
+
         if flatten:
             pl.savetxt(file_name, np.array(array).flatten().transpose())
         else:

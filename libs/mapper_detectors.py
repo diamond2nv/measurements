@@ -6,15 +6,18 @@ import visa
 import numpy as np
 
 from measurements.libs import mapper_general as mgen
-
-from measurements.instruments import NIBox
-from measurements.instruments.LockIn7265 import LockIn7265
-from measurements.instruments.pylonWeetabixTrigger import trigSender, trigReceiver
-from measurements.instruments.KeithleyMultimeter import KeithleyMultimeter
 if sys.version_info.major == 3:
     from importlib import reload
+try:
+    from measurements.instruments import NIBox
+    from measurements.instruments.LockIn7265 import LockIn7265
+    from measurements.instruments.pylonWeetabixTrigger import trigSender, trigReceiver
+    from measurements.instruments.KeithleyMultimeter import KeithleyMultimeter
+    reload (NIBox)
+except:
+    print ("Enter simulation mode.")
 
-reload(NIBox)
+
 reload(mgen)
 
 
