@@ -37,6 +37,8 @@ apd0.set_integration_time_ms(ctr_time_ms)
 apd1 = mdet.dummyAPD(work_folder = 'C:/')
 apd1.set_integration_time_ms(ctr_time_ms)
 
+GalvoCtrl = mscan.GalvoNI (chX = '/Dev1/ao1', chY = '/Dev1/ao0')
+
 d = datetime.datetime.now()
 
 XYscan = mapper.XYScan(scanner_axes = dummy_scanner, detectors = [apd0, apd1])

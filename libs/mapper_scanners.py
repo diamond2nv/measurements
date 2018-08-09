@@ -401,21 +401,22 @@ class TestScanner (ScannerCtrl):
         print('Closing test device')
 
 
-# Test class for Galvo mirrors: Daniel White 03/05/2018
-
 class GalvoNI (ScannerCtrl):
-    def __init__(self, chX='/Dev1/ao0', chY='/Dev1/ao1', start_pos=[0,0], conversion_factor=1/15.):
+    def __init__(self, chX='/Dev1/ao0', chY='/Dev1/ao1', start_pos=[0,0], conversion_factor=1., min_limit= 0., max_limit= 5.):
         super().__init__(channels=[chX, chY])
         self.string_id = 'Galvo scanners controlled by NI box AO'
         self.conversion_factor = conversion_factor
 
         self.smooth_step = 1
         self.smooth_delay = 0.05
+        
+        self._min_limit = min_limit
+        self._max_limit = max_limit
 
         self._curr_pos = [pos for channel, pos in zip(self._channels, start_pos)]
 
     def _initialize(self):
-        self.scanners_volt_drives = [voltOut(channel) for channel in self._channels]
+        self.scanners_volt_drives = [voltOut(channel=channel, min_limit=self._min_limit, max_limit=self._max_limit) for channel in self._channels]
 
     def _move(self, target, axis=0):
         self.scanners_volt_drives[axis].write(self.conversion_factor * target)
@@ -423,6 +424,15 @@ class GalvoNI (ScannerCtrl):
 
     def _get(self, axis=0):
         return self._curr_pos[axis]
+    
+            
+    def set_range (self, min_limit, max_limit):
+        self._min_limit = min_limit
+        self._max_limit = max_limit
+        #self._set_range()
+
+            
+    
 
     def _close(self):
         for scanner in self.scanners_volt_drives:
