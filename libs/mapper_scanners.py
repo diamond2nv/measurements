@@ -424,15 +424,10 @@ class GalvoNI (ScannerCtrl):
 
     def _get(self, axis=0):
         return self._curr_pos[axis]
-    
-            
+         
     def set_range (self, min_limit, max_limit):
         self._min_limit = min_limit
         self._max_limit = max_limit
-        #self._set_range()
-
-            
-    
 
     def _close(self):
         for scanner in self.scanners_volt_drives:
