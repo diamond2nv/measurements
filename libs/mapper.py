@@ -241,6 +241,9 @@ class XYScan (XYMapper):
         if array is None:
             array = self.detector_readout_0
 
+        if not(file_name.endswith('.txt')):
+            file_name = file_name+'.txt'
+
         if flatten:
             pl.savetxt(file_name, np.array(array).flatten().transpose())
         else:
