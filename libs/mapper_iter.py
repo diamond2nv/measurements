@@ -1,0 +1,174 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Wed Nov 22 09:23:52 2017
+
+@author: cristian bonato
+"""
+
+import pylab as pl
+import time, sys
+from tools import data_object as DO
+import numpy as np
+import lmfit
+from measurements.libs import ScanGUI as SG
+from measurements.libs import mapper 
+from PyQt5 import QtCore, QtGui, QtWidgets
+
+#from measurements.libs.mapper_scanners import move_smooth
+
+if sys.version_info.major == 3:
+    from importlib import reload
+reload (DO)
+reload (SG)
+
+def move_smooth(scanner_axes, targets = []):
+    pass
+
+def move_smooth_simple (scanner_axes, targets = []):
+    pass
+
+
+class XYScanIterative (mapper.XYMapper):
+    def __init__(self, scanner_axes=None, detectors=None):
+        
+        self.trigger_active = True
+        self.feedback_active = True
+        self._back_to_zero = False
+
+        mapper.XYMapper.__init__ (self, scanner_axes = scanner_axes, detectors = detectors)
+        self._iterative = True
+
+    def set_back_to_zero(self):
+        # to go back to 0 V at the end of a scan
+        self._back_to_zero = True
+
+    def set_trigger(self, trigger=True, feedback=True):
+        self.trigger_active = trigger
+        self.feedback_active = feedback
+
+    def set_range(self, xLims, xStep, yLims=None, yStep=None):
+        self._set_range (xLims=xLims, xStep=xStep, yLims=yLims, yStep=yStep)
+        
+        if self._detectors is None:
+            self.counts = None
+        else:
+            for idx, d in enumerate (self._detectors):
+                setattr (self, 'detector_readout_'+str(idx), 
+                            pl.zeros([self.xNbOfSteps, self.yNbOfSteps]))    
+
+    def initialize_scan (self):         
+        self.init_detectors(self._detectors)
+        self.init_scanners(self._scanner_axes)
+
+        print('Total number of steps: {}\n'.format(self.totalNbOfSteps) +
+              'X number of steps:     {}\n'.format(self.xNbOfSteps) +
+              'Y number of steps:     {}'.format(self.yNbOfSteps))
+
+        self._start_time = 0
+        self._first_point = True
+        self._idx = 0
+        self._id_x = 0
+        self._id_y = 0
+        self._firstInRow = True
+
+        move_smooth(self._scanner_axes, targets=[self.xPositions[0], self.yPositions[0]])
+
+        print('\nScanners are at start position. Waiting for acquisition.\n')
+        print('step \tx (V)\ty (V)')
+
+
+    def next_point (self):
+
+        y = self.yPositions[self._id_y]
+        x = self.xPositions[self._id_x]
+        self._idx += 1
+       
+        self._scanner_axes[0].move(x)
+        try:
+            self._scanner_axes[1].move(y)
+        except IndexError:
+            pass
+
+        # display update
+        print('{}/{} \t{:.1f} \t{:.1f}'.format(self._idx, self.totalNbOfSteps, x, y))
+
+        # For first point may wait for a reaction 
+        # (when acquisition is launched in WinSpec and the old Acton spectrometers)
+        if self._first_point:
+            self.wait_first_point(self._detectors)
+            start_time = time.time()
+            first_point = False
+        else:
+            if idx % 10 == 0:
+                self.print_elapsed_time(start_time=start_time, current_index=idx, total_nb_of_steps=self.totalNbOfSteps)
+
+        # delay between rows
+        if self._firstInRow:
+            time.sleep(self.delayBetweenRows)
+            self._firstInRow = False
+
+        # delay between points
+        time.sleep(self.delayBetweenPoints)
+
+        # trigger exposure / detector measurement
+        if self._detectors is not None:
+            for i, detector in enumerate (self._detectors):
+                getattr (self, 'detector_readout_'+str(i))[self._id_x, self._id_y] = detector.readout()
+
+        time.sleep(self.max_delay_after_readout)
+
+        # wait for detector to say it finished
+        self.wait_for_ready(self._detectors)
+
+        done = self._prepare_next_point()
+
+        return done
+
+    def _prepare_next_point (self):
+
+        done = False
+        self._id_x +=1
+
+        if (self._id_x >= self.xNbOfSteps):
+            self._id_x = 0
+            self._id_y +=1
+
+            if (self._id_y >= self.yNbOfSteps):        
+                done = True
+                self.close_scan()
+            else:
+                # move back to first point of row smoothly
+                if self.yPositions[self._id_y] != self.yPositions[-1]:
+                    self._scanner_axes[0].move_smooth(target=self.xPositions[0])
+        return done
+
+    def open_GUI (self):     
+        qApp=QtWidgets.QApplication.instance() 
+        if not qApp: 
+            qApp = QtWidgets.QApplication(sys.argv)
+
+        gui = SG.ScanGUI (scanner=self)
+        gui.setWindowTitle('QPL-ScanGUI')
+        gui.show()
+        sys.exit(qApp.exec_())
+
+    def close_scan(self):
+        # go smoothly to start position
+        if self._back_to_zero:
+            print('\nGoing back to 0 V on scanners...')
+            move_smooth(self._scanner_axes, targets=[0, 0])
+
+        print('\nSCAN COMPLETED\n' +
+              'X from {:.2f} V to {:.2f} V with step size {:.2f} V (nb of steps: {})\n'.format(self.xPositions[0], self.xPositions[-1], self.xStep, self.xNbOfSteps) +
+              'Y from {:.2f} V to {:.2f} V with step size {:.2f} V (nb of steps: {})\n'.format(self.yPositions[0], self.yPositions[-1], self.yStep, self.yNbOfSteps) +
+              'Total number of steps: {}'.format(self.totalNbOfSteps))
+
+        self.close_instruments()
+
+    def save_to_hdf5(self, file_name=None):
+
+        d_obj = DO.DataObjectHDF5()
+        d_obj.save_object_to_file (self, file_name)
+        print("File saved")
+
+
