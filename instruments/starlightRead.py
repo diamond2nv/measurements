@@ -50,7 +50,7 @@ class StarlightCCD(StarlightCamUSB):
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.close() 
         
-    def _longExposure(self, exposureTime=2, **readFlags):
+    def _longExposure(self, exposureTime=0.2, **readFlags):
         """
         To handle long exposures (> 1 second) which need to be timed by the 
         computer.
@@ -197,7 +197,7 @@ if __name__ == "__main__":
     with StarlightCCD(0) as test:
         ilAcq = False
         ilCorrDoubleExpo = True
-        exposureTime = 10
+        exposureTime = 1
         
         while not test.exposureFinished:
             test.exposure(exposureTime, ilAcq=ilAcq, ilCorrDoubleExpo=ilCorrDoubleExpo)
