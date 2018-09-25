@@ -1,1 +1,1 @@
-{"keithleyVisaId": "ASRL4::INSTR"}
+{"keithleyVisaId": "GPIB1::1::INSTR"}

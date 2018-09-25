@@ -27,7 +27,7 @@ if sys.executable.endswith("pythonw.exe"):  # this allows pythonw not to quit im
 
 
 class VoltmeterThread (threading.Thread):
-    def __init__(self, VISA_address=r'ASRL4::INSTR', meas_mode='voltage', timeStep=1):
+    def __init__(self, VISA_address=r'ASRL15::INSTR', meas_mode='voltage', timeStep=1):
         threading.Thread.__init__(self)
         self._stop = threading.Event()
         self.timeStep = timeStep
@@ -273,28 +273,22 @@ def errorMessageWindow(parentWindow, winTitle, winText):
     msg.exec_()
     
     
-#def multimeter_oscillo_run(config):
-#    app = QApplication(sys.argv)
-#    app.aboutToQuit.connect(app.deleteLater)
-#    
-#    window = VoltmeterRead(app, config)
-#
-#    #try:
-#        # window.ui.setFocus(True)
-#        # window.setFocus(True)
-#    window.show()
-#    app.exec_()
-##    except:
-#        raise
-    #finally:
-        #window.close_instruments()
-
-if __name__ == "__main__":
-    config = { "meas_mode": "voltage" ,"multimeterVisaId": "ASRL6::INSTR"}#
-    
+def multimeter_oscillo_run(config):
     app = QApplication(sys.argv)
     app.aboutToQuit.connect(app.deleteLater)
+    
     window = VoltmeterRead(app, config)
-    window.show()
-    app.exec_()
-#    multimeter_oscillo_run(config)
+
+    try:
+        # window.ui.setFocus(True)
+        # window.setFocus(True)
+        window.show()
+        app.exec_()
+    except:
+        raise
+    finally:
+        window.close_instruments()
+
+if __name__ == "__main__":
+    config = {"multimeterVisaId": "GPIB1::1::INSTR"}
+    multimeter_oscillo_run(config)
