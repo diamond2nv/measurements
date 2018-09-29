@@ -165,7 +165,7 @@ class ActonLockinCtrl (DetectorCtrl):
 class APDCounterCtrl (DetectorCtrl):
 
     def __init__(self, ctr_port, debug=False, work_folder=None):
-        self.string_id = 'APD NI box counter'
+        self.string_id = 'APD-NIbox'
         self._wfolder = work_folder
         self._ctr_port = ctr_port
         self.delay_after_readout = 0.
@@ -198,7 +198,7 @@ class APDCounterCtrl (DetectorCtrl):
 class dummyAPD (DetectorCtrl):
 
     def __init__(self, work_folder, random_counts = True, debug = False):
-        self.string_id = 'dummy APD counter'
+        self.string_id = 'dummyAPD'
         self._wfolder = work_folder
         self.delay_after_readout = 0.
         self._debug = debug

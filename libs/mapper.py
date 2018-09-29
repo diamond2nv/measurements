@@ -61,7 +61,6 @@ class XYMapper ():
             self.yStep = 0
         self.totalNbOfSteps = self.xNbOfSteps * self.yNbOfSteps
 
-
     def seconds_in_HMS(self, nbOfSeconds):
         hours = pl.floor(nbOfSeconds / 3600)
         minutes = pl.floor(nbOfSeconds % 3600 / 60)

@@ -34,10 +34,12 @@ dummy_scanner = mscan.ScannerCtrl(channels = [0,1])
 
 apd0 = mdet.dummyAPD(work_folder = 'C:/')
 apd0.set_integration_time_ms(ctr_time_ms)
+apd1 = mdet.dummyAPD(work_folder = 'C:/')
+apd1.set_integration_time_ms(ctr_time_ms)
 
 d = datetime.datetime.now()
 
-XYscan = mapper.XYScanIterative(scanner_axes = dummy_scanner, detectors = [apd0])
+XYscan = mapper.XYScanIterative(scanner_axes = dummy_scanner, detectors = [apd0, apd1])
 #XYscan.set_range (xLims=xLims, xStep=xStep, yLims=yLims, yStep=yStep)
 XYscan.set_delays (between_points = delayBetweenPoints, between_rows = delayBetweenRows)
 XYscan.set_back_to_zero()

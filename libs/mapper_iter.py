@@ -38,6 +38,21 @@ class XYScanIterative (mapper.XYMapper):
         mapper.XYMapper.__init__ (self, scanner_axes = scanner_axes, detectors = detectors)
         self._iterative = True
 
+        det_id_list = []
+        det_id_counts = []
+        for det in self._detectors:
+            if det.string_id in det_id_list:
+                pos = det_id_list.index(det.string_id)
+                det_id_counts[pos]+=1
+                det.string_id = det.string_id+'-'+str(det_id_counts[pos])
+            else:
+                det_id_list = det_id_list + [det.string_id]
+                det_id_counts = det_id_counts + [0]
+
+        # default values for scanner axes
+        self._x_scan_id = 0
+        self._x_scan_id = 1
+
     def set_back_to_zero(self):
         # to go back to 0 V at the end of a scan
         self._back_to_zero = True
@@ -54,7 +69,11 @@ class XYScanIterative (mapper.XYMapper):
         else:
             for idx, d in enumerate (self._detectors):
                 setattr (self, 'detector_readout_'+str(idx), 
-                            pl.zeros([self.xNbOfSteps, self.yNbOfSteps]))    
+                            pl.zeros([self.xNbOfSteps, self.yNbOfSteps]))
+
+    def set_scanners (self, scan1_id, scan2_id):
+        self._x_scan_id = scan1_id
+        self._y_scan_id = scan2_id
 
     def initialize_scan (self):         
         self.init_detectors(self._detectors)
@@ -76,21 +95,29 @@ class XYScanIterative (mapper.XYMapper):
         print('\nScanners are at start position. Waiting for acquisition.\n')
         print('step \tx (V)\ty (V)')
 
+    def get_current_point (self):
+        return self._curr_x, self._curr_y
 
-    def next_point (self):
-
+    def move_to_next (self):
         y = self.yPositions[self._id_y]
         x = self.xPositions[self._id_x]
+        self._curr_x = x
+        self._curr_y = y
+
         self._idx += 1
        
-        self._scanner_axes[0].move(x)
+        self._scanner_axes[self._x_scan_id].move(x)
         try:
-            self._scanner_axes[1].move(y)
+            self._scanner_axes[self._y_scan_id].move(y)
         except IndexError:
             pass
 
         # display update
         print('{}/{} \t{:.1f} \t{:.1f}'.format(self._idx, self.totalNbOfSteps, x, y))
+
+
+    def acquire_data (self):
+
 
         # For first point may wait for a reaction 
         # (when acquisition is launched in WinSpec and the old Acton spectrometers)
@@ -139,7 +166,7 @@ class XYScanIterative (mapper.XYMapper):
             else:
                 # move back to first point of row smoothly
                 if self.yPositions[self._id_y] != self.yPositions[-1]:
-                    self._scanner_axes[0].move_smooth(target=self.xPositions[0])
+                    self._scanner_axes[self._x_scan_id].move_smooth(target=self.xPositions[0])
         return done
 
     def open_GUI (self):     

@@ -38,6 +38,11 @@ class ScanGUI(QtWidgets.QMainWindow):
         self.ui.label_xcurr.setText ("curr X ("+self._units+")")
         self.ui.label_ycurr.setText ("curr Y ("+self._units+")")
         self.ui.label_zcurr.setText ("curr Z ("+self._units+")")
+
+        # here add detector string IDs to combo box
+        for det in self._scanner._detectors:
+            self.ui.cb_detector.addItem(det.string_id)
+            
         #CONNECT SIGNALS TO EVENTS
         self.ui.pushButton_Start.clicked.connect (self._start_scan)
         self.ui.pushButton_Stop.clicked.connect (self._stop_scan)
@@ -55,6 +60,8 @@ class ScanGUI(QtWidgets.QMainWindow):
         self.ui.cb_scan2.currentIndexChanged.connect (self._set_scan_axis_2)
         self.ui.cb_fixed.currentIndexChanged.connect (self._set_fixed_axis)
 
+        self.load_settings()
+
         self._curr_task = None
         #TIMER:
         self.refresh_time = 0.2
@@ -69,17 +76,22 @@ class ScanGUI(QtWidgets.QMainWindow):
             idle = True
 
     def _set_scan_axis_1 (self, value):
-        self._scan_axis_1 = value
+        self._scan_axis_1 = int(value)
 
     def _set_scan_axis_2 (self, value):
-        self._scan_axis_2 = value
+        self._scan_axis_2 = int(value)
 
     def _set_fixed_axis (self, value):
-        self._fixed_axis = value
+        self._fixed_axis = int(value)
 
-    def parameters_are_valid (self):
-
-        return correct
+    def set_current_point (self, scan1, scan2, fixed):
+        values = [0,0,0]
+        values[self._scan_axis_1] = scan1
+        values[self._scan_axis_2] = scan2
+        values[self._fixed_axis] = fixed        
+        self.ui.label_view_xCurr.setText (str(values[0]))
+        self.ui.label_view_yCurr.setText (str(values[1]))
+        self.ui.label_view_zCurr.setText (str(values[2]))      
 
     def _start_scan (self):
         print ("Starting scan...")
@@ -90,13 +102,15 @@ class ScanGUI(QtWidgets.QMainWindow):
                     (self._scan_axis_2 != self._fixed_axis))
         valid = max_min and axes
 
+        print ("Scan axes: ", self._scan_axis_1, self._scan_axis_2)
         if valid:
+            self._scanner.set_scanners (scan1_id=self._scan_axis_1, scan2_id=self._scan_axis_2)
             Lims = [(self._min_1, self._max_1), (self._min_2, self._max_2)]
             StepSizes = [1+(self._max_1 - self._min_1)/self._steps_1, 1+(self._max_2 - self._min_2)/self._steps_2]
             
             # SERVE METTERE VALORE CORRETTO!!!
-            self._scanner.set_range (xLims=Lims[0], xStep=StepSizes[0], 
-                    yLims=Lims[1], yStep=StepSizes[1])
+            self._scanner.set_range (xLims=Lims[self._scan_axis_1], xStep=StepSizes[self._scan_axis_1], 
+                    yLims=Lims[self._scan_axis_2], yStep=StepSizes[self._scan_axis_2])
             self._scanner.initialize_scan()
 
             self._curr_task = 'scan'
@@ -117,7 +131,10 @@ class ScanGUI(QtWidgets.QMainWindow):
         print ("Saving scan...")
 
     def _get_next_point (self):
-        done = self._scanner.next_point ()
+        self._scanner.move_to_next()
+        xC, yC = self._scanner.get_current_point ()
+        self.set_current_point (scan1 = xC, scan2 = yC, fixed = 0)
+        done = self._scanner.acquire_data ()
         if done:
             self._curr_task = None
 
@@ -153,11 +170,41 @@ class ScanGUI(QtWidgets.QMainWindow):
         #self.ui.canvas.resize_canvas (w=w, h=h*0.8)
         #self._zoom_full()
 
+    def save_settings (self):
+        values = [self._min_1, self._max_1, self._steps_1, self._min_2, self._max_2, self._steps_2, self._fixed_pos, self._scan_axis_1, self._scan_axis_2, self._fixed_axis]
+        np.savetxt ('C:/Users/cristian/Research/QPL-code/measurements/scripts/bay5/_settings/set_scan_gui.txt', values, delimiter = ',')
+
+    def load_settings (self):
+        try: 
+            self._min_1, self._max_1, steps_1, self._min_2, self._max_2, steps_2, self._fixed_pos, scan_axis_1, scan_axis_2, fixed_axis = np.loadtxt('C:/Users/cristian/Research/QPL-code/measurements/scripts/bay5/_settings/set_scan_gui.txt', delimiter = ',')
+            self._steps_1 = int(steps_1)
+            self._steps_2 = int(steps_2)
+            self._scan_axis_1 = int(scan_axis_1)
+            self._scan_axis_2 = int(scan_axis_2)
+            self._fixed_axis = int(fixed_axis)
+
+            print ("Settings loaded from file.")
+        except:
+            self._min_1, self._max_1, self._steps_1, self._min_2, self._max_2, self._steps_2, self._fixed_pos, self._scan_axis_1, self._scan_axis_2, self._fixed_axis = [0,0,0,0,0,0,0,0,1,2]
+            print ("Settings to zero.")
+
+        self.ui.dsB_max1.setValue(self._max_1)           
+        self.ui.dsB_max2.setValue(self._max_2)           
+        self.ui.dsB_min1.setValue(self._min_1)           
+        self.ui.dsB_min2.setValue(self._min_2)           
+        self.ui.dsB_steps1.setValue(self._steps_1)           
+        self.ui.dsB_steps2.setValue(self._steps_2)           
+        self.ui.dsB_fixed_pos.setValue(self._fixed_pos)
+        self.ui.cb_scan1.setCurrentIndex(self._scan_axis_1)         
+        self.ui.cb_scan2.setCurrentIndex(self._scan_axis_2)         
+        self.ui.cb_fixed.setCurrentIndex(self._fixed_axis)         
+
     def fileQuit(self):
         self.close()
 
     def closeEvent(self, ce):
         print ("Close window...")
+        self.save_settings()
         ce.accept()
 
 

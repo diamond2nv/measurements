@@ -227,7 +227,7 @@
        </widget>
       </item>
       <item row="1" column="0">
-       <widget class="QLabel" name="label">
+       <widget class="QLabel" name="label_view_xCurr">
         <property name="font">
          <font>
           <pointsize>12</pointsize>
@@ -242,7 +242,7 @@
        </widget>
       </item>
       <item row="1" column="1">
-       <widget class="QLabel" name="label_2">
+       <widget class="QLabel" name="label_view_yCurr">
         <property name="font">
          <font>
           <pointsize>12</pointsize>
@@ -257,7 +257,7 @@
        </widget>
       </item>
       <item row="1" column="2">
-       <widget class="QLabel" name="label_3">
+       <widget class="QLabel" name="label_view_zCurr">
         <property name="font">
          <font>
           <pointsize>12</pointsize>
