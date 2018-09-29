@@ -235,7 +235,12 @@ class XYScan (XYMapper):
         for i in detector_numbers:
             pl.figure(figsize=(10, 10))
             [X, Y] = pl.meshgrid (self.xPositions, self.yPositions)
-            pl.pcolor(X, Y, getattr(self, 'detector_readout_'+str(i)))
+            pl.pcolormesh(X, Y, getattr(self, 'detector_readout_'+str(i) ).transpose())
+            
+#            z = getattr(self, 'detector_readout_'+str(i))
+#            Z = z.reshape(X.shape[0],X.shape[1])
+#            pl.pcolormesh(X,Y,Z)
+            
             pl.title ("detector nr "+str(i), fontsize=18)
             pl.colorbar()
             pl.show()
@@ -248,9 +253,20 @@ class XYScan (XYMapper):
             file_name = file_name+'.txt'
 
         if flatten:
+#            array = np.array(array).flatten()
             pl.savetxt(file_name, np.array(array).flatten().transpose())
         else:
-            pl.savetxt(file_name, array)
+            pl.savetxt(file_name, np.array(array))
+        xfile_name = file_name[:-4]+'_x_coord.txt';
+        yfile_name = file_name[:-4]+'_y_coord.txt';
+        x = self.xPositions;
+        y = self.yPositions;
+        pl.savetxt(xfile_name,x)
+        pl.savetxt(yfile_name,y)
+#        x = self.xPositions.flatten()
+#        y = self.yPositions.flatten()
+#        print (x,y)
+#        pl.savetxt(file_name,np.transpose([x,y]))
         print("\nPower as volts saved in file.")
 
 
