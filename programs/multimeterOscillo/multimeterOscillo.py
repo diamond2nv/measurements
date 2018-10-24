@@ -27,7 +27,7 @@ if sys.executable.endswith("pythonw.exe"):  # this allows pythonw not to quit im
 
 
 class VoltmeterThread (threading.Thread):
-    def __init__(self, VISA_address=r'ASRL15::INSTR', meas_mode='voltage', timeStep=1):
+    def __init__(self, VISA_address=r'ASRL1::INSTR', meas_mode='voltage', timeStep=1):
         threading.Thread.__init__(self)
         self._stop = threading.Event()
         self.timeStep = timeStep
@@ -290,5 +290,5 @@ def multimeter_oscillo_run(config):
         window.close_instruments()
 
 if __name__ == "__main__":
-    config = {"multimeterVisaId": "GPIB1::1::INSTR"}
+    config = {"multimeterVisaId": "GPIB0::22::INSTR","meas_mode":"voltage"}
     multimeter_oscillo_run(config)
