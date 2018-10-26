@@ -54,6 +54,8 @@ class ScanGUI(QtWidgets.QMainWindow):
             self.ui.cB_scanner2.addItem(s)
             self.ui.cB_scanner3.addItem(s)
             
+        self._curr_APD = 0
+
         #CONNECT SIGNALS TO EVENTS
         self.ui.pushButton_Start.clicked.connect (self._start_scan)
         self.ui.pushButton_Stop.clicked.connect (self._stop_scan)
@@ -67,10 +69,13 @@ class ScanGUI(QtWidgets.QMainWindow):
         self.ui.dsB_max2.valueChanged.connect (self._set_max_2)
         self.ui.dsB_steps2.valueChanged.connect (self._set_steps_2)
         self.ui.dsB_fixed_pos.valueChanged.connect (self._set_fixed_pos)
+        self.ui.sB_APD.valueChanged.connect (self._set_APD_time)
         self.ui.cB_scanner1.currentIndexChanged.connect (self._set_scan_axis_1)
         self.ui.cB_scanner2.currentIndexChanged.connect (self._set_scan_axis_2)
         self.ui.cB_scanner3.currentIndexChanged.connect (self._set_fixed_axis)
+        self.ui.cb_detector.currentIndexChanged.connect (self._set_view_detector)
 
+        self._set_view_detector(self._curr_APD)
         self.load_settings()
 
         self._curr_task = None
@@ -86,6 +91,14 @@ class ScanGUI(QtWidgets.QMainWindow):
         else:
             idle = True
 
+    def _set_view_detector (self, value):
+        a = int(self._scanner._detectors[value]._ctr_time_ms)
+        self._curr_APD = value
+        self.ui.sB_APD.setValue(a)
+
+    def _set_APD_time (self, value):
+        self._scanner._detectors[self._curr_APD]._ctr_time_ms = value
+
     def _set_scan_axis_1 (self, value):
         self._scan_axis_1 = int(value)
 
@@ -100,9 +113,9 @@ class ScanGUI(QtWidgets.QMainWindow):
         values[self._scan_axis_1] = scan1
         values[self._scan_axis_2] = scan2
         values[self._fixed_axis] = fixed        
-        self.ui.label_view_xCurr.setText (str(values[0]))
-        self.ui.label_view_yCurr.setText (str(values[1]))
-        self.ui.label_view_zCurr.setText (str(values[2]))      
+        self.ui.label_view_xCurr.setText (str(int(10*values[0])/10))
+        self.ui.label_view_yCurr.setText (str(int(10*values[1])/10))
+        self.ui.label_view_zCurr.setText (str(int(10*values[2])/10))     
 
     def _start_scan (self):
         print ("Starting scan...")
@@ -242,6 +255,7 @@ class CanvasGUI(qplGUI.QPLZoomableGUI):
             self._units = 'V'
             
         self._curr_task = None
+        self.ui.pushButton.clicked.connect (self._zoom_out)
 
         #TIMER:
         self.refresh_time = 0.3
@@ -251,6 +265,14 @@ class CanvasGUI(qplGUI.QPLZoomableGUI):
 
     def _is_click_near_cursor(self, x = None):
         return False
+
+    def _zoom_out(self):
+        xVals = self._detector.xValues
+        dx = (xVals[1]-xVals[0])/2
+        yVals = self._detector.yValues
+        dy = (yVals[1]-yVals[0])/2
+        self.ui.canvas.set_range (axis1 = [min(xVals)-dx, max(xVals)+dx], 
+                                    axis2 = [min(yVals)-dy, max(yVals)]+dy)
 
     def check_new_readout (self):
         if (self._detector._scan_params_changed):
