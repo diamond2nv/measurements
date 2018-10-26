@@ -249,12 +249,14 @@ class CanvasGUI(qplGUI.QPLZoomableGUI):
         self.timer.start(self.refresh_time)
 
     def check_new_readout (self):
-        try:
-            if (self._detector._is_changed):
-                self.ui.canvas.set_2D_data (value = self._detector.readout_values)
-                self._detector._is_changed = False
-        except:
-            print ("Something went wrong...")
+        if (self._detector._scan_params_changed):
+            self._xValues = self._detector.xValues
+            self._yValues = self._detector.yValues
+            self._detector._scan_params_changed = False
+        if (self._detector._is_changed):
+            self.ui.canvas.set_2D_data (x = self._xValues, y = self._yValues,
+                                            value = self._detector.readout_values)
+            self._detector._is_changed = False
 
     def resizeEvent (self, event):
         QtWidgets.QWidget.resizeEvent (self, event)

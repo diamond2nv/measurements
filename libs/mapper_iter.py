@@ -41,6 +41,7 @@ class ScanData ():
     # IDEA
     # creiamo un oggetto ScanData x ogni detector, e facciamo l'update dei parametri 
     # di questo, non dell'oggetto detector (che non e' molto elegante)
+    # NO, THIS IS SO MUCH HARDER!!!
 
 
 class XYScanIterative (mapper.XYMapper):
@@ -64,7 +65,7 @@ class XYScanIterative (mapper.XYMapper):
                 det_id_list = det_id_list + [det.string_id]
                 det_id_counts = det_id_counts + [0]
             det._is_changed = False
-            det._scan_params_changes = False
+            det._scan_params_changed = False
             det.readout_values = None
             det.xValues = None
             det.yValues = None
@@ -93,9 +94,10 @@ class XYScanIterative (mapper.XYMapper):
                 for j in range (self.yNbOfSteps):
                     a[i,j] = None
             for idx, d in enumerate (self._detectors):
+                setattr (d, '_scan_params_changed', True)
                 setattr (self, 'detector_readout_'+str(idx), a)
                 setattr (d, 'readout_values', a)
-                #setattr (d, 'xValues', self.xPositions)
+                setattr (d, 'xValues', self.xPositions)
                 setattr (d, 'yValues', self.yPositions)
 
     def set_scanners (self, scan1_id, scan2_id):

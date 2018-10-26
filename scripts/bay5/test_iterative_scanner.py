@@ -30,7 +30,7 @@ ctr_port = 'pfi0'
 
 #######################
 # instruments
-dummy_scanner = mscan.ScannerCtrl(channels = [0,1,2], ids = ['atto-1', 'atto-2', 'atto-3'])
+dummy_scanner = mscan.ScannerCtrl(channels = [0,1,2], ids = ['dummy-1', 'dummy-2', 'dummy-3'])
 
 apd0 = mdet.dummyAPD(work_folder = 'C:/')
 apd0.set_integration_time_ms(ctr_time_ms)
