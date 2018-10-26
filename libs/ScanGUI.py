@@ -15,6 +15,7 @@ from tools import QPL_viewGUI as qplGUI
 from importlib import reload
 reload (uScan)
 reload (uCanvas)
+reload (qplGUI)
 
 class ScanGUI(QtWidgets.QMainWindow):
 
@@ -247,6 +248,9 @@ class CanvasGUI(qplGUI.QPLZoomableGUI):
         self.timer = QtCore.QTimer(self)
         self.timer.timeout.connect(self.check_new_readout)
         self.timer.start(self.refresh_time)
+
+    def _is_click_near_cursor(self, x = None):
+        return False
 
     def check_new_readout (self):
         if (self._detector._scan_params_changed):
