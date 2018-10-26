@@ -28,6 +28,21 @@ def move_smooth_simple (scanner_axes, targets = []):
     pass
 
 
+class ScanData ():
+
+    def __init__(self):
+        self._detector_name = None
+        self._axis1_pos = None
+        self._axis2_pos = None
+        self._axis3_pos = None
+        self._units = None
+        self._values = None
+
+    # IDEA
+    # creiamo un oggetto ScanData x ogni detector, e facciamo l'update dei parametri 
+    # di questo, non dell'oggetto detector (che non e' molto elegante)
+
+
 class XYScanIterative (mapper.XYMapper):
     def __init__(self, scanner_axes=None, detectors=None):
         
@@ -48,6 +63,12 @@ class XYScanIterative (mapper.XYMapper):
             else:
                 det_id_list = det_id_list + [det.string_id]
                 det_id_counts = det_id_counts + [0]
+            det._is_changed = False
+            det._scan_params_changes = False
+            det.readout_values = None
+            det.xValues = None
+            det.yValues = None
+
 
         # default values for scanner axes
         self._x_scan_id = 0
@@ -67,9 +88,15 @@ class XYScanIterative (mapper.XYMapper):
         if self._detectors is None:
             self.counts = None
         else:
+            a = pl.zeros([self.xNbOfSteps, self.yNbOfSteps])
+            for i in range(self.xNbOfSteps):
+                for j in range (self.yNbOfSteps):
+                    a[i,j] = None
             for idx, d in enumerate (self._detectors):
-                setattr (self, 'detector_readout_'+str(idx), 
-                            pl.zeros([self.xNbOfSteps, self.yNbOfSteps]))
+                setattr (self, 'detector_readout_'+str(idx), a)
+                setattr (d, 'readout_values', a)
+                #setattr (d, 'xValues', self.xPositions)
+                setattr (d, 'yValues', self.yPositions)
 
     def set_scanners (self, scan1_id, scan2_id):
         self._x_scan_id = scan1_id
@@ -140,7 +167,10 @@ class XYScanIterative (mapper.XYMapper):
         # trigger exposure / detector measurement
         if self._detectors is not None:
             for i, detector in enumerate (self._detectors):
-                getattr (self, 'detector_readout_'+str(i))[self._id_x, self._id_y] = detector.readout()
+                a = detector.readout()
+                getattr (self, 'detector_readout_'+str(i))[self._id_x, self._id_y] = a
+                getattr (detector, 'readout_values')[self._id_x, self._id_y] = a
+                setattr (detector, '_is_changed', True)
 
         time.sleep(self.max_delay_after_readout)
 
@@ -174,9 +204,16 @@ class XYScanIterative (mapper.XYMapper):
         if not qApp: 
             qApp = QtWidgets.QApplication(sys.argv)
 
-        gui = SG.ScanGUI (scanner=self)
-        gui.setWindowTitle('QPL-ScanGUI')
-        gui.show()
+        self._guiCtrl = SG.ScanGUI (scanner=self)
+        self._guiCtrl.setWindowTitle('QPL-ScanGUI')
+        self._guiCtrl.show()
+        
+        for idx, d in enumerate(self._detectors):
+            setattr (self, '_guiDetector_'+str(idx), SG.CanvasGUI(detector=d))
+            obj = getattr(self, '_guiDetector_'+str(idx))
+            getattr (obj, 'setWindowTitle')('QPL-detector_'+str(idx))
+            getattr (obj, 'show')()
+
         sys.exit(qApp.exec_())
 
     def close_scan(self):
@@ -197,5 +234,9 @@ class XYScanIterative (mapper.XYMapper):
         d_obj = DO.DataObjectHDF5()
         d_obj.save_object_to_file (self, file_name)
         print("File saved")
+
+
+#class XYZ_2DScan (mapper.XYMapper):
+#    pass
 
 

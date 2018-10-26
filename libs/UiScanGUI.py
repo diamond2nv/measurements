@@ -7,14 +7,21 @@
 # WARNING! All changes made in this file will be lost!
 
 from PyQt5 import QtCore, QtGui, QtWidgets
+import numpy as np
+import h5py
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as Canvas
+from matplotlib.figure import Figure
+from tools import QPLCanvas as qplCanvas
+
+from importlib import reload
+reload (qplCanvas)
 
 class Ui_Form(object):
     def setupUi(self, Form):
         Form.setObjectName("Form")
         Form.resize(974, 741)
-        self.graphicsView = QtWidgets.QGraphicsView(Form)
-        self.graphicsView.setGeometry(QtCore.QRect(10, 10, 700, 700))
-        self.graphicsView.setObjectName("graphicsView")
+        self.canvas = qplCanvas.QPLCanvas_2D(Form)
+        self.canvas.setObjectName("canvas")
         self.layoutWidget = QtWidgets.QWidget(Form)
         self.layoutWidget.setGeometry(QtCore.QRect(720, 140, 241, 411))
         self.layoutWidget.setObjectName("layoutWidget")

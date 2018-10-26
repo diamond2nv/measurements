@@ -13,18 +13,18 @@ import lmfit
 from measurements.libs import ScanGUI as SG
 from PyQt5 import QtCore, QtGui, QtWidgets
 
-from measurements.libs.mapper_scanners import move_smooth
+#from measurements.libs.mapper_scanners import move_smooth
 
 if sys.version_info.major == 3:
     from importlib import reload
 reload (DO)
 reload (SG)
 
-#def move_smooth(scanner_axes, targets = []):
-#    pass
+def move_smooth(scanner_axes, targets = []):
+    pass
 
-#def move_smooth_simple (scanner_axes, targets = []):
-#    pass
+def move_smooth_simple (scanner_axes, targets = []):
+    pass
 
 class XYMapper ():
     def __init__(self, scanner_axes=None, detectors=None):

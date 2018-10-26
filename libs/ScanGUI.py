@@ -8,18 +8,21 @@ import h5py
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 from PyQt5 import QtCore, QtGui, QtWidgets
-from measurements.libs import UiScanGUI as uM
-from importlib import reload
-reload (uM)
+from measurements.libs import ui_scan_gui_ctrl as uScan
+from measurements.libs import ui_scan_gui_canvas as uCanvas
 
+from tools import QPL_viewGUI as qplGUI
+from importlib import reload
+reload (uScan)
+reload (uCanvas)
 
 class ScanGUI(QtWidgets.QMainWindow):
 
     def __init__(self, scanner = None):
 
-        QtWidgets.QWidget.__init__(self)
+        QtWidgets.QMainWindow.__init__(self)
         self.setAttribute(QtCore.Qt.WA_DeleteOnClose)
-        self.ui = uM.Ui_Form()
+        self.ui = uScan.Ui_MainWindow()
         self.ui.setupUi(self)
 
         self._scanner = scanner
@@ -42,6 +45,13 @@ class ScanGUI(QtWidgets.QMainWindow):
         # here add detector string IDs to combo box
         for det in self._scanner._detectors:
             self.ui.cb_detector.addItem(det.string_id)
+        # here add detector string IDs to combo box
+
+        print (scanner._scanner_axes._ids)
+        for s in self._scanner._scanner_axes._ids:
+            self.ui.cB_scanner1.addItem(s)
+            self.ui.cB_scanner2.addItem(s)
+            self.ui.cB_scanner3.addItem(s)
             
         #CONNECT SIGNALS TO EVENTS
         self.ui.pushButton_Start.clicked.connect (self._start_scan)
@@ -56,9 +66,9 @@ class ScanGUI(QtWidgets.QMainWindow):
         self.ui.dsB_max2.valueChanged.connect (self._set_max_2)
         self.ui.dsB_steps2.valueChanged.connect (self._set_steps_2)
         self.ui.dsB_fixed_pos.valueChanged.connect (self._set_fixed_pos)
-        self.ui.cb_scan1.currentIndexChanged.connect (self._set_scan_axis_1)
-        self.ui.cb_scan2.currentIndexChanged.connect (self._set_scan_axis_2)
-        self.ui.cb_fixed.currentIndexChanged.connect (self._set_fixed_axis)
+        self.ui.cB_scanner1.currentIndexChanged.connect (self._set_scan_axis_1)
+        self.ui.cB_scanner2.currentIndexChanged.connect (self._set_scan_axis_2)
+        self.ui.cB_scanner3.currentIndexChanged.connect (self._set_fixed_axis)
 
         self.load_settings()
 
@@ -106,14 +116,14 @@ class ScanGUI(QtWidgets.QMainWindow):
         if valid:
             self._scanner.set_scanners (scan1_id=self._scan_axis_1, scan2_id=self._scan_axis_2)
             Lims = [(self._min_1, self._max_1), (self._min_2, self._max_2)]
-            StepSizes = [1+(self._max_1 - self._min_1)/self._steps_1, 1+(self._max_2 - self._min_2)/self._steps_2]
+            StepSizes = [(self._max_1 - self._min_1)/(self._steps_1-1), (self._max_2 - self._min_2)/(self._steps_2-1)]
             
-            # SERVE METTERE VALORE CORRETTO!!!
-            self._scanner.set_range (xLims=Lims[self._scan_axis_1], xStep=StepSizes[self._scan_axis_1], 
-                    yLims=Lims[self._scan_axis_2], yStep=StepSizes[self._scan_axis_2])
+            self._scanner.set_range (xLims=Lims[0], xStep=StepSizes[0], 
+                    yLims=Lims[1], yStep=StepSizes[1])
             self._scanner.initialize_scan()
 
             self._curr_task = 'scan'
+            self.ui.label_status.setText ("Scanning")
         else:
             print ("Scan parameters are set incorrectly!")
             print ("Max > Min: ", max_min) 
@@ -121,11 +131,12 @@ class ScanGUI(QtWidgets.QMainWindow):
 
     def _stop_scan (self):
         self._curr_task = None
+        self.ui.label_status.setText ("Stopped")
         print ("Stop scan...")
 
     def _resume_scan (self):
         self._curr_task = 'scan'
-        print ("Resume scan...")
+        self.ui.label_status.setText ("Scanning")
 
     def _save_scan (self):
         print ("Saving scan...")
@@ -137,6 +148,8 @@ class ScanGUI(QtWidgets.QMainWindow):
         done = self._scanner.acquire_data ()
         if done:
             self._curr_task = None
+            self.ui.label_status.setText ("Idle")
+
 
     def _set_min_1 (self, value):
         self._min_1 = value
@@ -166,7 +179,6 @@ class ScanGUI(QtWidgets.QMainWindow):
         h = event.size().height()
         self.w = w
         self.h = h
-        print (w, h)
         #self.ui.canvas.resize_canvas (w=w, h=h*0.8)
         #self._zoom_full()
 
@@ -195,17 +207,67 @@ class ScanGUI(QtWidgets.QMainWindow):
         self.ui.dsB_steps1.setValue(self._steps_1)           
         self.ui.dsB_steps2.setValue(self._steps_2)           
         self.ui.dsB_fixed_pos.setValue(self._fixed_pos)
-        self.ui.cb_scan1.setCurrentIndex(self._scan_axis_1)         
-        self.ui.cb_scan2.setCurrentIndex(self._scan_axis_2)         
-        self.ui.cb_fixed.setCurrentIndex(self._fixed_axis)         
+        self.ui.cB_scanner1.setCurrentIndex(self._scan_axis_1)         
+        self.ui.cB_scanner2.setCurrentIndex(self._scan_axis_2)         
+        self.ui.cB_scanner3.setCurrentIndex(self._fixed_axis)         
+
+    def fileQuit(self):
+        self.close()
+
+    def closeEvent(self, ce):
+        self.save_settings()
+        ce.accept()
+
+
+class CanvasGUI(qplGUI.QPLZoomableGUI):
+
+    def __init__(self, detector = None):
+
+        ui = uCanvas.Ui_MainWindow()
+        qplGUI.QPLZoomableGUI.__init__(self, ui_panel = ui)
+        self.setAttribute(QtCore.Qt.WA_DeleteOnClose)
+
+        self._detector = detector
+        self.ui.label.setText(self._detector.string_id)
+        self.ui.label.setAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
+
+        #SETTINGS ELEMENTS
+        try:
+            if scanner._scan_units == 'um':
+                self._units = 'um'
+            else:
+                self._units = 'V'
+        except:
+            self._units = 'V'
+            
+        self._curr_task = None
+
+        #TIMER:
+        self.refresh_time = 0.3
+        self.timer = QtCore.QTimer(self)
+        self.timer.timeout.connect(self.check_new_readout)
+        self.timer.start(self.refresh_time)
+
+    def check_new_readout (self):
+        try:
+            if (self._detector._is_changed):
+                self.ui.canvas.set_2D_data (value = self._detector.readout_values)
+                self._detector._is_changed = False
+        except:
+            print ("Something went wrong...")
+
+    def resizeEvent (self, event):
+        QtWidgets.QWidget.resizeEvent (self, event)
+        w = event.size().width()
+        h = event.size().height()
+        m = min(h,w)
+        self.w = m
+        self.h = m
+        self.ui.canvas.resize_canvas (w=m, h=m)
 
     def fileQuit(self):
         self.close()
 
     def closeEvent(self, ce):
         print ("Close window...")
-        self.save_settings()
         ce.accept()
-
-
-
