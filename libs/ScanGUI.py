@@ -27,6 +27,7 @@ class ScanGUI(QtWidgets.QMainWindow):
         self.ui.setupUi(self)
 
         self._scanner = scanner
+        self._work_folder = scanner._work_folder
 
         #SETTINGS ELEMENTS
         try:
@@ -145,12 +146,12 @@ class ScanGUI(QtWidgets.QMainWindow):
 
     def _stop_scan (self):
         self._curr_task = None
-        self.ui.label_status.setText ("Stopped")
+        self.ui.label_status.setText ("Status: Stopped")
         print ("Stop scan...")
 
     def _resume_scan (self):
         self._curr_task = 'scan'
-        self.ui.label_status.setText ("Scanning")
+        self.ui.label_status.setText ("Status: Scanning")
 
     def _save_scan (self):
         print ("Saving scan...")
@@ -162,7 +163,7 @@ class ScanGUI(QtWidgets.QMainWindow):
         done = self._scanner.acquire_data ()
         if done:
             self._curr_task = None
-            self.ui.label_status.setText ("Idle")
+            self.ui.label_status.setText ("Status: Idle")
 
 
     def _set_min_1 (self, value):

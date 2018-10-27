@@ -75,6 +75,9 @@ class XYScanIterative (mapper.XYMapper):
         self._x_scan_id = 0
         self._x_scan_id = 1
 
+    def set_work_folder (self, folder):
+        self._work_folder = folder
+
     def set_back_to_zero(self):
         # to go back to 0 V at the end of a scan
         self._back_to_zero = True
