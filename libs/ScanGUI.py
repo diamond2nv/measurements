@@ -221,6 +221,7 @@ class ScanGUI(QtWidgets.QMainWindow):
                 ax.pcolor (value)
             fig.savefig (os.path.join (subf, 'map_detector'+str(idx)+'_'+d.string_id+'.png'))
             fig.savefig (os.path.join (subf, 'map_detector'+str(idx)+'_'+d.string_id+'.svg'))
+            plt.close(fig)
 
     def _recalculate (self, values):
         x0 =  values[0]
@@ -265,11 +266,16 @@ class ScanGUI(QtWidgets.QMainWindow):
 
     def save_settings (self):
         values = [self._min_1, self._max_1, self._steps_1, self._min_2, self._max_2, self._steps_2, self._fixed_pos, self._scan_axis_1, self._scan_axis_2, self._fixed_axis]
-        np.savetxt ('C:/Users/cristian/Research/QPL-code/measurements/scripts/bay5/_settings/set_scan_gui.txt', values, delimiter = ',')
+        subf = os.path.join (self._work_folder, '_settings')
+        if not(os.path.exists(subf)):
+            os.mkdir(subf)
+
+        np.savetxt (os.path.join (subf, 'set_scan_gui.txt'), values, delimiter = ',')
 
     def load_settings (self):
         try: 
-            self._min_1, self._max_1, steps_1, self._min_2, self._max_2, steps_2, self._fixed_pos, scan_axis_1, scan_axis_2, fixed_axis = np.loadtxt('C:/Users/cristian/Research/QPL-code/measurements/scripts/bay5/_settings/set_scan_gui.txt', delimiter = ',')
+            fname = os.path.join (os.path.join (self._work_folder, '_settings'), 'set_scan_gui.txt')
+            self._min_1, self._max_1, steps_1, self._min_2, self._max_2, steps_2, self._fixed_pos, scan_axis_1, scan_axis_2, fixed_axis = np.loadtxt(fname, delimiter = ',')
             self._steps_1 = int(steps_1)
             self._steps_2 = int(steps_2)
             self._scan_axis_1 = int(scan_axis_1)
