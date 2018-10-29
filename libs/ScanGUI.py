@@ -12,10 +12,13 @@ from measurements.libs import ui_scan_gui_ctrl as uScan
 from measurements.libs import ui_scan_gui_canvas as uCanvas
 
 from tools import QPL_viewGUI as qplGUI
+from tools import data_object as DO
+
 from importlib import reload
 reload (uScan)
 reload (uCanvas)
 reload (qplGUI)
+reload (DO)
 
 class ScanGUI(QtWidgets.QMainWindow):
 
@@ -28,6 +31,7 @@ class ScanGUI(QtWidgets.QMainWindow):
 
         self._scanner = scanner
         self._work_folder = scanner._work_folder
+        print ("Work folder: ", self._work_folder)
 
         #SETTINGS ELEMENTS
         try:
@@ -44,18 +48,16 @@ class ScanGUI(QtWidgets.QMainWindow):
         self.ui.label_ycurr.setText ("curr Y ("+self._units+")")
         self.ui.label_zcurr.setText ("curr Z ("+self._units+")")
 
-        # here add detector string IDs to combo box
+        # add detector string IDs and scanner axes to respective combo boxes
         for det in self._scanner._detectors:
             self.ui.cb_detector.addItem(det.string_id)
-        # here add detector string IDs to combo box
-
-        print (scanner._scanner_axes._ids)
         for s in self._scanner._scanner_axes._ids:
             self.ui.cB_scanner1.addItem(s)
             self.ui.cB_scanner2.addItem(s)
             self.ui.cB_scanner3.addItem(s)
             
         self._curr_APD = 0
+        self._autosave = True
 
         #CONNECT SIGNALS TO EVENTS
         self.ui.pushButton_Start.clicked.connect (self._start_scan)
@@ -75,22 +77,34 @@ class ScanGUI(QtWidgets.QMainWindow):
         self.ui.cB_scanner2.currentIndexChanged.connect (self._set_scan_axis_2)
         self.ui.cB_scanner3.currentIndexChanged.connect (self._set_fixed_axis)
         self.ui.cb_detector.currentIndexChanged.connect (self._set_view_detector)
+        self.ui.checkBox_autosave.stateChanged.connect (self._set_autosave)
 
         self._set_view_detector(self._curr_APD)
         self.load_settings()
 
-        self._curr_task = None
         #TIMER:
+        # periodically runs "manage_tasks"
+        self._curr_task = None
         self.refresh_time = 0.2
         self.timer = QtCore.QTimer(self)
         self.timer.timeout.connect(self.manage_tasks)
         self.timer.start(self.refresh_time)
 
     def manage_tasks (self):
+
+        '''     
+        Check what the current task is. If the task is 'scan', moves to the next point
+        '''
         if (self._curr_task == 'scan'):
             self._get_next_point()
         else:
             idle = True
+
+    def _set_autosave (self, value):
+        if value>0:
+            self._autosave = True
+        else:
+            self._autosave = False
 
     def _set_view_detector (self, value):
         a = int(self._scanner._detectors[value]._ctr_time_ms)
@@ -154,7 +168,66 @@ class ScanGUI(QtWidgets.QMainWindow):
         self.ui.label_status.setText ("Status: Scanning")
 
     def _save_scan (self):
-        print ("Saving scan...")
+        
+        # save hdf5 file with scan parameters and detector maps
+        tstamp = time.strftime ('%Y%m%d_%H%M%S')
+        subf = os.path.join (self._work_folder, tstamp + '_mapper/')
+        if not(os.path.exists(subf)):
+            os.mkdir(subf)
+        fname = os.path.join (subf, tstamp+'_map_data.hdf5')
+        f = h5py.File (fname, 'w')
+        obj = DO.DataObjectHDF5 ()
+        
+        try:
+            obj.save_object_all_vars_to_file (obj = self, f = f)
+        except:
+            print ("Scan parameters not saved.")
+
+        try:
+            for idx, s in enumerate(self._scanner._scanner_axes):
+                grp = f.create_group('scanner_'+str(idx))
+                obj.save_object_all_vars_to_file (obj = s, f = grp)
+        except:
+            print ("Scanner axes not saved.")
+
+        try:    
+            for idx, d in enumerate(self._scanner._detectors):
+                grp = f.create_group('detector_'+str(idx))
+                obj.save_object_to_file (obj = d, f = grp)
+        except:
+            print ("Detectors not saved.")
+
+        f.close()
+
+
+        # save plots of spatial maps
+        for idx, d in enumerate(self._scanner._detectors):
+
+            x = d.xValues
+            y = d.yValues
+            value = d.readout_values
+
+            dy = 10*len(y)/len(x)
+            fig = plt.figure(figsize= (10, dy))
+            ax = fig.add_subplot(111)
+            ax.tick_params(labelsize=18)
+
+            if ((x is not None) and (y is not None)):
+                [X, Y] = np.meshgrid (self._recalculate(x),self._recalculate(y))
+                ax.pcolor (X, Y, value)
+                ax.xaxis.set_ticks (x)
+                ax.yaxis.set_ticks (y)
+            else:
+                ax.pcolor (value)
+            fig.savefig (os.path.join (subf, 'map_detector'+str(idx)+'_'+d.string_id+'.png'))
+            fig.savefig (os.path.join (subf, 'map_detector'+str(idx)+'_'+d.string_id+'.svg'))
+
+    def _recalculate (self, values):
+        x0 =  values[0]
+        x1 = values[-1]
+        dx = values[1]-values[0]
+        N = len(values)
+        return np.linspace (x0-dx/2, x1+dx/2, N+1)
 
     def _get_next_point (self):
         self._scanner.move_to_next()
@@ -164,6 +237,8 @@ class ScanGUI(QtWidgets.QMainWindow):
         if done:
             self._curr_task = None
             self.ui.label_status.setText ("Status: Idle")
+            if self._autosave:
+                self._save_scan()
 
 
     def _set_min_1 (self, value):
@@ -187,15 +262,6 @@ class ScanGUI(QtWidgets.QMainWindow):
     def _set_fixed_pos (self, value):
         self._fixed_pos = value
         print (self._fixed_pos)
-
-    def resizeEvent (self, event):
-        QtWidgets.QWidget.resizeEvent (self, event )
-        w = event.size().width()
-        h = event.size().height()
-        self.w = w
-        self.h = h
-        #self.ui.canvas.resize_canvas (w=w, h=h*0.8)
-        #self._zoom_full()
 
     def save_settings (self):
         values = [self._min_1, self._max_1, self._steps_1, self._min_2, self._max_2, self._steps_2, self._fixed_pos, self._scan_axis_1, self._scan_axis_2, self._fixed_axis]
