@@ -47,7 +47,7 @@ XYscan.run_scan(silence_errors=False)
 
 XYscan.save_to_txt(voltsFilePath,  flatten=True)
 
-x = np.arange(a, a+d, xStep)
+x = np.arange(a-d, a+d, xStep)
 y = pl.loadtxt(voltsFilePath)
 if np.size(x) == np.size(y):
     pl.plot(x,y,'o')

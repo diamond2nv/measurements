@@ -45,7 +45,7 @@ class ScannerCtrl (mgen.DeviceCtrl):
         the device. Used in error messages.
     """
     
-    def __init__(self, channels=[]):
+    def __init__(self, channels=[], ids = None):
         """Initializes all scanner attributes with default values. In
         particular, it calculates the number of axes based on the number
         of channels and defines self.number_of_axes in function.
@@ -64,6 +64,12 @@ class ScannerCtrl (mgen.DeviceCtrl):
                 self.number_of_axes = len(channels)
             except TypeError:
                 self.number_of_axes = len(list(channels))
+
+        if ids is None:
+            ids = ['scan_axis_'+str(i) for i in enumerate(channels)]         
+            
+        self._ids = ids
+        print ("Setting ids: ", self._ids)
 
         try:
             channels = list(channels)
@@ -406,8 +412,9 @@ class TestScanner (ScannerCtrl):
 
 
 class GalvoNI (ScannerCtrl):
-    def __init__(self, chX='/Dev1/ao0', chY='/Dev1/ao1', start_pos=[0,0], conversion_factor=1., min_limit= 0., max_limit= 5.):
-        super().__init__(channels=[chX, chY])
+    def __init__(self, chX='/Dev1/ao0', chY='/Dev1/ao1', start_pos=[0,0], 
+                     conversion_factor=1., min_limit= 0., max_limit= 5., ids = None):
+        super().__init__(channels=[chX, chY], ids=ids)
         self.string_id = 'Galvo scanners controlled by NI box AO'
         self.conversion_factor = conversion_factor
 
