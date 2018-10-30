@@ -315,4 +315,36 @@ def move_smooth_simple(scanner_axis, target):
     """
     pass
 
-    
+
+class GalvoDummy (ScannerCtrl):
+    def __init__(self, chX='/Dev1/ao0', chY='/Dev1/ao1', start_pos=[0,0], 
+                     conversion_factor=1., min_limit= 0., max_limit= 5., ids = None):
+        super().__init__(channels=[chX, chY], ids=ids)
+        self.string_id = 'Galvo scanners controlled by NI box AO'
+        self.conversion_factor = conversion_factor
+
+        self.smooth_step = 1
+        self.smooth_delay = 0.05
+        
+        self._min_limit = min_limit
+        self._max_limit = max_limit
+
+        self._curr_pos = [pos for channel, pos in zip(self._channels, start_pos)]
+
+    def _initialize(self):
+        pass
+
+    def _move(self, target, axis=0):
+        self._curr_pos[axis] = target
+
+    def _get(self, axis=0):
+        return self._curr_pos[axis]
+         
+    def set_range (self, min_limit, max_limit):
+        self._min_limit = min_limit
+        self._max_limit = max_limit
+
+    def _close(self):
+        pass
+
+

@@ -51,7 +51,8 @@ class ScanGUI(QtWidgets.QMainWindow):
         # add detector string IDs and scanner axes to respective combo boxes
         for det in self._scanner._detectors:
             self.ui.cb_detector.addItem(det.string_id)
-        for s in self._scanner._scanner_axes._ids:
+        for saxes in self._scanner._scanner_axes:
+            s = saxes._ids
             self.ui.cB_scanner1.addItem(s)
             self.ui.cB_scanner2.addItem(s)
             self.ui.cB_scanner3.addItem(s)
@@ -361,10 +362,10 @@ class CanvasGUI(qplGUI.QPLZoomableGUI):
         QtWidgets.QWidget.resizeEvent (self, event)
         w = event.size().width()
         h = event.size().height()
-        m = min(h,w)
-        self.w = m
-        self.h = m
-        self.ui.canvas.resize_canvas (w=m, h=m)
+        #m = min(h,w)
+        self.w = w
+        self.h = h
+        self.ui.canvas.resize_canvas (w=w, h=h)
 
     def fileQuit(self):
         self.close()

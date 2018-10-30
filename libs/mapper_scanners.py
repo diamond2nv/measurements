@@ -66,7 +66,7 @@ class ScannerCtrl (mgen.DeviceCtrl):
                 self.number_of_axes = len(list(channels))
 
         if ids is None:
-            ids = ['scan_axis_'+str(i) for i in enumerate(channels)]         
+            ids = [str(i) for i in channels]         
             
         self._ids = ids
         print ("Setting ids: ", self._ids)
@@ -374,6 +374,19 @@ def move_smooth_simple(scanner_axis, target):
     for pos in smooth_positions:
         scanner_axis.move(pos)
         time.sleep(smooth_delay)
+
+
+
+class MultiScanner ():
+
+    def __init__ (self):
+        pass
+
+    def add (self, scanner):
+        pass
+
+
+
 
 
 ########################################################################
