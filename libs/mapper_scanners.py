@@ -5,20 +5,24 @@ import time
 import sys
 import visa
 
-from measurements.libs import mapper_general as mgen
-
-from measurements.instruments.LockIn7265 import LockIn7265
-from measurements.instruments import NIBox
-from measurements.instruments import AttocubeANCV1 as attoANC
-from measurements.instruments.pylonWeetabixTrigger import voltOut
-from measurements.instruments import KeithleyPSU2220
-from measurements.instruments import solstis
-
 if sys.version_info.major == 3:
     from importlib import reload
 
-reload(NIBox)
+from measurements.libs import mapper_general as mgen
 reload(mgen)
+
+try:
+    from measurements.instruments.LockIn7265 import LockIn7265
+    from measurements.instruments import NIBox
+    from measurements.instruments import AttocubeANCV1 as attoANC
+    from measurements.instruments.pylonWeetabixTrigger import voltOut
+    from measurements.instruments import KeithleyPSU2220
+    from measurements.instruments import solstis
+    reload(NIBox)
+except:
+    print ("Instruments not loaded. entering simulation mode.")
+
+
 
 ########################################################################
 #                      DEFAULT SCANNERS CLASSES                        #

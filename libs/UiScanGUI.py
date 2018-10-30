@@ -1,20 +1,27 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file 'C:\Users\cristian\Research\QPL-code\measurements\scripts\bay5\Galvo_GUI\scan_gui_design.ui'
+# Form implementation generated from reading ui file 'C:\Users\cristian\Research\QPL-code\measurements\libs\scan_gui_design.ui'
 #
 # Created by: PyQt5 UI code generator 5.6
 #
 # WARNING! All changes made in this file will be lost!
 
 from PyQt5 import QtCore, QtGui, QtWidgets
+import numpy as np
+import h5py
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as Canvas
+from matplotlib.figure import Figure
+from tools import QPLCanvas as qplCanvas
+
+from importlib import reload
+reload (qplCanvas)
 
 class Ui_Form(object):
     def setupUi(self, Form):
         Form.setObjectName("Form")
         Form.resize(974, 741)
-        self.graphicsView = QtWidgets.QGraphicsView(Form)
-        self.graphicsView.setGeometry(QtCore.QRect(10, 10, 700, 700))
-        self.graphicsView.setObjectName("graphicsView")
+        self.canvas = qplCanvas.QPLCanvas_2D(Form)
+        self.canvas.setObjectName("canvas")
         self.layoutWidget = QtWidgets.QWidget(Form)
         self.layoutWidget.setGeometry(QtCore.QRect(720, 140, 241, 411))
         self.layoutWidget.setObjectName("layoutWidget")
@@ -104,28 +111,28 @@ class Ui_Form(object):
         self.label_zcurr.setAlignment(QtCore.Qt.AlignCenter)
         self.label_zcurr.setObjectName("label_zcurr")
         self.gridLayout_3.addWidget(self.label_zcurr, 0, 2, 1, 1)
-        self.label = QtWidgets.QLabel(self.layoutWidget)
+        self.label_view_xCurr = QtWidgets.QLabel(self.layoutWidget)
         font = QtGui.QFont()
         font.setPointSize(12)
-        self.label.setFont(font)
-        self.label.setAlignment(QtCore.Qt.AlignCenter)
-        self.label.setObjectName("label")
-        self.gridLayout_3.addWidget(self.label, 1, 0, 1, 1)
-        self.label_2 = QtWidgets.QLabel(self.layoutWidget)
+        self.label_view_xCurr.setFont(font)
+        self.label_view_xCurr.setAlignment(QtCore.Qt.AlignCenter)
+        self.label_view_xCurr.setObjectName("label_view_xCurr")
+        self.gridLayout_3.addWidget(self.label_view_xCurr, 1, 0, 1, 1)
+        self.label_view_yCurr = QtWidgets.QLabel(self.layoutWidget)
         font = QtGui.QFont()
         font.setPointSize(12)
-        self.label_2.setFont(font)
-        self.label_2.setAlignment(QtCore.Qt.AlignCenter)
-        self.label_2.setObjectName("label_2")
-        self.gridLayout_3.addWidget(self.label_2, 1, 1, 1, 1)
-        self.label_3 = QtWidgets.QLabel(self.layoutWidget)
+        self.label_view_yCurr.setFont(font)
+        self.label_view_yCurr.setAlignment(QtCore.Qt.AlignCenter)
+        self.label_view_yCurr.setObjectName("label_view_yCurr")
+        self.gridLayout_3.addWidget(self.label_view_yCurr, 1, 1, 1, 1)
+        self.label_view_zCurr = QtWidgets.QLabel(self.layoutWidget)
         font = QtGui.QFont()
         font.setPointSize(12)
-        self.label_3.setFont(font)
-        self.label_3.setInputMethodHints(QtCore.Qt.ImhNoPredictiveText)
-        self.label_3.setAlignment(QtCore.Qt.AlignCenter)
-        self.label_3.setObjectName("label_3")
-        self.gridLayout_3.addWidget(self.label_3, 1, 2, 1, 1)
+        self.label_view_zCurr.setFont(font)
+        self.label_view_zCurr.setInputMethodHints(QtCore.Qt.ImhNoPredictiveText)
+        self.label_view_zCurr.setAlignment(QtCore.Qt.AlignCenter)
+        self.label_view_zCurr.setObjectName("label_view_zCurr")
+        self.gridLayout_3.addWidget(self.label_view_zCurr, 1, 2, 1, 1)
         self.verticalLayout.addLayout(self.gridLayout_3)
         spacerItem1 = QtWidgets.QSpacerItem(228, 17, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
         self.verticalLayout.addItem(spacerItem1)
@@ -187,9 +194,9 @@ class Ui_Form(object):
         self.label_ycurr.setText(_translate("Form", "y (curr)"))
         self.label_xcurr.setText(_translate("Form", "x (curr)"))
         self.label_zcurr.setText(_translate("Form", "z  (curr)"))
-        self.label.setText(_translate("Form", "---"))
-        self.label_2.setText(_translate("Form", "---"))
-        self.label_3.setText(_translate("Form", "---"))
+        self.label_view_xCurr.setText(_translate("Form", "---"))
+        self.label_view_yCurr.setText(_translate("Form", "---"))
+        self.label_view_zCurr.setText(_translate("Form", "---"))
         self.label_APD.setText(_translate("Form", "APD integr time (ms)"))
         self.pushButton_Start.setText(_translate("Form", "Start"))
         self.label_detectors.setText(_translate("Form", "Detector"))

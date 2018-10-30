@@ -33,7 +33,7 @@ class ScannerCtrl (mgen.DeviceCtrl):
         the device. Used in error messages.
     """
     
-    def __init__(self, channels=[]):
+    def __init__(self, channels=[], ids = None):
         """Initializes all scanner attributes with default values. In
         particular, it calculates the number of axes based on the number
         of channels and defines self.number_of_axes in function.
@@ -52,6 +52,11 @@ class ScannerCtrl (mgen.DeviceCtrl):
                 self.number_of_axes = len(channels)
             except TypeError:
                 self.number_of_axes = len(list(channels))
+
+        if ids is None:
+            ids = ['scan_axis_'+str(i) for i in enumerate(channels)]         
+            
+        self._ids = ids
 
         try:
             channels = list(channels)

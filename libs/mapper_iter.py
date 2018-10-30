@@ -28,6 +28,22 @@ def move_smooth_simple (scanner_axes, targets = []):
     pass
 
 
+class ScanData ():
+
+    def __init__(self):
+        self._detector_name = None
+        self._axis1_pos = None
+        self._axis2_pos = None
+        self._axis3_pos = None
+        self._units = None
+        self._values = None
+
+    # IDEA
+    # creiamo un oggetto ScanData x ogni detector, e facciamo l'update dei parametri 
+    # di questo, non dell'oggetto detector (che non e' molto elegante)
+    # NO, THIS IS SO MUCH HARDER!!!
+
+
 class XYScanIterative (mapper.XYMapper):
     def __init__(self, scanner_axes=None, detectors=None):
         
@@ -37,6 +53,30 @@ class XYScanIterative (mapper.XYMapper):
 
         mapper.XYMapper.__init__ (self, scanner_axes = scanner_axes, detectors = detectors)
         self._iterative = True
+
+        det_id_list = []
+        det_id_counts = []
+        for det in self._detectors:
+            if det.string_id in det_id_list:
+                pos = det_id_list.index(det.string_id)
+                det_id_counts[pos]+=1
+                det.string_id = det.string_id+'-'+str(det_id_counts[pos])
+            else:
+                det_id_list = det_id_list + [det.string_id]
+                det_id_counts = det_id_counts + [0]
+            det._is_changed = False
+            det._scan_params_changed = False
+            det.readout_values = None
+            det.xValues = None
+            det.yValues = None
+
+
+        # default values for scanner axes
+        self._x_scan_id = 0
+        self._x_scan_id = 1
+
+    def set_work_folder (self, folder):
+        self._work_folder = folder
 
     def set_back_to_zero(self):
         # to go back to 0 V at the end of a scan
@@ -52,9 +92,20 @@ class XYScanIterative (mapper.XYMapper):
         if self._detectors is None:
             self.counts = None
         else:
+            a = pl.zeros([self.xNbOfSteps, self.yNbOfSteps])
+            for i in range(self.xNbOfSteps):
+                for j in range (self.yNbOfSteps):
+                    a[i,j] = None
             for idx, d in enumerate (self._detectors):
-                setattr (self, 'detector_readout_'+str(idx), 
-                            pl.zeros([self.xNbOfSteps, self.yNbOfSteps]))    
+                setattr (d, '_scan_params_changed', True)
+                setattr (self, 'detector_readout_'+str(idx), a)
+                setattr (d, 'readout_values', a)
+                setattr (d, 'xValues', self.xPositions)
+                setattr (d, 'yValues', self.yPositions)
+
+    def set_scanners (self, scan1_id, scan2_id):
+        self._x_scan_id = scan1_id
+        self._y_scan_id = scan2_id
 
     def initialize_scan (self):         
         self.init_detectors(self._detectors)
@@ -76,21 +127,29 @@ class XYScanIterative (mapper.XYMapper):
         print('\nScanners are at start position. Waiting for acquisition.\n')
         print('step \tx (V)\ty (V)')
 
+    def get_current_point (self):
+        return self._curr_x, self._curr_y
 
-    def next_point (self):
-
+    def move_to_next (self):
         y = self.yPositions[self._id_y]
         x = self.xPositions[self._id_x]
+        self._curr_x = x
+        self._curr_y = y
+
         self._idx += 1
        
-        self._scanner_axes[0].move(x)
+        self._scanner_axes[self._x_scan_id].move(x)
         try:
-            self._scanner_axes[1].move(y)
+            self._scanner_axes[self._y_scan_id].move(y)
         except IndexError:
             pass
 
         # display update
         print('{}/{} \t{:.1f} \t{:.1f}'.format(self._idx, self.totalNbOfSteps, x, y))
+
+
+    def acquire_data (self):
+
 
         # For first point may wait for a reaction 
         # (when acquisition is launched in WinSpec and the old Acton spectrometers)
@@ -113,7 +172,10 @@ class XYScanIterative (mapper.XYMapper):
         # trigger exposure / detector measurement
         if self._detectors is not None:
             for i, detector in enumerate (self._detectors):
-                getattr (self, 'detector_readout_'+str(i))[self._id_x, self._id_y] = detector.readout()
+                a = detector.readout()
+                getattr (self, 'detector_readout_'+str(i))[self._id_x, self._id_y] = a
+                getattr (detector, 'readout_values')[self._id_x, self._id_y] = a
+                setattr (detector, '_is_changed', True)
 
         time.sleep(self.max_delay_after_readout)
 
@@ -139,7 +201,7 @@ class XYScanIterative (mapper.XYMapper):
             else:
                 # move back to first point of row smoothly
                 if self.yPositions[self._id_y] != self.yPositions[-1]:
-                    self._scanner_axes[0].move_smooth(target=self.xPositions[0])
+                    self._scanner_axes[self._x_scan_id].move_smooth(target=self.xPositions[0])
         return done
 
     def open_GUI (self):     
@@ -147,9 +209,16 @@ class XYScanIterative (mapper.XYMapper):
         if not qApp: 
             qApp = QtWidgets.QApplication(sys.argv)
 
-        gui = SG.ScanGUI (scanner=self)
-        gui.setWindowTitle('QPL-ScanGUI')
-        gui.show()
+        self._guiCtrl = SG.ScanGUI (scanner=self)
+        self._guiCtrl.setWindowTitle('QPL-ScanGUI')
+        self._guiCtrl.show()
+        
+        for idx, d in enumerate(self._detectors):
+            setattr (self, '_guiDetector_'+str(idx), SG.CanvasGUI(detector=d))
+            obj = getattr(self, '_guiDetector_'+str(idx))
+            getattr (obj, 'setWindowTitle')('QPL-detector_'+str(idx))
+            getattr (obj, 'show')()
+
         sys.exit(qApp.exec_())
 
     def close_scan(self):
@@ -170,5 +239,9 @@ class XYScanIterative (mapper.XYMapper):
         d_obj = DO.DataObjectHDF5()
         d_obj.save_object_to_file (self, file_name)
         print("File saved")
+
+
+#class XYZ_2DScan (mapper.XYMapper):
+#    pass
 
 
