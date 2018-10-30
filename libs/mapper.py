@@ -236,7 +236,7 @@ class XYScan (XYMapper):
         for i in detector_numbers:
             pl.figure(figsize=(10, 10))
             [X, Y] = pl.meshgrid (self.xPositions, self.yPositions)
-            pl.pcolor(X, Y, getattr(self, 'detector_readout_'+str(i)))
+            pl.pcolormesh(X, Y, getattr(self, 'detector_readout_'+str(i) ).transpose(), cmap='Greys')
             pl.title ("detector nr "+str(i), fontsize=18)
             pl.colorbar()
             pl.show()
