@@ -28,19 +28,7 @@ def move_smooth_simple (scanner_axes, targets = []):
     pass
 
 
-class ScanData ():
-
-    def __init__(self):
-        self._detector_name = None
-        self._axis1_pos = None
-        self._axis2_pos = None
-        self._axis3_pos = None
-        self._units = None
-        self._values = None
-
-
-
-class XYScanIterative (mapper.XYMapper):
+class Mapper2D_3axes (mapper.XYMapper):
     def __init__(self, scanner_axes=None, detectors=None):
         
         self.trigger_active = True
@@ -50,6 +38,7 @@ class XYScanIterative (mapper.XYMapper):
         mapper.XYMapper.__init__ (self, scanner_axes = scanner_axes, detectors = detectors)
         self._iterative = True
 
+        # create a unique ID for each detector, sets additional parameters 
         det_id_list = []
         det_id_counts = []
         for det in self._detectors:
@@ -66,6 +55,7 @@ class XYScanIterative (mapper.XYMapper):
             det.xValues = None
             det.yValues = None
 
+        # creates a list of Saxis objects for the scanners
         self._scAx = self._scanner_axes
         self._scanner_axes = []
         for axes in self._scAx:
@@ -92,8 +82,11 @@ class XYScanIterative (mapper.XYMapper):
         self.feedback_active = feedback
 
     def set_range(self, xLims, xStep, yLims=None, yStep=None):
+
+        # sets the scanning range
         self._set_range (xLims=xLims, xStep=xStep, yLims=yLims, yStep=yStep)
         
+        # creates, for each detectors, variable for X, Y, roeadout
         if self._detectors is None:
             self.counts = None
         else:
@@ -135,7 +128,7 @@ class XYScanIterative (mapper.XYMapper):
     def get_current_point (self):
         return self._curr_x, self._curr_y
 
-    def move_to_next (self):
+    def move_to_next (self, verbose = False):
         y = self.yPositions[self._id_y]
         x = self.xPositions[self._id_x]
         self._curr_x = x
@@ -150,11 +143,11 @@ class XYScanIterative (mapper.XYMapper):
             pass
 
         # display update
-        print('{}/{} \t{:.1f} \t{:.1f}'.format(self._idx, self.totalNbOfSteps, x, y))
+        if verbose:
+            print('{}/{} \t{:.1f} \t{:.1f}'.format(self._idx, self.totalNbOfSteps, x, y))
 
 
     def acquire_data (self):
-
 
         # For first point may wait for a reaction 
         # (when acquisition is launched in WinSpec and the old Acton spectrometers)
@@ -193,6 +186,7 @@ class XYScanIterative (mapper.XYMapper):
 
     def _prepare_next_point (self):
 
+        # selects the values of (x,y) for the next scan point
         done = False
         self._id_x +=1
 
@@ -209,7 +203,11 @@ class XYScanIterative (mapper.XYMapper):
                     self._scanner_axes[self._x_scan_id].move_smooth(target=self.xPositions[0])
         return done
 
-    def open_GUI (self):     
+    def open_GUI (self):
+        '''
+        Opens Graphical User Interface to manage scan.
+        '''
+
         qApp=QtWidgets.QApplication.instance() 
         if not qApp: 
             qApp = QtWidgets.QApplication(sys.argv)
@@ -238,15 +236,4 @@ class XYScanIterative (mapper.XYMapper):
               'Total number of steps: {}'.format(self.totalNbOfSteps))
 
         self.close_instruments()
-
-    def save_to_hdf5(self, file_name=None):
-
-        d_obj = DO.DataObjectHDF5()
-        d_obj.save_object_to_file (self, file_name)
-        print("File saved")
-
-
-#class XYZ_2DScan (mapper.XYMapper):
-#    pass
-
 

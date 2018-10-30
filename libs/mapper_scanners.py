@@ -69,7 +69,6 @@ class ScannerCtrl (mgen.DeviceCtrl):
             ids = [str(i) for i in channels]         
             
         self._ids = ids
-        print ("Setting ids: ", self._ids)
 
         try:
             channels = list(channels)

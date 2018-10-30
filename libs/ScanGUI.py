@@ -51,14 +51,20 @@ class ScanGUI(QtWidgets.QMainWindow):
         # add detector string IDs and scanner axes to respective combo boxes
         for det in self._scanner._detectors:
             self.ui.cb_detector.addItem(det.string_id)
+
+        self._nr_scanner_axes = len(self._scanner._scanner_axes)
+        print ("Nr scanner axes: ", self._nr_scanner_axes)
+
         for saxes in self._scanner._scanner_axes:
             s = saxes._ids
             self.ui.cB_scanner1.addItem(s)
             self.ui.cB_scanner2.addItem(s)
             self.ui.cB_scanner3.addItem(s)
-            
+        self.ui.cB_scanner3.addItem('None') #disables fixed axis
+
         self._curr_APD = 0
         self._autosave = True
+        self._fixed_axis_enabled = True
 
         #CONNECT SIGNALS TO EVENTS
         self.ui.pushButton_Start.clicked.connect (self._start_scan)
@@ -123,6 +129,10 @@ class ScanGUI(QtWidgets.QMainWindow):
 
     def _set_fixed_axis (self, value):
         self._fixed_axis = int(value)
+        if (value >= self._nr_scanner_axes):
+            self._fixed_axis_enabled = False
+        else:
+            self._fixed_axis_enabled = True
 
     def set_current_point (self, scan1, scan2, fixed):
         values = [0,0,0]
@@ -131,7 +141,8 @@ class ScanGUI(QtWidgets.QMainWindow):
         values[self._fixed_axis] = fixed        
         self.ui.label_view_xCurr.setText (str(int(10*values[0])/10))
         self.ui.label_view_yCurr.setText (str(int(10*values[1])/10))
-        self.ui.label_view_zCurr.setText (str(int(10*values[2])/10))     
+        self.ui.label_view_zCurr.setText (str(int(10*values[2])/10)) 
+        self.ui.label_done.setText(str(self._scanner._idx)+'/'+str(self._scanner.totalNbOfSteps))   
 
     def _start_scan (self):
         print ("Starting scan...")
@@ -142,9 +153,12 @@ class ScanGUI(QtWidgets.QMainWindow):
                     (self._scan_axis_2 != self._fixed_axis))
         valid = max_min and axes
 
-        print ("Scan axes: ", self._scan_axis_1, self._scan_axis_2)
         if valid:
             self._scanner.set_scanners (scan1_id=self._scan_axis_1, scan2_id=self._scan_axis_2)
+
+            if self._fixed_axis_enabled:
+                self._scanner._scanner_axes [self._fixed_axis].move(target = self._fixed_pos)
+
             Lims = [(self._min_1, self._max_1), (self._min_2, self._max_2)]
             StepSizes = [(self._max_1 - self._min_1)/(self._steps_1-1), (self._max_2 - self._min_2)/(self._steps_2-1)]
             

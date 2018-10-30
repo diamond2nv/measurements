@@ -44,7 +44,7 @@ apd0.set_integration_time_ms(ctr_time_ms)
 
 # d = datetime.datetime.now()
 
-XYscan = mapper.XYScanIterative(scanner_axes = [dummyA, dummyB], detectors = [apd0])
+XYscan = mapper.Mapper2D_3axes (scanner_axes = [dummyA, dummyB], detectors = [apd0])
 # XYscan.set_work_folder (r'C:\Users\Daniel\Desktop\Voltmeter')
 XYscan.set_work_folder ('C:/Users/cristian/Research/Work-Data/')
 # XYscan.set_delays (between_points = delayBetweenPoints, between_rows = delayBetweenRows)

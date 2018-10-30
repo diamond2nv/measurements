@@ -146,6 +146,7 @@ class ScannerCtrl (mgen.DeviceCtrl):
             target (float): target position to move to
             axis (int, optional): axis number
         """
+        #print ("Move axis ", axis, " to position: ", target)
         pass
 
     def get(self, axis=0):
@@ -267,6 +268,7 @@ class Saxis():
             target (float): target position to move to.
         """
         self.scanner.move(target=target, axis=self.axis)
+        #print ("Move axis ", self.axis, " to position: ", target)
 
     def get(self):
         """ Reads current position of the s-axis.
@@ -336,6 +338,8 @@ class GalvoDummy (ScannerCtrl):
 
     def _move(self, target, axis=0):
         self._curr_pos[axis] = target
+        #print ("[Galvo] Move axis ", axis, " to position: ", target)
+
 
     def _get(self, axis=0):
         return self._curr_pos[axis]
