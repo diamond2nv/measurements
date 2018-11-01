@@ -338,8 +338,6 @@ class GalvoDummy (ScannerCtrl):
 
     def _move(self, target, axis=0):
         self._curr_pos[axis] = target
-        #print ("[Galvo] Move axis ", axis, " to position: ", target)
-
 
     def _get(self, axis=0):
         return self._curr_pos[axis]

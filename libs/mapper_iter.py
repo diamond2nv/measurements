@@ -100,6 +100,11 @@ class Mapper2D_3axes (mapper.XYMapper):
                 setattr (d, 'readout_values', a)
                 setattr (d, 'xValues', self.xPositions)
                 setattr (d, 'yValues', self.yPositions)
+                try:
+                    setattr (d, '_scan_units', self._scan_units)
+                except:
+                    setattr (d, '_scan_units', 'V')
+
 
     def set_scanners (self, scan1_id, scan2_id):
         self._x_scan_id = scan1_id
