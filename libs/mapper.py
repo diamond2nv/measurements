@@ -20,11 +20,17 @@ if sys.version_info.major == 3:
 reload (DO)
 reload (SG)
 
-def move_smooth(scanner_axes, targets = []):
-    pass
 
-def move_smooth_simple (scanner_axes, targets = []):
-    pass
+try: 
+    from measurements.libs.mapper_scanners import move_smooth
+except:
+    def move_smooth(scanner_axes, targets = []):
+        pass
+
+    def move_smooth_simple (scanner_axes, targets = []):
+        pass
+
+    print ("Simulation mode. Pay attention that the move_smooth function is not implemented!")
 
 class XYMapper ():
     def __init__(self, scanner_axes=None, detectors=None):

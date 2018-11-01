@@ -362,22 +362,30 @@ class CanvasGUI(qplGUI.QPLZoomableGUI):
                                     axis2 = [min(yVals)-dy, max(yVals)]+dy)
 
     def check_new_readout (self):
+        resize = False
         if (self._detector._scan_params_changed):
             self._xValues = self._detector.xValues
             self._yValues = self._detector.yValues
             self.ui.canvas.reinitialize()
             self._detector._scan_params_changed = False
+            resize = True
         if (self._detector._is_changed):
             self.ui.canvas.set_2D_data (x = self._xValues, y = self._yValues,
                                             value = self._detector.readout_values,
                                             scan_units = self._detector._scan_units)
+            if resize:
+                self._resize_canvas_to_fit_map (w=self.width(), h=self.height())
+                resize = False
+
             self._detector._is_changed = False
 
-    def _resize (self, w, h):
+    def _resize_canvas_to_fit_map (self, w, h):
         try:
-            p = min(w/len(self._xValues), h/len(self._yValues))
-            w1 = p*len(self._xValues)
-            h1 = p*len(self._yValues)
+            dX = abs(self._xValues[-1] - self._xValues[-0])
+            dY = abs(self._yValues[-1] - self._yValues[-0])
+            p = min(w/dX, h/dY)
+            w1 = p*dX
+            h1 = p*dY
         except:
             w1 = w
             h1 = h
@@ -389,7 +397,7 @@ class CanvasGUI(qplGUI.QPLZoomableGUI):
         QtWidgets.QWidget.resizeEvent (self, event)
         w = event.size().width()
         h = event.size().height()
-        self._resize (w=w, h=h)
+        self._resize_canvas_to_fit_map (w=w, h=h)
 
     def fileQuit(self):
         self.close()
