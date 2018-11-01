@@ -342,6 +342,7 @@ class CanvasGUI(qplGUI.QPLZoomableGUI):
             
         self._curr_task = None
         self.ui.pushButton.clicked.connect (self._zoom_out)
+        self.ui.canvas.set_format_axes_ticks(1)
 
         #TIMER:
         self.refresh_time = 0.3
@@ -364,20 +365,31 @@ class CanvasGUI(qplGUI.QPLZoomableGUI):
         if (self._detector._scan_params_changed):
             self._xValues = self._detector.xValues
             self._yValues = self._detector.yValues
+            self.ui.canvas.reinitialize()
             self._detector._scan_params_changed = False
         if (self._detector._is_changed):
             self.ui.canvas.set_2D_data (x = self._xValues, y = self._yValues,
-                                            value = self._detector.readout_values)
+                                            value = self._detector.readout_values,
+                                            scan_units = self._detector._scan_units)
             self._detector._is_changed = False
+
+    def _resize (self, w, h):
+        try:
+            p = min(w/len(self._xValues), h/len(self._yValues))
+            w1 = p*len(self._xValues)
+            h1 = p*len(self._yValues)
+        except:
+            w1 = w
+            h1 = h
+        self.w = w1
+        self.h = h1
+        self.ui.canvas.resize_canvas (w=w1, h=h1)
 
     def resizeEvent (self, event):
         QtWidgets.QWidget.resizeEvent (self, event)
         w = event.size().width()
         h = event.size().height()
-        #m = min(h,w)
-        self.w = w
-        self.h = h
-        self.ui.canvas.resize_canvas (w=w, h=h)
+        self._resize (w=w, h=h)
 
     def fileQuit(self):
         self.close()
