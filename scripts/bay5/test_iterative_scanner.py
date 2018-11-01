@@ -32,15 +32,15 @@ ctr_port = 'pfi0'
 
 #######################
 # instruments
-dummy_scanner = mscan_dummy.ScannerCtrl(channels = [2], ids = ['dummy-axis'])[0]
+dummy_scanner = mscan_dummy.ScannerCtrl(channels = [2])
 min_lim = -5.
 max_lim = 5.
 GalvoCtrl = mscan.GalvoNI (chX = '/Dev1/ao1', chY = '/Dev1/ao0', ids = ['galvo-x', 'galvo-y']) 
 GalvoCtrl.set_range(min_limit=min_lim, max_limit=max_lim)
 
-s = mscan.ScannerCtrl()
-s._scanner_axes = [GalvoCtrl[0], GalvoCtrl[1], dummy_scanner]
-s._scanner_axes._ids = ['galvo-x', 'galvo-y', 'dummy']
+#s = mscan.ScannerCtrl()
+#s._scanner_axes = [GalvoCtrl[0], GalvoCtrl[1], dummy_scanner]
+#s._scanner_axes._ids = ['galvo-x', 'galvo-y', 'dummy']
 
 voltmeterCtrl = mdet.MultimeterCtrl(VISA_address=r'ASRL5::INSTR')
 voltmeterCtrl._ctr_time_ms = 0
@@ -52,7 +52,7 @@ voltmeterCtrl._ctr_time_ms = 0
 
 d = datetime.datetime.now()
 
-XYscan = mapper.XYScanIterative(scanner_axes = s, detectors = [voltmeterCtrl])
+XYscan = mapper.Mapper2D_3axes (scanner_axes = [GalvoCtrl, dummy_scanner], detectors = [voltmeterCtrl])
 XYscan.set_work_folder (r'C:\Users\Daniel\Desktop\Voltmeter')
 #XYscan.set_work_folder ('C:/Users/cristian/Research/Work-Data/')
 XYscan.set_delays (between_points = delayBetweenPoints, between_rows = delayBetweenRows)

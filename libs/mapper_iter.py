@@ -14,18 +14,18 @@ from measurements.libs import ScanGUI as SG
 from measurements.libs import mapper 
 from PyQt5 import QtCore, QtGui, QtWidgets
 
-#from measurements.libs.mapper_scanners import move_smooth
+from measurements.libs.mapper_scanners import move_smooth
 
 if sys.version_info.major == 3:
     from importlib import reload
 reload (DO)
 reload (SG)
 
-def move_smooth(scanner_axes, targets = []):
-    pass
+#def move_smooth(scanner_axes, targets = []):
+#    pass
 
-def move_smooth_simple (scanner_axes, targets = []):
-    pass
+#def move_smooth_simple (scanner_axes, targets = []):
+#    pass
 
 
 class Mapper2D_3axes (mapper.XYMapper):

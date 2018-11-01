@@ -15,10 +15,10 @@ reload(mapper)
 reload(mscan)
 reload(mdet)
 
-a = -0.625
-b = 2.54
-d = 0.2
-xStep = 0.0005
+a = -0.68
+b = 2.53
+d = 0.0
+xStep = 0.0002
 
 delayBetweenPoints = 0.015
 delayBetweenRows = 0.015
@@ -45,23 +45,26 @@ XYscan.run_scan(silence_errors=False)
 
 #XYscan.plot_counts()
 
-XYscan.save_to_txt(voltsFilePath,  flatten=True)
-
-x = np.arange(a-d, a+d, xStep)
-y = pl.loadtxt(voltsFilePath)
-if np.size(x) == np.size(y):
-    pl.plot(x,y,'o')
-else:
-    pl.plot(x, y[:np.size(y)-1],'o')
-
-
+#XYscan.save_to_txt(voltsFilePath,  flatten=True)
+#
+#x = np.arange(a-d, a+d, xStep)
+#y = pl.loadtxt(voltsFilePath)
+#if np.size(x) == np.size(y):
+#    pl.plot(x,y,'o')
+#else:
+#    pl.plot(x, y[:np.size(y)-1],'o')
+#
+#
 #def gaussian(x, mu, sig):
 #    return np.exp(-np.power(x - mu, 2.) / (2 * np.power(sig, 2.)))
 #    print(sig*2.3548)
 ###
 #dy = np.gradient(y)
-#dx = np.linspace(0,41,801)
+#dx = np.linspace(0,83,np.size(y))
 ##
 #pl.plot(dx,dy,'o')
-#pl.plot(dx, 0.004*gaussian(dx, 2.7, 0.4))
-##pl.xlim(0,15)
+#pl.plot(dx, 0.002*gaussian(dx, 73.3, 0.22))
+#pl.plot(dx, 0.001*gaussian(dx, 22.35, 0.3))
+#pl.plot(dx, 0.0025*gaussian(dx, 13.18, 0.22))
+#pl.plot(dx, -0.0025*gaussian(dx, 18.4, 0.22))
+#pl.xlim(0,15)
