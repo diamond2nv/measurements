@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>255</width>
+    <width>256</width>
     <height>663</height>
    </rect>
   </property>
@@ -33,7 +33,7 @@
         <item row="2" column="2">
          <widget class="QLabel" name="label_steps">
           <property name="text">
-           <string>steps</string>
+           <string>step</string>
           </property>
           <property name="alignment">
            <set>Qt::AlignCenter</set>
@@ -65,21 +65,31 @@
           <property name="decimals">
            <number>2</number>
           </property>
+          <property name="maximum">
+           <double>999.990000000000009</double>
+          </property>
          </widget>
         </item>
         <item row="4" column="1">
-         <widget class="QDoubleSpinBox" name="dsB_max1"/>
+         <widget class="QDoubleSpinBox" name="dsB_max1">
+          <property name="maximum">
+           <double>999.990000000000009</double>
+          </property>
+         </widget>
         </item>
         <item row="4" column="2">
-         <widget class="QDoubleSpinBox" name="dsB_steps1">
+         <widget class="QDoubleSpinBox" name="dsB_stepsize1">
           <property name="decimals">
-           <number>0</number>
+           <number>2</number>
           </property>
           <property name="minimum">
-           <double>1.000000000000000</double>
+           <double>0.000000000000000</double>
           </property>
           <property name="maximum">
-           <double>1000.000000000000000</double>
+           <double>99.989999999999995</double>
+          </property>
+          <property name="singleStep">
+           <double>0.100000000000000</double>
           </property>
          </widget>
         </item>
@@ -90,15 +100,18 @@
          <widget class="QDoubleSpinBox" name="dsB_max2"/>
         </item>
         <item row="6" column="2">
-         <widget class="QDoubleSpinBox" name="dsB_steps2">
+         <widget class="QDoubleSpinBox" name="dsB_stepsize2">
           <property name="decimals">
-           <number>0</number>
+           <number>2</number>
           </property>
           <property name="minimum">
-           <double>1.000000000000000</double>
+           <double>0.000000000000000</double>
           </property>
           <property name="maximum">
-           <double>1000.000000000000000</double>
+           <double>100.000000000000000</double>
+          </property>
+          <property name="singleStep">
+           <double>0.100000000000000</double>
           </property>
          </widget>
         </item>
@@ -394,7 +407,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>255</width>
+     <width>256</width>
      <height>26</height>
     </rect>
    </property>
