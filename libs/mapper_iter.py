@@ -11,7 +11,7 @@ from tools import data_object as DO
 import numpy as np
 import lmfit
 from measurements.libs import ScanGUI as SG
-from measurements.libs import mapper 
+from measurements.libs import mapper_dummy as mapper 
 from PyQt5 import QtCore, QtGui, QtWidgets
 
 from measurements.libs.mapper_scanners import move_smooth
