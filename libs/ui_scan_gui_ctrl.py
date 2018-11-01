@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file 'scan_gui_ctrl.ui'
+# Form implementation generated from reading ui file 'C:\Users\Daniel\Desktop\PhD\Python\QuantumPhotonicsLab\measurements\libs\scan_gui_ctrl.ui'
 #
-# Created by: PyQt5 UI code generator 5.6
+# Created by: PyQt5 UI code generator 5.9.2
 #
 # WARNING! All changes made in this file will be lost!
 
@@ -11,7 +11,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
-        MainWindow.resize(255, 663)
+        MainWindow.resize(335, 663)
         font = QtGui.QFont()
         font.setPointSize(9)
         MainWindow.setFont(font)
@@ -39,30 +39,47 @@ class Ui_MainWindow(object):
         self.gridLayout_2.addWidget(self.label_min, 2, 0, 1, 1)
         self.dsB_min1 = QtWidgets.QDoubleSpinBox(self.centralwidget)
         self.dsB_min1.setDecimals(2)
+        self.dsB_min1.setMinimum(-10.0)
+        self.dsB_min1.setMaximum(10.0)
+        self.dsB_min1.setSingleStep(0.01)
         self.dsB_min1.setObjectName("dsB_min1")
         self.gridLayout_2.addWidget(self.dsB_min1, 4, 0, 1, 1)
         self.dsB_max1 = QtWidgets.QDoubleSpinBox(self.centralwidget)
+        self.dsB_max1.setMinimum(-10.0)
+        self.dsB_max1.setMaximum(10.0)
+        self.dsB_max1.setSingleStep(0.01)
         self.dsB_max1.setObjectName("dsB_max1")
         self.gridLayout_2.addWidget(self.dsB_max1, 4, 1, 1, 1)
         self.dsB_steps1 = QtWidgets.QDoubleSpinBox(self.centralwidget)
         self.dsB_steps1.setDecimals(0)
-        self.dsB_steps1.setMinimum(1.0)
-        self.dsB_steps1.setMaximum(1000.0)
+        self.dsB_steps1.setMinimum(0.0)
+        self.dsB_steps1.setMaximum(10000.0)
+        self.dsB_steps1.setSingleStep(1.0)
         self.dsB_steps1.setObjectName("dsB_steps1")
         self.gridLayout_2.addWidget(self.dsB_steps1, 4, 2, 1, 1)
         self.dsB_min2 = QtWidgets.QDoubleSpinBox(self.centralwidget)
+        self.dsB_min2.setMinimum(-10.0)
+        self.dsB_min2.setMaximum(10.0)
+        self.dsB_min2.setSingleStep(0.01)
         self.dsB_min2.setObjectName("dsB_min2")
         self.gridLayout_2.addWidget(self.dsB_min2, 6, 0, 1, 1)
         self.dsB_max2 = QtWidgets.QDoubleSpinBox(self.centralwidget)
+        self.dsB_max2.setMinimum(-10.0)
+        self.dsB_max2.setMaximum(10.0)
+        self.dsB_max2.setSingleStep(0.01)
         self.dsB_max2.setObjectName("dsB_max2")
         self.gridLayout_2.addWidget(self.dsB_max2, 6, 1, 1, 1)
         self.dsB_steps2 = QtWidgets.QDoubleSpinBox(self.centralwidget)
         self.dsB_steps2.setDecimals(0)
-        self.dsB_steps2.setMinimum(1.0)
-        self.dsB_steps2.setMaximum(1000.0)
+        self.dsB_steps2.setMinimum(0.0)
+        self.dsB_steps2.setMaximum(10000.0)
+        self.dsB_steps2.setSingleStep(1.0)
         self.dsB_steps2.setObjectName("dsB_steps2")
         self.gridLayout_2.addWidget(self.dsB_steps2, 6, 2, 1, 1)
         self.dsB_fixed_pos = QtWidgets.QDoubleSpinBox(self.centralwidget)
+        self.dsB_fixed_pos.setMinimum(-10.0)
+        self.dsB_fixed_pos.setMaximum(10.0)
+        self.dsB_fixed_pos.setSingleStep(0.01)
         self.dsB_fixed_pos.setObjectName("dsB_fixed_pos")
         self.gridLayout_2.addWidget(self.dsB_fixed_pos, 8, 0, 1, 1)
         self.cB_scanner2 = QtWidgets.QComboBox(self.centralwidget)
@@ -191,7 +208,7 @@ class Ui_MainWindow(object):
         self.gridLayout_4.addLayout(self.verticalLayout, 2, 0, 1, 1)
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QtWidgets.QMenuBar(MainWindow)
-        self.menubar.setGeometry(QtCore.QRect(0, 0, 255, 26))
+        self.menubar.setGeometry(QtCore.QRect(0, 0, 335, 21))
         self.menubar.setObjectName("menubar")
         MainWindow.setMenuBar(self.menubar)
         self.statusbar = QtWidgets.QStatusBar(MainWindow)
@@ -224,4 +241,14 @@ class Ui_MainWindow(object):
         self.label_APD.setText(_translate("MainWindow", "integr time (ms)"))
         self.checkBox_autosave.setText(_translate("MainWindow", "scan auto-save "))
         self.pushButton_optimizer.setText(_translate("MainWindow", "Optimizer"))
+
+
+if __name__ == "__main__":
+    import sys
+    app = QtWidgets.QApplication(sys.argv)
+    MainWindow = QtWidgets.QMainWindow()
+    ui = Ui_MainWindow()
+    ui.setupUi(MainWindow)
+    MainWindow.show()
+    sys.exit(app.exec_())
 

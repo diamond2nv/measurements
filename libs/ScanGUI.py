@@ -1,4 +1,3 @@
-
 import os, sys, time
 from datetime import datetime
 import random
@@ -10,7 +9,6 @@ from matplotlib.figure import Figure
 from PyQt5 import QtCore, QtGui, QtWidgets
 from measurements.libs import ui_scan_gui_ctrl as uScan
 from measurements.libs import ui_scan_gui_canvas as uCanvas
-
 from tools import QPL_viewGUI as qplGUI
 from tools import data_object as DO
 

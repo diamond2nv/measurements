@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>255</width>
+    <width>335</width>
     <height>663</height>
    </rect>
   </property>
@@ -65,10 +65,29 @@
           <property name="decimals">
            <number>2</number>
           </property>
+          <property name="minimum">
+           <double>-10.000000000000000</double>
+          </property>
+          <property name="maximum">
+           <double>10.000000000000000</double>
+          </property>
+          <property name="singleStep">
+           <double>0.010000000000000</double>
+          </property>
          </widget>
         </item>
         <item row="4" column="1">
-         <widget class="QDoubleSpinBox" name="dsB_max1"/>
+         <widget class="QDoubleSpinBox" name="dsB_max1">
+          <property name="minimum">
+           <double>-10.000000000000000</double>
+          </property>
+          <property name="maximum">
+           <double>10.000000000000000</double>
+          </property>
+          <property name="singleStep">
+           <double>0.010000000000000</double>
+          </property>
+         </widget>
         </item>
         <item row="4" column="2">
          <widget class="QDoubleSpinBox" name="dsB_steps1">
@@ -76,18 +95,41 @@
            <number>0</number>
           </property>
           <property name="minimum">
-           <double>1.000000000000000</double>
+           <double>0.000000000000000</double>
           </property>
           <property name="maximum">
-           <double>1000.000000000000000</double>
+           <double>10000.000000000000000</double>
+          </property>
+          <property name="singleStep">
+           <double>1.000000000000000</double>
           </property>
          </widget>
         </item>
         <item row="6" column="0">
-         <widget class="QDoubleSpinBox" name="dsB_min2"/>
+         <widget class="QDoubleSpinBox" name="dsB_min2">
+          <property name="minimum">
+           <double>-10.000000000000000</double>
+          </property>
+          <property name="maximum">
+           <double>10.000000000000000</double>
+          </property>
+          <property name="singleStep">
+           <double>0.010000000000000</double>
+          </property>
+         </widget>
         </item>
         <item row="6" column="1">
-         <widget class="QDoubleSpinBox" name="dsB_max2"/>
+         <widget class="QDoubleSpinBox" name="dsB_max2">
+          <property name="minimum">
+           <double>-10.000000000000000</double>
+          </property>
+          <property name="maximum">
+           <double>10.000000000000000</double>
+          </property>
+          <property name="singleStep">
+           <double>0.010000000000000</double>
+          </property>
+         </widget>
         </item>
         <item row="6" column="2">
          <widget class="QDoubleSpinBox" name="dsB_steps2">
@@ -95,15 +137,28 @@
            <number>0</number>
           </property>
           <property name="minimum">
-           <double>1.000000000000000</double>
+           <double>0.000000000000000</double>
           </property>
           <property name="maximum">
-           <double>1000.000000000000000</double>
+           <double>10000.000000000000000</double>
+          </property>
+          <property name="singleStep">
+           <double>1.000000000000000</double>
           </property>
          </widget>
         </item>
         <item row="8" column="0">
-         <widget class="QDoubleSpinBox" name="dsB_fixed_pos"/>
+         <widget class="QDoubleSpinBox" name="dsB_fixed_pos">
+          <property name="minimum">
+           <double>-10.000000000000000</double>
+          </property>
+          <property name="maximum">
+           <double>10.000000000000000</double>
+          </property>
+          <property name="singleStep">
+           <double>0.010000000000000</double>
+          </property>
+         </widget>
         </item>
         <item row="5" column="0" colspan="3">
          <widget class="QComboBox" name="cB_scanner2"/>
@@ -394,8 +449,8 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>255</width>
-     <height>26</height>
+     <width>335</width>
+     <height>21</height>
     </rect>
    </property>
   </widget>
