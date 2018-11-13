@@ -229,7 +229,7 @@ class ScanGUI(QtWidgets.QMainWindow):
 
             if ((x is not None) and (y is not None)):
                 [X, Y] = np.meshgrid (self._recalculate(x),self._recalculate(y))
-                ax.pcolor (X, Y, value)
+                ax.pcolor (X, Y, np.transpose(value))
                 ax.xaxis.set_ticks (x)
                 ax.yaxis.set_ticks (y)
             else:
@@ -291,8 +291,8 @@ class ScanGUI(QtWidgets.QMainWindow):
         try: 
             fname = os.path.join (os.path.join (self._work_folder, '_settings'), 'set_scan_gui.txt')
             self._min_1, self._max_1, stepsize_1, self._min_2, self._max_2, stepsize_2, self._fixed_pos, scan_axis_1, scan_axis_2, fixed_axis = np.loadtxt(fname, delimiter = ',')
-            self._stepsize_1 = int(stepsize_1)
-            self._stepsize_2 = int(stepsize_2)
+            self._stepsize_1 = stepsize_1
+            self._stepsize_2 = stepsize_2
             self._scan_axis_1 = int(scan_axis_1)
             self._scan_axis_2 = int(scan_axis_2)
             self._fixed_axis = int(fixed_axis)

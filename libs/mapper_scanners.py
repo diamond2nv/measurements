@@ -8,18 +8,21 @@ import struct
 
 import mapper_general as mgen
 
-from measurements.instruments.LockIn7265 import LockIn7265
-from measurements.instruments import NIBox
-from measurements.instruments import AttocubeANCV1 as attoANC
-from measurements.instruments.pylonWeetabixTrigger import voltOut
-from measurements.instruments import KeithleyPSU2220
-from measurements.instruments import solstis
-from measurements.instruments import u3 
-
 if sys.version_info.major == 3:
     from importlib import reload
 
-reload(NIBox)
+try:
+    from measurements.instruments.LockIn7265 import LockIn7265
+    from measurements.instruments import NIBox
+    from measurements.instruments import AttocubeANCV1 as attoANC
+    from measurements.instruments.pylonWeetabixTrigger import voltOut
+    from measurements.instruments import KeithleyPSU2220
+    from measurements.instruments import solstis
+    from measurements.instruments import u3 
+    reload(NIBox)
+except:
+    print ("Enter simulation mode. Detectors are not loaded.")
+
 reload(mgen)
 
 ########################################################################
