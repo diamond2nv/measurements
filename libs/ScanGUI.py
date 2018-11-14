@@ -246,6 +246,7 @@ class ScanGUI(QtWidgets.QMainWindow):
         return np.linspace (x0-dx/2, x1+dx/2, N+1)
 
     def _get_next_point (self):
+        self._curr_task = 'acquiring'
         self._scanner.move_to_next()
         xC, yC = self._scanner.get_current_point ()
         self.set_current_point (scan1 = xC, scan2 = yC, fixed = 0)
@@ -255,6 +256,8 @@ class ScanGUI(QtWidgets.QMainWindow):
             self.ui.label_status.setText ("Status: Idle")
             if self._autosave:
                 self._save_scan()
+        else:
+            self._curr_task = 'scan'
 
 
     def _set_min_1 (self, value):

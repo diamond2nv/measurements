@@ -29,7 +29,7 @@ except:
     def move_smooth_simple (scanner_axes, targets = []):
         pass
 
-    print ("Simulation mode. Pay attention that the move_smooth function is not implemented!")
+    print ("Simulation mode. Be aware that the move_smooth function is not implemented!")
 
 class Mapper2D_3axes (mapper.XYMapper):
     def __init__(self, scanner_axes=None, detectors=None):
