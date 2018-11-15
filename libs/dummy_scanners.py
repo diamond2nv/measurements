@@ -33,7 +33,7 @@ class ScannerCtrl (mgen.DeviceCtrl):
         the device. Used in error messages.
     """
     
-    def __init__(self, channels=[]):
+    def __init__(self, channels=[], ids = None):
         """Initializes all scanner attributes with default values. In
         particular, it calculates the number of axes based on the number
         of channels and defines self.number_of_axes in function.
@@ -52,6 +52,11 @@ class ScannerCtrl (mgen.DeviceCtrl):
                 self.number_of_axes = len(channels)
             except TypeError:
                 self.number_of_axes = len(list(channels))
+
+        if ids is None:
+            ids = ['scan_axis_'+str(i) for i in enumerate(channels)]         
+            
+        self._ids = ids
 
         try:
             channels = list(channels)
@@ -141,6 +146,7 @@ class ScannerCtrl (mgen.DeviceCtrl):
             target (float): target position to move to
             axis (int, optional): axis number
         """
+        #print ("Move axis ", axis, " to position: ", target)
         pass
 
     def get(self, axis=0):
@@ -262,6 +268,7 @@ class Saxis():
             target (float): target position to move to.
         """
         self.scanner.move(target=target, axis=self.axis)
+        #print ("Move axis ", self.axis, " to position: ", target)
 
     def get(self):
         """ Reads current position of the s-axis.
@@ -310,4 +317,36 @@ def move_smooth_simple(scanner_axis, target):
     """
     pass
 
-    
+
+class GalvoDummy (ScannerCtrl):
+    def __init__(self, chX='/Dev1/ao0', chY='/Dev1/ao1', start_pos=[0,0], 
+                     conversion_factor=1., min_limit= 0., max_limit= 5., ids = None):
+        super().__init__(channels=[chX, chY], ids=ids)
+        self.string_id = 'Galvo scanners controlled by NI box AO'
+        self.conversion_factor = conversion_factor
+
+        self.smooth_step = 1
+        self.smooth_delay = 0.05
+        
+        self._min_limit = min_limit
+        self._max_limit = max_limit
+
+        self._curr_pos = [pos for channel, pos in zip(self._channels, start_pos)]
+
+    def _initialize(self):
+        pass
+
+    def _move(self, target, axis=0):
+        self._curr_pos[axis] = target
+
+    def _get(self, axis=0):
+        return self._curr_pos[axis]
+         
+    def set_range (self, min_limit, max_limit):
+        self._min_limit = min_limit
+        self._max_limit = max_limit
+
+    def _close(self):
+        pass
+
+

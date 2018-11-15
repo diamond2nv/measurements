@@ -17,7 +17,6 @@ try:
 except:
     print ("Enter simulation mode.")
 
-
 reload(mgen)
 
 
@@ -29,6 +28,8 @@ class DetectorCtrl (mgen.DeviceCtrl):
 
     def __init__(self, work_folder=None):
         self._wfolder = work_folder
+        self._is_changed = False
+        self.readout_values = None
 
     def initialize(self):
         pass
@@ -42,6 +43,9 @@ class DetectorCtrl (mgen.DeviceCtrl):
     def first_point(self):
         return True
 
+    def _is_changed (self):
+        pass
+
     def _close(self):
         pass
 
@@ -52,6 +56,7 @@ class DetectorCtrl (mgen.DeviceCtrl):
 class PylonNICtrl (DetectorCtrl):
 
     def __init__(self, sender_port="/Weetabix/port1/line3", receiver_port="/Weetabix/port1/line2", work_folder=None):
+        DetectorCtrl.__init__ (self, work_folder = work_folder)
         self.string_id = 'Pylon (new spectro) camera - NI box control'
         self._wfolder = work_folder
         self._sender_port = sender_port
@@ -82,6 +87,7 @@ class PylonNICtrl (DetectorCtrl):
 class ActonNICtrl (DetectorCtrl):
 
     def __init__(self, sender_port, receiver_port, work_folder=None):
+        DetectorCtrl.__init__ (self, work_folder = work_folder)
         self.string_id = 'Acton (old spectro) camera - NI box control'
         self._sender_port = sender_port
         self._receiver_port = receiver_port
@@ -129,6 +135,7 @@ class ActonNICtrl (DetectorCtrl):
 class ActonLockinCtrl (DetectorCtrl):
 
     def __init__(self, lockinVisaAddress, work_folder=None):
+        DetectorCtrl.__init__ (self, work_folder = work_folder)
         self.string_id = 'Acton (old spectro) camera - Lockin control'
         self._wfolder = work_folder
         self._lockin = LockIn7265(lockinVisaAddress)
@@ -165,7 +172,8 @@ class ActonLockinCtrl (DetectorCtrl):
 class APDCounterCtrl (DetectorCtrl):
 
     def __init__(self, ctr_port, debug=False, work_folder=None):
-        self.string_id = 'APD NI box counter'
+        DetectorCtrl.__init__ (self, work_folder = work_folder)
+        self.string_id = 'APD-NIbox'
         self._wfolder = work_folder
         self._ctr_port = ctr_port
         self.delay_after_readout = 0.
@@ -198,7 +206,8 @@ class APDCounterCtrl (DetectorCtrl):
 class dummyAPD (DetectorCtrl):
 
     def __init__(self, work_folder, random_counts = True, debug = False):
-        self.string_id = 'dummy APD counter'
+        DetectorCtrl.__init__ (self, work_folder = work_folder)
+        self.string_id = 'dummyAPD'
         self._wfolder = work_folder
         self.delay_after_readout = 0.
         self._debug = debug
@@ -230,6 +239,7 @@ class dummyAPD (DetectorCtrl):
 class MultimeterCtrl (DetectorCtrl):
 
     def __init__(self, VISA_address, mode='voltage', work_folder=None):
+        DetectorCtrl.__init__ (self, work_folder = work_folder)
         self.string_id = 'Keithley multimeter'
         self._VISA_address = VISA_address
         self.delay_after_readout = 0.

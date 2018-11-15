@@ -13,18 +13,24 @@ import lmfit
 from measurements.libs import ScanGUI as SG
 from PyQt5 import QtCore, QtGui, QtWidgets
 
-from measurements.libs.mapper_scanners import move_smooth
+#from measurements.libs.mapper_scanners import move_smooth
 
 if sys.version_info.major == 3:
     from importlib import reload
 reload (DO)
 reload (SG)
 
-#def move_smooth(scanner_axes, targets = []):
-#    pass
 
-#def move_smooth_simple (scanner_axes, targets = []):
-#    pass
+try: 
+    from measurements.libs.mapper_scanners import move_smooth
+except:
+    def move_smooth(scanner_axes, targets = []):
+        pass
+
+    def move_smooth_simple (scanner_axes, targets = []):
+        pass
+
+    print ("Simulation mode. Pay attention that the move_smooth function is not implemented!")
 
 class XYMapper ():
     def __init__(self, scanner_axes=None, detectors=None):
@@ -60,7 +66,6 @@ class XYMapper ():
             self.yPositions = pl.array([0])
             self.yStep = 0
         self.totalNbOfSteps = self.xNbOfSteps * self.yNbOfSteps
-
 
     def seconds_in_HMS(self, nbOfSeconds):
         hours = pl.floor(nbOfSeconds / 3600)
@@ -236,7 +241,7 @@ class XYScan (XYMapper):
         for i in detector_numbers:
             pl.figure(figsize=(10, 10))
             [X, Y] = pl.meshgrid (self.xPositions, self.yPositions)
-            pl.pcolor(X, Y, getattr(self, 'detector_readout_'+str(i)))
+            pl.pcolormesh(X, Y, getattr(self, 'detector_readout_'+str(i) ).transpose(), cmap='Greys')
             pl.title ("detector nr "+str(i), fontsize=18)
             pl.colorbar()
             pl.show()
