@@ -53,7 +53,6 @@ class ScanGUI(QtWidgets.QMainWindow):
             self.ui.cb_detector.addItem(det.string_id)
 
         self._nr_scanner_axes = len(self._scanner._scanner_axes)
-        print ("Nr scanner axes: ", self._nr_scanner_axes)
 
         for saxes in self._scanner._scanner_axes:
             s = saxes._ids
