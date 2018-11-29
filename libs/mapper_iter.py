@@ -29,7 +29,7 @@ except:
     def move_smooth_simple (scanner_axes, targets = []):
         pass
 
-    print ("Simulation mode. Be aware that the move_smooth function is not implemented!")
+    print ("Simulation mode. Pay attention that the move_smooth function is not implemented!")
 
 class Mapper2D_3axes (mapper.XYMapper):
     def __init__(self, scanner_axes=None, detectors=None):
@@ -230,7 +230,7 @@ class Mapper2D_3axes (mapper.XYMapper):
             getattr (obj, 'setWindowTitle')('QPL-detector_'+str(idx))
             getattr (obj, 'show')()
 
-        sys.exit(qApp.exec_())
+        #sys.exit(qApp.exec_())
 
     def close_scan(self):
         # go smoothly to start position

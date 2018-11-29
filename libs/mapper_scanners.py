@@ -4,12 +4,12 @@ import pylab as np
 import time
 import sys
 import visa
-import struct
-
-import mapper_general as mgen
 
 if sys.version_info.major == 3:
     from importlib import reload
+
+from measurements.libs import mapper_general as mgen
+reload(mgen)
 
 try:
     from measurements.instruments.LockIn7265 import LockIn7265
@@ -18,12 +18,11 @@ try:
     from measurements.instruments.pylonWeetabixTrigger import voltOut
     from measurements.instruments import KeithleyPSU2220
     from measurements.instruments import solstis
-    from measurements.instruments import u3 
     reload(NIBox)
 except:
-    print ("Enter simulation mode. Detectors are not loaded.")
+    print ("Instruments not loaded. entering simulation mode.")
 
-reload(mgen)
+
 
 ########################################################################
 #                      DEFAULT SCANNERS CLASSES                        #
@@ -46,7 +45,7 @@ class ScannerCtrl (mgen.DeviceCtrl):
         the device. Used in error messages.
     """
     
-    def __init__(self, channels=[]):
+    def __init__(self, channels=[], ids = None):
         """Initializes all scanner attributes with default values. In
         particular, it calculates the number of axes based on the number
         of channels and defines self.number_of_axes in function.
@@ -65,6 +64,11 @@ class ScannerCtrl (mgen.DeviceCtrl):
                 self.number_of_axes = len(channels)
             except TypeError:
                 self.number_of_axes = len(list(channels))
+
+        if ids is None:
+            ids = [str(i) for i in channels]         
+            
+        self._ids = ids
 
         try:
             channels = list(channels)
@@ -371,6 +375,19 @@ def move_smooth_simple(scanner_axis, target):
         time.sleep(smooth_delay)
 
 
+
+class MultiScanner ():
+
+    def __init__ (self):
+        pass
+
+    def add (self, scanner):
+        pass
+
+
+
+
+
 ########################################################################
 # / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / /#
 ########################################################################
@@ -407,8 +424,9 @@ class TestScanner (ScannerCtrl):
 
 
 class GalvoNI (ScannerCtrl):
-    def __init__(self, chX='/Dev1/ao0', chY='/Dev1/ao1', start_pos=[0,0], conversion_factor=1., min_limit= 0., max_limit= 5.):
-        super().__init__(channels=[chX, chY])
+    def __init__(self, chX='/Dev1/ao0', chY='/Dev1/ao1', start_pos=[0,0], 
+                     conversion_factor=1., min_limit= 0., max_limit= 5., ids = None):
+        super().__init__(channels=[chX, chY], ids=ids)
         self.string_id = 'Galvo scanners controlled by NI box AO'
         self.conversion_factor = conversion_factor
 
@@ -674,111 +692,6 @@ class SolstisLaserScanner(ScannerCtrl):
     def _close(self):
         self._laser_handle.close()
 
-class LabJack_U3_HV(ScannerCtrl):
-    #no initialize and close functions as this is not an option for the LabJack.
-    #it will connect automatically. Also note that this is for the labjack with no tick attached
-    
-    def __init__(self, channels = [0,0]):
-        self.smooth_step = 1.
-        self.smooth_delay = 0.05
-        self.number_of_axes = 2
-        self.string_id = 'Labjack_U3_HV'
-        
-    def _initialize(self):
-        self.objU3 = u3.U3()
-        
-    def _move(self, voltageX, voltageY):
-        if voltageX>5 or voltageX<0 or voltageY>5 or voltageY<0:
-            print ("You must set a voltage between 0V and 5V")
-        else:
-            #same as set, called once to change axis to the target in some way
-            self.voltageX = voltageX
-            self.voltageY = voltageY
-            #voltage converted to bits, 16bit input
-            self.bitsx = self.objU3.voltageToDACBits(volts = voltageX, dacNumber = 0, is16Bits = True)
-            self.bitsy = self.objU3.voltageToDACBits(volts = voltageY, dacNumber = 1, is16Bits = True)
-
-            #Sets displacement in x
-            self.Sx = u3.DAC16(0, self.bitsx)
-            
-            #Sets displacement in y
-            self.Sy = u3.DAC16(1, self.bitsy)
-            
-            self.channels = [self.Sx, self.Sy]
-            
-            u3.U3().getFeedback(self.channels[0], self.bitsx)
-            u3.U3().getFeedback(self.channels[1], self.bitsy)
-            
-    def _get(self, axis=0):
-        #output the current set voltage
-        if axis==0:
-            return self.voltageX
-        elif axis==1:
-            return self.voltageY        
-
-class LJTickDAC(ScannerCtrl):
-    """Sets voltages at DACA and DACB for a LJTick-DAC"""
-    EEPROM_ADDRESS = 0x50
-    DAC_ADDRESS = 0x12
-    def __init__(self, channels = [0,0]):
-        
-        #Remember to plug the LJTick into FI04 and F105
-        # The pin numbers
-        self.sclPin = 4
-        self.sdaPin = self.sclPin + 1
-        
-        self.smooth_step = 1.
-        self.smooth_delay = 0.05
-        self.number_of_axes = 2
-        self.string_id = 'LJTickDAC'
-
-    def _initialize(self):
-        self.objU3 = u3.U3()
-
-    def toDouble(self, buff):
-        """Converts the 8 byte array into a floating point number.
-        buff: An array with 8 bytes.
-
-        """
-        right, left = struct.unpack("<Ii", struct.pack("B" * 8, *buff[0:8]))
-        return float(left) + float(right)/(2**32)
-
-        
-    def _move(self, dacA, dacB):
-        """Updates the voltages on the LJTick-DAC.
-        dacA: The DACA voltage to set.
-        dacB: The DACB voltage to set.
-
-        """
-        
-        self.dacA=dacA
-        self.dacB=dacB
-        data = self.objU3.i2c(Address=LJTickDAC.EEPROM_ADDRESS,
-                         I2CBytes = [64],
-                               NumI2CBytesToReceive=36,
-                               SDAPinNum=5,
-                               SCLPinNum=4)
-        response = data['I2CBytes']
-        self.slopeA = self.toDouble(response[0:8])
-        self.offsetA = self.toDouble(response[8:16])
-        self.slopeB = self.toDouble(response[16:24])
-        self.offsetB = self.toDouble(response[24:32])
-
-        binaryA = int(dacA*self.slopeA + self.offsetA)
-        self.objU3.i2c(LJTickDAC.DAC_ADDRESS,
-                        [48, binaryA // 256, binaryA % 256],
-                        SDAPinNum=self.sdaPin, SCLPinNum=self.sclPin)
-        binaryB = int(dacB*self.slopeB + self.offsetB)
-        self.objU3.i2c(LJTickDAC.DAC_ADDRESS,
-                        [49, binaryB // 256, binaryB % 256],
-                        SDAPinNum=self.sdaPin, SCLPinNum=self.sclPin)
-
-    def _get(self):
-        return self.dacA, self.dacB
-    
-    def _close(self):
-        # Close the device
-        dev.close()
 
 
 

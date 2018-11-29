@@ -17,14 +17,14 @@ reload(mdet)
 
 a = -0.68
 b = 2.53
-d = 0.0
-xStep = 0.0002
+d = 0.15
+xStep = 0.0008
 
-delayBetweenPoints = 0.015
-delayBetweenRows = 0.015
+delayBetweenPoints = 0.02
+delayBetweenRows = 0.02
 
 xLims = (a-d,a+d)
-yLims = (b,b)
+yLims = (b-d,b+d)
 yStep = xStep
 
 min_lim = -5.
@@ -43,10 +43,10 @@ for i in range(0,0):
     print('\n', i, '\n')
 XYscan.run_scan(silence_errors=False)
 
-#XYscan.plot_counts()
+XYscan.plot_counts()
 
-#XYscan.save_to_txt(voltsFilePath,  flatten=True)
-#
+XYscan.save_to_txt(voltsFilePath,  flatten=True)
+
 #x = np.arange(a-d, a+d, xStep)
 #y = pl.loadtxt(voltsFilePath)
 #if np.size(x) == np.size(y):

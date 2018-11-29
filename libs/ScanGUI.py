@@ -1,4 +1,3 @@
-
 import os, sys, time
 from datetime import datetime
 import random
@@ -10,7 +9,6 @@ from matplotlib.figure import Figure
 from PyQt5 import QtCore, QtGui, QtWidgets
 from measurements.libs import ui_scan_gui_ctrl as uScan
 from measurements.libs import ui_scan_gui_canvas as uCanvas
-
 from tools import QPL_viewGUI as qplGUI
 from tools import data_object as DO
 
@@ -73,10 +71,10 @@ class ScanGUI(QtWidgets.QMainWindow):
 
         self.ui.dsB_min1.valueChanged.connect (self._set_min_1)
         self.ui.dsB_max1.valueChanged.connect (self._set_max_1)
-        self.ui.dsB_stepsize1.valueChanged.connect (self._set_stepsize_1)
+        self.ui.dsB_steps1.valueChanged.connect (self._set_steps_1)
         self.ui.dsB_min2.valueChanged.connect (self._set_min_2)
         self.ui.dsB_max2.valueChanged.connect (self._set_max_2)
-        self.ui.dsB_stepsize2.valueChanged.connect (self._set_stepsize_2)
+        self.ui.dsB_steps2.valueChanged.connect (self._set_steps_2)
         self.ui.dsB_fixed_pos.valueChanged.connect (self._set_fixed_pos)
         self.ui.sB_APD.valueChanged.connect (self._set_APD_time)
         self.ui.cB_scanner1.currentIndexChanged.connect (self._set_scan_axis_1)
@@ -159,7 +157,7 @@ class ScanGUI(QtWidgets.QMainWindow):
                 self._scanner._scanner_axes [self._fixed_axis].move(target = self._fixed_pos)
 
             Lims = [(self._min_1, self._max_1), (self._min_2, self._max_2)]
-            StepSizes = [self._stepsize_1, self._stepsize_2]
+            StepSizes = [(self._max_1 - self._min_1)/(self._steps_1-1), (self._max_2 - self._min_2)/(self._steps_2-1)]
             
             self._scanner.set_range (xLims=Lims[0], xStep=StepSizes[0], 
                     yLims=Lims[1], yStep=StepSizes[1])
@@ -228,7 +226,7 @@ class ScanGUI(QtWidgets.QMainWindow):
 
             if ((x is not None) and (y is not None)):
                 [X, Y] = np.meshgrid (self._recalculate(x),self._recalculate(y))
-                ax.pcolor (X, Y, np.transpose(value))
+                ax.pcolor (X, Y, value)
                 ax.xaxis.set_ticks (x)
                 ax.yaxis.set_ticks (y)
             else:
@@ -245,7 +243,6 @@ class ScanGUI(QtWidgets.QMainWindow):
         return np.linspace (x0-dx/2, x1+dx/2, N+1)
 
     def _get_next_point (self):
-        self._curr_task = 'acquiring'
         self._scanner.move_to_next()
         xC, yC = self._scanner.get_current_point ()
         self.set_current_point (scan1 = xC, scan2 = yC, fixed = 0)
@@ -255,8 +252,6 @@ class ScanGUI(QtWidgets.QMainWindow):
             self.ui.label_status.setText ("Status: Idle")
             if self._autosave:
                 self._save_scan()
-        else:
-            self._curr_task = 'scan'
 
 
     def _set_min_1 (self, value):
@@ -271,18 +266,18 @@ class ScanGUI(QtWidgets.QMainWindow):
     def _set_max_2 (self, value):
         self._max_2 = value
 
-    def _set_stepsize_1 (self, value):
-        self._stepsize_1 = value
+    def _set_steps_1 (self, value):
+        self._steps_1 = value
 
-    def _set_stepsize_2 (self, value):
-        self._stepsize_2 = value
+    def _set_steps_2 (self, value):
+        self._steps_2 = value
 
     def _set_fixed_pos (self, value):
         self._fixed_pos = value
         print (self._fixed_pos)
 
     def save_settings (self):
-        values = [self._min_1, self._max_1, self._stepsize_1, self._min_2, self._max_2, self._stepsize_2, self._fixed_pos, self._scan_axis_1, self._scan_axis_2, self._fixed_axis]
+        values = [self._min_1, self._max_1, self._steps_1, self._min_2, self._max_2, self._steps_2, self._fixed_pos, self._scan_axis_1, self._scan_axis_2, self._fixed_axis]
         subf = os.path.join (self._work_folder, '_settings')
         if not(os.path.exists(subf)):
             os.mkdir(subf)
@@ -292,24 +287,24 @@ class ScanGUI(QtWidgets.QMainWindow):
     def load_settings (self):
         try: 
             fname = os.path.join (os.path.join (self._work_folder, '_settings'), 'set_scan_gui.txt')
-            self._min_1, self._max_1, stepsize_1, self._min_2, self._max_2, stepsize_2, self._fixed_pos, scan_axis_1, scan_axis_2, fixed_axis = np.loadtxt(fname, delimiter = ',')
-            self._stepsize_1 = stepsize_1
-            self._stepsize_2 = stepsize_2
+            self._min_1, self._max_1, steps_1, self._min_2, self._max_2, steps_2, self._fixed_pos, scan_axis_1, scan_axis_2, fixed_axis = np.loadtxt(fname, delimiter = ',')
+            self._steps_1 = int(steps_1)
+            self._steps_2 = int(steps_2)
             self._scan_axis_1 = int(scan_axis_1)
             self._scan_axis_2 = int(scan_axis_2)
             self._fixed_axis = int(fixed_axis)
 
             print ("Settings loaded from file.")
         except:
-            self._min_1, self._max_1, self._stepsize_1, self._min_2, self._max_2, self._stepsize2, self._fixed_pos, self._scan_axis_1, self._scan_axis_2, self._fixed_axis = [0,0,0,0,0,0,0,0,1,2]
+            self._min_1, self._max_1, self._steps_1, self._min_2, self._max_2, self._steps_2, self._fixed_pos, self._scan_axis_1, self._scan_axis_2, self._fixed_axis = [0,0,0,0,0,0,0,0,1,2]
             print ("Settings to zero.")
 
         self.ui.dsB_max1.setValue(self._max_1)           
         self.ui.dsB_max2.setValue(self._max_2)           
         self.ui.dsB_min1.setValue(self._min_1)           
         self.ui.dsB_min2.setValue(self._min_2)           
-        self.ui.dsB_stepsize1.setValue(self._stepsize_1)           
-        self.ui.dsB_stepsize2.setValue(self._stepsize_2)           
+        self.ui.dsB_steps1.setValue(self._steps_1)           
+        self.ui.dsB_steps2.setValue(self._steps_2)           
         self.ui.dsB_fixed_pos.setValue(self._fixed_pos)
         self.ui.cB_scanner1.setCurrentIndex(self._scan_axis_1)         
         self.ui.cB_scanner2.setCurrentIndex(self._scan_axis_2)         
