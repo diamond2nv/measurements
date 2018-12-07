@@ -4,6 +4,7 @@ import pylab as np
 import time
 import sys
 import visa
+import struct as struct
 
 if sys.version_info.major == 3:
     from importlib import reload
@@ -18,7 +19,7 @@ try:
     from measurements.instruments.pylonWeetabixTrigger import voltOut
     from measurements.instruments import KeithleyPSU2220
     from measurements.instruments import solstis
-    from measurements.instruments import LabJackU3 as LJ3 
+    from measurements.instruments import u3 
     reload(NIBox)
 except:
     print ("Instruments not loaded. entering simulation mode.")
@@ -735,76 +736,73 @@ class LabJack_U3_HV(ScannerCtrl):
         elif axis==1:
             return self.voltageY        
 
-class LJTickDAC_old (ScannerCtrl):
+class LJTickDAC(ScannerCtrl):
     """Sets voltages at DACA and DACB for a LJTick-DAC"""
-    
-    
-    def __init__(self, channels = [0,0]):
+    EEPROM_ADDRESS = 0x50
+    DAC_ADDRESS = 0x12
+
+    def __init__(self, channels = [0,0], ids = ['x', 'y']):
         
         #Remember to plug the LJTick into FI04 and F105
-        self.sclPins = [4,5]
-        #self.sclPin = 4
-        #self.sdaPin = self.sclPin + 1
+        # The pin numbers
+        super().__init__(channels=[channels[0], channels[1]], ids=ids)
+        
+        self.sclPin = 4
+        self.sdaPin = self.sclPin + 1
         
         self.smooth_step = 1.
         self.smooth_delay = 0.05
         self.number_of_axes = 2
         self.string_id = 'LJTickDAC'
-        self.EEPROM_ADDRESS = 0x50
-        self.DAC_ADDRESS = 0x12
-
+        self.dacA="undefined"
+        self.dacB="undefined"
+        
     def _initialize(self):
-        self._LJ = u3.U3()
-        self.getCalConstants()
-
-    def getCalConstants(self):
-        """ 
-        Name: getCalConstants()
-        Desc: Loads or reloads the calibration constants for the LJTic-DAC
-              modules and writes it in the module dictionary
-        """
-        for i,v in enumerate(self.sclPins):
-            module = {}
-            module['sclPin'] = v
-            module['sdaPin'] = v+1
-            ## getting calibration data from the LJTDAC
-            data = self._LJ.i2c(self.EEPROM_ADDRESS, [64], 
-                    NumI2CBytesToReceive=36, SDAPinNum = module['sdaPin'],
-                    SCLPinNum = module['sclPin'])
-
-            response = data['I2CBytes']
-            module['aSlope'] = self.toDouble(response[0:8])
-            module['aOffset'] = self.toDouble(response[8:16])
-            module['bSlope'] = self.toDouble(response[16:24])
-            module['bOffset'] = self.toDouble(response[24:32])
-
-            self.dac_modules['LJTDAC'+str(i)] = module 
-
+        self.objU3 = u3.U3()
 
     def toDouble(self, buff):
         """Converts the 8 byte array into a floating point number.
         buff: An array with 8 bytes.
 
         """
+        struct.unpack
         right, left = struct.unpack("<Ii", struct.pack("B" * 8, *buff[0:8]))
         return float(left) + float(right)/(2**32)
 
         
-    def _move_old(self, dacA, dacB):
+    def _move(self, volts, axis=0):
         """Updates the voltages on the LJTick-DAC.
         dacA: The DACA voltage to set.
         dacB: The DACB voltage to set.
 
         """
-        
-        self.dacA=dacA
-        self.dacB=dacB
         data = self.objU3.i2c(Address=LJTickDAC.EEPROM_ADDRESS,
                          I2CBytes = [64],
                                NumI2CBytesToReceive=36,
                                SDAPinNum=5,
                                SCLPinNum=4)
+        
         response = data['I2CBytes']
+        
+        if axis==0:
+            self.dacA=volts
+            self.slopeA = self.toDouble(response[0:8])
+            self.offsetA = self.toDouble(response[8:16])
+            binaryA = int(self.dacA*self.slopeA + self.offsetA)
+            self.objU3.i2c(LJTickDAC.DAC_ADDRESS,
+                        [48, binaryA // 256, binaryA % 256],
+                        SDAPinNum=self.sdaPin, SCLPinNum=self.sclPin)
+        elif axis==1:
+            self.dacB=volts
+            self.slopeB = self.toDouble(response[16:24])
+            self.offsetB = self.toDouble(response[24:32])
+            binaryB = int(self.dacB*self.slopeB + self.offsetB)
+            self.objU3.i2c(LJTickDAC.DAC_ADDRESS,
+                        [49, binaryB // 256, binaryB % 256],
+                        SDAPinNum=self.sdaPin, SCLPinNum=self.sclPin)
+        """self.dacA=dacA
+        self.dacB=dacB
+        
         self.slopeA = self.toDouble(response[0:8])
         self.offsetA = self.toDouble(response[8:16])
         self.slopeB = self.toDouble(response[16:24])
@@ -817,102 +815,16 @@ class LJTickDAC_old (ScannerCtrl):
         binaryB = int(dacB*self.slopeB + self.offsetB)
         self.objU3.i2c(LJTickDAC.DAC_ADDRESS,
                         [49, binaryB // 256, binaryB % 256],
-                        SDAPinNum=self.sdaPin, SCLPinNum=self.sclPin)
+                        SDAPinNum=self.sdaPin, SCLPinNum=self.sclPin)"""
 
-    def _get(self):
-        return self.dacA, self.dacB
-    
-    def _close(self):
-        # Close the device
-        dev.close()
-
-
-class LJTickDAC (ScannerCtrl):
-    """Sets voltages at DACA and DACB for a LJTick-DAC"""
-    
-    def __init__(self, channels = [4,5]):
-        
-        #Remember to plug the LJTick into FI04 and F105
-        self.sclPins = channels
-        #self.sclPin = 4
-        #self.sdaPin = self.sclPin + 1
-        
-        self.smooth_step = 1.
-        self.smooth_delay = 0.05
-        self.number_of_axes = 2
-        self.string_id = 'LJTickDAC'
-        self.EEPROM_ADDRESS = 0x50
-        self.DAC_ADDRESS = 0x12
-
-    def _initialize(self):
-        self._LJ = LJ3.LabJackU3()
-        self._LJ.getCalConstants()
-
-    def getCalConstants(self):
-        """ 
-        Name: getCalConstants()
-        Desc: Loads or reloads the calibration constants for the LJTic-DAC
-              modules and writes it in the module dictionary
-        """
-        for i,v in enumerate(self.sclPins):
-            module = {}
-            module['sclPin'] = v
-            module['sdaPin'] = v+1
-            ## getting calibration data from the LJTDAC
-            data = self._LJ.i2c(self.EEPROM_ADDRESS, [64], 
-                    NumI2CBytesToReceive=36, SDAPinNum = module['sdaPin'],
-                    SCLPinNum = module['sclPin'])
-
-            response = data['I2CBytes']
-            module['aSlope'] = self.toDouble(response[0:8])
-            module['aOffset'] = self.toDouble(response[8:16])
-            module['bSlope'] = self.toDouble(response[16:24])
-            module['bOffset'] = self.toDouble(response[24:32])
-
-            self.dac_modules['LJTDAC'+str(i)] = module 
-
-
-    def toDouble(self, buff):
-        """Converts the 8 byte array into a floating point number.
-        buff: An array with 8 bytes.
-
-        """
-        right, left = struct.unpack("<Ii", struct.pack("B" * 8, *buff[0:8]))
-        return float(left) + float(right)/(2**32)
-
-        
-    def _move_old(self, dacA, dacB):
-        """Updates the voltages on the LJTick-DAC.
-        dacA: The DACA voltage to set.
-        dacB: The DACB voltage to set.
-
-        """
-        
-        self.dacA=dacA
-        self.dacB=dacB
-        data = self.objU3.i2c(Address=LJTickDAC.EEPROM_ADDRESS,
-                         I2CBytes = [64],
-                               NumI2CBytesToReceive=36,
-                               SDAPinNum=5,
-                               SCLPinNum=4)
-        response = data['I2CBytes']
-        self.slopeA = self.toDouble(response[0:8])
-        self.offsetA = self.toDouble(response[8:16])
-        self.slopeB = self.toDouble(response[16:24])
-        self.offsetB = self.toDouble(response[24:32])
-
-        binaryA = int(dacA*self.slopeA + self.offsetA)
-        self.objU3.i2c(LJTickDAC.DAC_ADDRESS,
-                        [48, binaryA // 256, binaryA % 256],
-                        SDAPinNum=self.sdaPin, SCLPinNum=self.sclPin)
-        binaryB = int(dacB*self.slopeB + self.offsetB)
-        self.objU3.i2c(LJTickDAC.DAC_ADDRESS,
-                        [49, binaryB // 256, binaryB % 256],
-                        SDAPinNum=self.sdaPin, SCLPinNum=self.sclPin)
-
-    def _get(self):
-        return self.dacA, self.dacB
-    
+    def _get(self, axis=0):
+        if axis==0:
+            #return self.dacA
+            return self.objU3.getFIOState(4)
+        elif axis==1:
+            #return self.dacB 
+            return self.objU3.getFIOState(5)
+            
     def _close(self):
         # Close the device
         dev.close()
