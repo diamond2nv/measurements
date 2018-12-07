@@ -811,8 +811,8 @@ class LJTickDAC(ScannerCtrl):
             
     def _close(self):
         # Close the device
-        dev.close()
-
+        #dev.close()
+        self.objU3.close()
 
 
 

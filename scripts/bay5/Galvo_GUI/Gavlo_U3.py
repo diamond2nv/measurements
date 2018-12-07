@@ -16,7 +16,7 @@ reload(mdet)
 a = 1
 b = 1
 d = 2
-xStep = 0.2
+xStep = 1
 delayBetweenPoints = 0.02
 delayBetweenRows = 0.02
 
