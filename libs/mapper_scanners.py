@@ -754,24 +754,25 @@ class LJTickDAC(ScannerCtrl):
         self.smooth_delay = 0.05
         self.number_of_axes = 2
         self.string_id = 'LJTickDAC'
-        #self.dacA="undefined"
-        #self.dacB="undefined"
+        self.dacA="undefined"
+        self.dacB="undefined"
         
     def _initialize(self):
         self.objU3 = u3.U3()
 
-        # Retrieve calibration data
         data = self.objU3.i2c(Address=LJTickDAC.EEPROM_ADDRESS,
                          I2CBytes = [64],
                                NumI2CBytesToReceive=36,
-                               SDAPinNum=5,
-                               SCLPinNum=4)
+                               SDAPinNum=self.sdaPin,
+                               SCLPinNum=self.sclPin)
         
         response = data['I2CBytes']
         self.slopeA = self.toDouble(response[0:8])
         self.offsetA = self.toDouble(response[8:16])
         self.slopeB = self.toDouble(response[16:24])
         self.offsetB = self.toDouble(response[24:32])
+
+
 
     def toDouble(self, buff):
         """Converts the 8 byte array into a floating point number.
@@ -787,28 +788,31 @@ class LJTickDAC(ScannerCtrl):
         """Updates the voltages on the LJTick-DAC.
         """
         
-        do_move = False
         if axis==0:
-            binary= int(target*self.slopeA + self.offsetA)
+            #self.dacA=volts
+            binary = int(target*self.slopeA + self.offsetA)
         elif axis==1:
+            #self.dacB=volts
             binary = int(target*self.slopeB + self.offsetB)
-        else:
-            print ("Unknwn axis.")
-            do_move = False
 
-        if do_move:    
-            self.objU3.i2c(LJTickDAC.DAC_ADDRESS,
+        self.objU3.i2c(LJTickDAC.DAC_ADDRESS,
                     [48+axis, binary // 256, binary % 256],
                     SDAPinNum=self.sdaPin, SCLPinNum=self.sclPin)
 
 
+
     def _get(self, axis=0):
-        return self.objU3.getFIOState(4+axis)
+        if axis==0:
+            #return self.dacA
+            return self.objU3.getFIOState(4)
+        elif axis==1:
+            #return self.dacB 
+            return self.objU3.getFIOState(5)
             
     def _close(self):
         # Close the device
-        dev.close()
-
+        #dev.close()
+        self.objU3.close()
 
 
 

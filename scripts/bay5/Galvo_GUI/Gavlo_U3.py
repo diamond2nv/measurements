@@ -13,10 +13,10 @@ reload(mapper)
 reload(mscan)
 reload(mdet)
 
-a = 3.243
-b = -0.2888
-d = 0.05
-xStep = 0.001
+a = 1
+b = 1
+d = 2
+xStep = 1
 delayBetweenPoints = 0.02
 delayBetweenRows = 0.02
 
@@ -26,7 +26,7 @@ yStep = xStep
 
 min_lim = -10.
 max_lim = 10.
-
+ 
 GalvoCtrl = mscan.LJTickDAC()
 voltmeterCtrl = mdet.MultimeterCtrl(VISA_address=r'ASRL12::INSTR')
 XYscan = mapper.XYScan(scanner_axes = GalvoCtrl, detectors= [voltmeterCtrl])
@@ -38,6 +38,6 @@ for i in range(0,0):
     print('\n', i, '\n')
 XYscan.run_scan(silence_errors=False)
 
-XYscan.plot_counts()
+#XYscan.plot_counts()
 
 #XYscan.save_to_txt(voltsFilePath,  flatten=True)
