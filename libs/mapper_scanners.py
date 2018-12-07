@@ -760,6 +760,20 @@ class LJTickDAC(ScannerCtrl):
     def _initialize(self):
         self.objU3 = u3.U3()
 
+        data = self.objU3.i2c(Address=LJTickDAC.EEPROM_ADDRESS,
+                         I2CBytes = [64],
+                               NumI2CBytesToReceive=36,
+                               SDAPinNum=self.sdaPin,
+                               SCLPinNum=self.sclPin)
+        
+        response = data['I2CBytes']
+        self.slopeA = self.toDouble(response[0:8])
+        self.offsetA = self.toDouble(response[8:16])
+        self.slopeB = self.toDouble(response[16:24])
+        self.offsetB = self.toDouble(response[24:32])
+
+
+
     def toDouble(self, buff):
         """Converts the 8 byte array into a floating point number.
         buff: An array with 8 bytes.
@@ -770,52 +784,22 @@ class LJTickDAC(ScannerCtrl):
         return float(left) + float(right)/(2**32)
 
         
-    def _move(self, volts, axis=0):
+    def _move(self, target, axis=0):
         """Updates the voltages on the LJTick-DAC.
-        dacA: The DACA voltage to set.
-        dacB: The DACB voltage to set.
-
         """
-        data = self.objU3.i2c(Address=LJTickDAC.EEPROM_ADDRESS,
-                         I2CBytes = [64],
-                               NumI2CBytesToReceive=36,
-                               SDAPinNum=5,
-                               SCLPinNum=4)
-        
-        response = data['I2CBytes']
         
         if axis==0:
-            self.dacA=volts
-            self.slopeA = self.toDouble(response[0:8])
-            self.offsetA = self.toDouble(response[8:16])
-            binaryA = int(self.dacA*self.slopeA + self.offsetA)
-            self.objU3.i2c(LJTickDAC.DAC_ADDRESS,
-                        [48, binaryA // 256, binaryA % 256],
-                        SDAPinNum=self.sdaPin, SCLPinNum=self.sclPin)
+            #self.dacA=volts
+            binary = int(target*self.slopeA + self.offsetA)
         elif axis==1:
-            self.dacB=volts
-            self.slopeB = self.toDouble(response[16:24])
-            self.offsetB = self.toDouble(response[24:32])
-            binaryB = int(self.dacB*self.slopeB + self.offsetB)
-            self.objU3.i2c(LJTickDAC.DAC_ADDRESS,
-                        [49, binaryB // 256, binaryB % 256],
-                        SDAPinNum=self.sdaPin, SCLPinNum=self.sclPin)
-        """self.dacA=dacA
-        self.dacB=dacB
-        
-        self.slopeA = self.toDouble(response[0:8])
-        self.offsetA = self.toDouble(response[8:16])
-        self.slopeB = self.toDouble(response[16:24])
-        self.offsetB = self.toDouble(response[24:32])
+            #self.dacB=volts
+            binary = int(target*self.slopeB + self.offsetB)
 
-        binaryA = int(dacA*self.slopeA + self.offsetA)
         self.objU3.i2c(LJTickDAC.DAC_ADDRESS,
-                        [48, binaryA // 256, binaryA % 256],
-                        SDAPinNum=self.sdaPin, SCLPinNum=self.sclPin)
-        binaryB = int(dacB*self.slopeB + self.offsetB)
-        self.objU3.i2c(LJTickDAC.DAC_ADDRESS,
-                        [49, binaryB // 256, binaryB % 256],
-                        SDAPinNum=self.sdaPin, SCLPinNum=self.sclPin)"""
+                    [48+axis, binary // 256, binary % 256],
+                    SDAPinNum=self.sdaPin, SCLPinNum=self.sclPin)
+
+
 
     def _get(self, axis=0):
         if axis==0:
