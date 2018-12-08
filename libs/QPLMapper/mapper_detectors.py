@@ -5,7 +5,7 @@ import sys
 import visa
 import numpy as np
 
-from measurements.libs import mapper_general as mgen
+from measurements.libs.QPLMapper import mapper_general as mgen
 if sys.version_info.major == 3:
     from importlib import reload
 try:
