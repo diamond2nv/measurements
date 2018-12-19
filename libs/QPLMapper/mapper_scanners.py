@@ -784,7 +784,7 @@ class LJTickDAC(ScannerCtrl):
         return float(left) + float(right)/(2**32)
 
         
-    def _move(self, volts, axis=0):
+    def _move(self, target, axis=0):
         """Updates the voltages on the LJTick-DAC.
         dacA: The DACA voltage to set.
         dacB: The DACB voltage to set.
@@ -798,12 +798,16 @@ class LJTickDAC(ScannerCtrl):
         
         if axis==0:
             #self.dacA=volts
-            binary = int(target*self.slopeA + self.offsetA)
+            binaryA= int(target*self.slopeA + self.offsetA)
+            self.objU3.i2c(LJTickDAC.DAC_ADDRESS,
+                        [48, binaryA // 256, binaryA % 256],
+                        SDAPinNum=self.sdaPin, SCLPinNum=self.sclPin)
+        
         elif axis==1:
             #self.dacB=volts
-            binary = int(target*self.slopeB + self.offsetB)
+            binaryB = int(target*self.slopeB + self.offsetB)
 
-        self.objU3.i2c(LJTickDAC.DAC_ADDRESS,
+            self.objU3.i2c(LJTickDAC.DAC_ADDRESS,
                         [49, binaryB // 256, binaryB % 256],
                         SDAPinNum=self.sdaPin, SCLPinNum=self.sclPin)
 
@@ -822,7 +826,7 @@ class LJTickDAC(ScannerCtrl):
         self.objU3.close()
 
 class PI_E709(ScannerCtrl):
-    def __init__(self, channels=[0], visaAddress):
+    def __init__(self, VISA_address, channels=[0]):
         
         
         self.smooth_step = 1.
@@ -832,9 +836,9 @@ class PI_E709(ScannerCtrl):
         self.number_of_axes = 1
         self._dev_initialised = False
         
-        #establishes a connection with the device
+        #establishes a connection with the deviced
         rm = visa.ResourceManager()
-        self._instr = rm.open_resource(visaAddress)
+        self._instr = rm.open_resource(VISA_address)
         self._instr.baud_rate = 57600
         self._instr.data_bits = 8
         self._instr.parity = visa.constants.Parity.none
