@@ -15,10 +15,11 @@ reload(mapper)
 reload(mscan)
 reload(mdet)
 
-a = -0.68
-b = 2.53
-d = 0.15
-xStep = 0.0008
+
+a = 3.05
+b = 0.21
+d = 0.00
+xStep = 0.005
 
 delayBetweenPoints = 0.02
 delayBetweenRows = 0.02
@@ -33,7 +34,7 @@ max_lim = 5.
 
 GalvoCtrl = mscan.GalvoNI (chX = '/Dev1/ao1', chY = '/Dev1/ao0') 
 GalvoCtrl.set_range(min_limit=min_lim, max_limit=max_lim)
-voltmeterCtrl = mdet.MultimeterCtrl(VISA_address=r'ASRL5::INSTR')
+voltmeterCtrl = mdet.MultimeterCtrl(VISA_address=r'ASRL12::INSTR')
 XYscan = mapper.XYScan(scanner_axes = GalvoCtrl, detectors= [voltmeterCtrl])
 XYscan.set_range (xLims=xLims, xStep=xStep, yLims=yLims, yStep=yStep)
 XYscan.set_delays (between_points = delayBetweenPoints, between_rows = delayBetweenRows)
@@ -43,9 +44,9 @@ for i in range(0,0):
     print('\n', i, '\n')
 XYscan.run_scan(silence_errors=False)
 
-XYscan.plot_counts()
+#XYscan.plot_counts()
 
-XYscan.save_to_txt(voltsFilePath,  flatten=True)
+#XYscan.save_to_txt(voltsFilePath,  flatten=True)
 
 #x = np.arange(a-d, a+d, xStep)
 #y = pl.loadtxt(voltsFilePath)
