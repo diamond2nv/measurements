@@ -1,0 +1,63 @@
+Different constants are stored in hhdefin.h
+
+
+int dev[MAXDEVNUM]; 
+int found=0;
+FILE *fpout;   // file for the error log
+int retcode;   // variable for return codes
+int ctcstatus; // for the finishing condition in the infinite finish loop
+char LIB_Version[8];
+char HW_Model[16];
+char HW_Partno[8];
+char HW_Version[8];
+char HW_Serial[8];
+char Errorstring[40];
+int NumChannels;
+int Mode=MODE_T2; //set T2 or T3 here, observe suitable Syncdivider and Range!
+int Binning=0; //you can change this, meaningful only in T3 mode
+int Offset=0;  //you can change this, meaningful only in T3 mode
+int Tacq=1000; //Measurement time in millisec, you can change this
+int SyncDivider = 1; //you can change this, observe Mode! READ MANUAL!
+int SyncCFDZeroCross=10; //you can change this (in mV)
+int SyncCFDLevel=50; //you can change this (in mV)
+int SyncChannelOffset=-5000; //you can change this (in ps, like a cable delay)
+int InputCFDZeroCross=10; //you can change this (in mV)
+int InputCFDLevel=50; //you can change this (in mV)
+int InputChannelOffset=0; //you can change this (in ps, like a cable delay)
+double Resolution; 
+int Syncrate;
+int Countrate;
+int i;
+int flags;
+int nRecords;
+unsigned int Progress;
+
+
+
+Steps (Minimal steps to produce a measurement)
+if running t3 mode you also have to do steps with an *
+
+OpenDevice
+Initialize
+GetNumOfInputChannels
+Calibrate
+SetSyncDiv
+SetSyncCFD
+SetSyncChannelOffset
+// The next 2 steps have to be done in a for loop for all channels
+SetInputCFD
+SetInputChannelOffset
+SetBinning *
+SetOffset *
+GetResolution *
+StartMeas
+
+// Then goes an infite loop while the measurement is running that checks for
+// errors and finishing condition. When stopping condition is met break out
+// of the loop and execute StopMeas
+
+StopMeas
+CloseDevice
+
+
+
