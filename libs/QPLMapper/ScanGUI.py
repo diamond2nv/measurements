@@ -7,8 +7,8 @@ import h5py
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 from PyQt5 import QtCore, QtGui, QtWidgets
-from measurements.libs import ui_scan_gui_ctrl as uScan
-from measurements.libs import ui_scan_gui_canvas as uCanvas
+from measurements.libs.QPLMapper import ui_scan_gui_ctrl as uScan
+from measurements.libs.QPLMapper import ui_scan_gui_canvas as uCanvas
 from tools import QPL_viewGUI as qplGUI
 from tools import data_object as DO
 

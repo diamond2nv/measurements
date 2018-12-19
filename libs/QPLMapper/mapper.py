@@ -10,7 +10,7 @@ import time, sys
 from tools import data_object as DO
 import numpy as np
 import lmfit
-from measurements.libs import ScanGUI as SG
+from measurements.libs.QPLMapper import ScanGUI as SG
 from PyQt5 import QtCore, QtGui, QtWidgets
 
 #from measurements.libs.mapper_scanners import move_smooth

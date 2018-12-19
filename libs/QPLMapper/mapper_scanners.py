@@ -9,7 +9,7 @@ import struct as struct
 if sys.version_info.major == 3:
     from importlib import reload
 
-from measurements.libs import mapper_general as mgen
+from measurements.libs.QPLMapper import mapper_general as mgen
 reload(mgen)
 
 try:

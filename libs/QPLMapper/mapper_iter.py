@@ -10,8 +10,8 @@ import time, sys
 from tools import data_object as DO
 import numpy as np
 import lmfit
-from measurements.libs import ScanGUI as SG
-from measurements.libs import mapper
+from measurements.libs.QPLMapper import ScanGUI as SG
+from measurements.libs.QPLMapper import mapper
 from PyQt5 import QtCore, QtGui, QtWidgets
 
 if sys.version_info.major == 3:
