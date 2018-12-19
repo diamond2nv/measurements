@@ -784,9 +784,17 @@ class LJTickDAC(ScannerCtrl):
         return float(left) + float(right)/(2**32)
 
         
-    def _move(self, target, axis=0):
+    def _move(self, volts, axis=0):
         """Updates the voltages on the LJTick-DAC.
+        dacA: The DACA voltage to set.
+        dacB: The DACB voltage to set.
+
         """
+        data = self.objU3.i2c(Address=LJTickDAC.EEPROM_ADDRESS,
+                         I2CBytes = [64],
+                               NumI2CBytesToReceive=36,
+                               SDAPinNum=5,
+                               SCLPinNum=4)
         
         if axis==0:
             #self.dacA=volts
@@ -796,9 +804,8 @@ class LJTickDAC(ScannerCtrl):
             binary = int(target*self.slopeB + self.offsetB)
 
         self.objU3.i2c(LJTickDAC.DAC_ADDRESS,
-                    [48+axis, binary // 256, binary % 256],
-                    SDAPinNum=self.sdaPin, SCLPinNum=self.sclPin)
-
+                        [49, binaryB // 256, binaryB % 256],
+                        SDAPinNum=self.sdaPin, SCLPinNum=self.sclPin)
 
 
     def _get(self, axis=0):
@@ -814,8 +821,55 @@ class LJTickDAC(ScannerCtrl):
         #dev.close()
         self.objU3.close()
 
+class PI_E709(ScannerCtrl):
+    def __init__(self, channels=[0], visaAddress):
+        
+        
+        self.smooth_step = 1.
+        self.smooth_delay = 0.05
+        self.string_id = 'PI_E709'
+        self._channels = channels
+        self.number_of_axes = 1
+        self._dev_initialised = False
+        
+        #establishes a connection with the device
+        rm = visa.ResourceManager()
+        self._instr = rm.open_resource(visaAddress)
+        self._instr.baud_rate = 57600
+        self._instr.data_bits = 8
+        self._instr.parity = visa.constants.Parity.none
 
+    def _initialize(self):
+        """Must call this before move function will work
+        """
+        print(self._instr.query("*IDN?\n"))
+        
+        #stores the maximum and minimum displacement values
+        self.min_position=float(self._instr.query("TMN?\n")[2:])
+        self.max_position=float(self._instr.query("TMX?\n")[2:])
+        
+        # for move function to work, the servo state must be closed loop (1)
+        print(self._instr.query("SVO?\n"))
+        self._instr.write("SVO 1 1\n")
+        print(self._instr.query("SVO?\n"))
 
+    def __len__(self):
+        """ Returns the number of axes on this scanner."""
+        return 1
+    
+    def _get(self, axis=1):
+        """current position"""
+        current_position=float(self._instr.query("MOV?\n")[2:])
+        return current_position
+
+    def _move(self, target, axis=1):
+        """ moves only when initialize has been called """
+        
+        mov_command = "MOV 1 %f\n"%target
+        self._instr.write(mov_command) 
+        
+    def _close(self):
+        self._instr.close() 
 
 if __name__ == '__main__':
     toto = TestScanner(address='totoLand', channels=[3,5])

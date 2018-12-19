@@ -7,7 +7,7 @@ if sys.version_info.major == 3:
     from importlib import reload
 
 d = datetime.datetime.now()
-voltsDirectory = r'C:\Users\Daniel\Desktop\Voltmeter'
+voltsDirectory = r'C:\Users\Karen\Desktop\Voltmeter'
 voltsFilePath = os.path.join(voltsDirectory, 'powerInVolts_{:%Y-%m-%d_%H-%M-%S}.txt'.format(d))
 reload(mapper)
 reload(mscan)
