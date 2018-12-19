@@ -271,7 +271,7 @@ def errorMessageWindow(parentWindow, winTitle, winText):
     msg.setWindowTitle(winTitle)
     msg.setText(winText)
     msg.exec_()
-    
+    imp
     
 def multimeter_oscillo_run(config):
     app = QApplication(sys.argv)
@@ -290,5 +290,10 @@ def multimeter_oscillo_run(config):
         window.close_instruments()
 
 if __name__ == "__main__":
-    config = {"multimeterVisaId": "GPIB1::1::INSTR"}
-    multimeter_oscillo_run(config)
+    config = {"multimeterVisaId": "ASRL12::INSTR", "meas_mode":"voltage"}
+    app = QApplication(sys.argv)
+    app.aboutToQuit.connect(app.deleteLater)
+    
+    window = VoltmeterRead(app, config)
+#    multimeter_oscillo_run(config)
+    window.show()
