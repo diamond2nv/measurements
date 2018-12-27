@@ -182,34 +182,31 @@ class ScanGUI(QtWidgets.QMainWindow):
     def _save_scan (self):
         
         # save hdf5 file with scan parameters and detector maps
-        tstamp = time.strftime ('%Y%m%d_%H%M%S')
-        subf = os.path.join (self._work_folder, tstamp + '_mapper/')
-        if not(os.path.exists(subf)):
-            os.mkdir(subf)
-        fname = os.path.join (subf, tstamp+'_map_data.hdf5')
-        f = h5py.File (fname, 'w')
-        obj = DO.DataObjectHDF5 ()
+        #tstamp = time.strftime ('%Y%m%d_%H%M%S')
+        #subf = os.path.join (self._work_folder, tstamp + '_mapper/')
+        #if not(os.path.exists(subf)):
+        #    os.mkdir(subf)
+        #fname = os.path.join (subf, tstamp+'_map_data.hdf5')
+        #f = h5py.File (fname, 'w')
+        DOobj = DO.DataObjectHDF5 ()
+        f = DOobj.create_file (folder = self._work_folder, name = 'map_data')
         
         try:
-            obj.save_object_all_vars_to_file (obj = self, f = f)
+            DOobj.save_object_all_vars_to_file (obj = self, f = f)
         except:
             print ("Scan parameters not saved.")
 
         try:
             for idx, s in enumerate(self._scanner._scanner_axes):
-                grp = f.create_group('scanner_'+str(idx))
-                obj.save_object_all_vars_to_file (obj = s, f = grp)
+                DOobj.save_object_all_vars_to_file (obj = s, f = f, group_name = 'scanner_'+str(idx))
         except:
             print ("Scanner axes not saved.")
 
         try:    
             for idx, d in enumerate(self._scanner._detectors):
-                grp = f.create_group('detector_'+str(idx))
-                obj.save_object_to_file (obj = d, f = grp)
+                DOobj.save_object_to_file (obj = d, f = f, group_name = 'detector_'+str(idx))
         except:
             print ("Detectors not saved.")
-
-        f.close()
 
 
         # save plots of spatial maps
