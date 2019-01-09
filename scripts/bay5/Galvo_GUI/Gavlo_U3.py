@@ -7,7 +7,7 @@ if sys.version_info.major == 3:
     from importlib import reload
 
 d = datetime.datetime.now()
-voltsDirectory = r'C:\Users\Karen\Desktop\Voltmeter'
+voltsDirectory = r'C:\Users\Daniel\Desktop\Voltmeter'
 voltsFilePath = os.path.join(voltsDirectory, 'powerInVolts_{:%Y-%m-%d_%H-%M-%S}.txt'.format(d))
 reload(mapper)
 reload(mscan)
@@ -36,7 +36,5 @@ XYscan.set_delays (between_points = delayBetweenPoints, between_rows = delayBetw
 for i in range(0,1):
     XYscan.run_scan(silence_errors=False)
 #    print('\n', i, '\n')
-
 XYscan.plot_counts()
-
 XYscan.save_to_txt(voltsFilePath,  flatten=True)

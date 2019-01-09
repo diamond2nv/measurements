@@ -21,7 +21,8 @@ try:
     from measurements.instruments import solstis
     from measurements.instruments import u3 
     reload(NIBox)
-except:
+except Exception as e:
+    print("Error: ", e)
     print ("Instruments not loaded. entering simulation mode.")
 
 

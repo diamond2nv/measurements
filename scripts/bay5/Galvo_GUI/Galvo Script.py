@@ -1,8 +1,8 @@
 import datetime
 import os.path
 import sys
-from measurements.libs import mapper_scanners as mscan, mapper_detectors as mdet
-from  measurements.libs import mapper
+from measurements.libs.QPLMapper import mapper_scanners as mscan, mapper_detectors as mdet
+from  measurements.libs.QPLMapper import mapper
 if sys.version_info.major == 3:
     from importlib import reload
 import pylab as pl
@@ -34,7 +34,9 @@ max_lim = 5.
 
 GalvoCtrl = mscan.GalvoNI (chX = '/Dev1/ao1', chY = '/Dev1/ao0') 
 GalvoCtrl.set_range(min_limit=min_lim, max_limit=max_lim)
-voltmeterCtrl = mdet.MultimeterCtrl(VISA_address=r'ASRL12::INSTR')
+voltmeterCtrl = mdet.MultimeterCtrl(VISA_address=r'ASRL17::INSTR')
+dummyAPD = mdet.dummyAPD(voltsDirectory)
+
 XYscan = mapper.XYScan(scanner_axes = GalvoCtrl, detectors= [voltmeterCtrl])
 XYscan.set_range (xLims=xLims, xStep=xStep, yLims=yLims, yStep=yStep)
 XYscan.set_delays (between_points = delayBetweenPoints, between_rows = delayBetweenRows)

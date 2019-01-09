@@ -22,7 +22,7 @@ reload (SG)
 
 
 try: 
-    from measurements.libs.mapper_scanners import move_smooth
+    from measurements.libs.QPLMapper.mapper_scanners import move_smooth
 except:
     def move_smooth(scanner_axes, targets = []):
         pass
