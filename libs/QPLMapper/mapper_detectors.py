@@ -13,6 +13,7 @@ try:
     from measurements.instruments.LockIn7265 import LockIn7265
     from measurements.instruments.pylonWeetabixTrigger import trigSender, trigReceiver
     from measurements.instruments.KeithleyMultimeter import KeithleyMultimeter
+    from measurements.instruments import u3
     reload (NIBox)
 except:
     print ("Enter simulation mode.")
@@ -257,3 +258,38 @@ class MultimeterCtrl (DetectorCtrl):
 
     def _close(self):
         self._multimeter.close()
+        
+class Pylon_LabjackCtrl (DetectorCtrl):
+
+    def __init__(self, TriggerIn = 6, TTLOut = 7):
+        """Inputs are the labjack FIO pins connected to spectrometer Trigger in and TTL out"""
+        self.string_id = 'Pylon Spectro - Labjack U3 Ctrl'
+        self.TriggerIn = TriggerIn
+        self.TTLOut = TTLOut
+
+    def initialize(self):
+        self.dev = u3.U3()#opens first found U3
+
+    def readout(self):
+        """sends a pulse to trigger the spectrometer,
+        spectrometer should take a reading"""
+        self.dev.configIO(FIOAnalog=0x0F)
+        self.pulseduration = 254 #units are unknown, you have take a reading to know how wide this pulse is
+        
+        """sets the state and direction (to output) of corrresponding FIO pin """
+        self.dev.setDOState(ioNum=self.TriggerIn, state=0) #set state to zero
+        self.dev.getFeedback(u3.WaitLong(30))#give it some time at zero before sending the pulse 
+        self.dev.setDOState(ioNum=self.TriggerIn, state=1) #set state to one
+        self.dev.getFeedback(u3.WaitShort(self.pulseduration)) # wait pulse duration
+        self.dev.setDOState(ioNum=self.TriggerIn, state=0)#set state back to zero
+
+    def is_ready(self):
+        """Looks for a pulse from the spectrometer"""
+        return self.dev.getDIState(ioNum = self.TTLOut) # checkes state and changes direction to input
+
+    def first_point(self):
+        return self.dev.getDIState(ioNum = self.TTLOut)
+
+    def _close(self):
+        pass
+
