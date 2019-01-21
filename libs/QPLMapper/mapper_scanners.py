@@ -19,7 +19,8 @@ try:
     from measurements.instruments.pylonWeetabixTrigger import voltOut
     from measurements.instruments import KeithleyPSU2220
     from measurements.instruments import solstis
-    from measurements.instruments import u3 
+    from measurements.instruments import u3
+    from measurements.instruments import NewportConexCC as conex
     reload(NIBox)
 except Exception as e:
     print("Error: ", e)
@@ -424,6 +425,54 @@ class TestScanner (ScannerCtrl):
 
     def _close(self):
         print('Closing test device')
+
+
+class ConexCC_2D (ScannerCtrl):
+
+    def __init__ (self, chX = 'ASRL8::INSTR', chY='', min_limit = 0., start_pos=[0,0],
+                    max_limit = 11., ids = None):
+        super().__init__(channels=[chX, chY], ids=ids)
+        self.string_id = '2D scanner with two Newport Conex-CC positioners'
+        self.conversion_factor = 1
+
+        self.smooth_step = 1
+        self.smooth_delay = 0.05
+        
+        self._min_limit = min_limit
+        self._max_limit = max_limit
+
+        self._scannerX = conex (address = chX)
+        self._scannerY = conex (address = chY)        
+
+        self._curr_pos = [pos for channel, pos in zip(self._channels, start_pos)]
+
+    def _initialize ():
+        pass
+
+    def _move (self, target, axis=0):
+
+        if ((target > self._min_limit) and (target < self._max_limit)):
+            if axis=0:
+                self._scannerX.move_absolute(target)
+            elif axis=1:
+                self._scannerY.move_absolute(target)
+        else:
+            print ("Set target exceeds device limits!")
+
+    def _get (self, axis=0):
+        if axis=0:
+            pos = self._scannerX.get_position()
+        elif axis=1:
+            pos = self._scannerY.get_position()
+        return pos       
+
+    def _close (self):
+        self._scannerX.close()
+        self._scannerY.close()
+
+
+
+
 
 
 class GalvoNI (ScannerCtrl):

@@ -48,8 +48,9 @@ class NewportConexCC:
 
     def get_position (self):
 #        self.scanner.ask('1TP')
-        I=print(self.scanner.ask('1TP'))
-        Pos=float(I[3:])
+        I=self.scanner.ask('1TP')
+        Pos = float(I[3:])
+        return Pos
         
     
     def reset (self):    #works
@@ -63,8 +64,8 @@ class NewportConexCC:
 
 
 
-#scanner1 = Scanner (address = 'ASRL8::INSTR')
-#scanner1.move_relative(distance=0.001)     #move r in mm
+scanner1 = Scanner (address = 'ASRL8::INSTR')
+scanner1.move_relative(distance=0.001)     #move r in mm
 #scanner1.move_absolute(position=0.005)     #move a
 #time.sleep(0.1)
 
