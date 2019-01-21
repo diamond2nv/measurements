@@ -427,6 +427,35 @@ class TestScanner (ScannerCtrl):
         print('Closing test device')
 
 
+
+class LockInDAC (ScannerCtrl):
+
+    def __init__(self, visa_address, channels):
+        super().__init__(channels=channels)
+        self.string_id = 'LockIn voltage scan'
+
+        self.smooth_step = 0.5
+        self.smooth_delay = 0.5
+        self._curr_pos = np.zeros(len(channels)) + 2
+        self._visa_addr = visa_address
+
+    def _initialize(self):
+        self._lockin = LockIn7265 (self._visa_addr)
+        print('Device initialized')
+
+    def _move(self, target, axis=0):
+        self._curr_pos[axis] = target
+        self._lockin.set_DAC_voltage (voltage = target)
+
+    def _get(self, axis=0):
+        v = self._lockin.get_DAC_voltage()
+        return v
+
+    def _close(self):
+        self._lockin.close()
+    
+   
+
 class ConexCC_2D (ScannerCtrl):
 
     def __init__ (self, chX = 'ASRL8::INSTR', chY='', min_limit = 0., start_pos=[0,0],
@@ -452,17 +481,17 @@ class ConexCC_2D (ScannerCtrl):
     def _move (self, target, axis=0):
 
         if ((target > self._min_limit) and (target < self._max_limit)):
-            if axis=0:
+            if (axis==0):
                 self._scannerX.move_absolute(target)
-            elif axis=1:
+            elif axis==1:
                 self._scannerY.move_absolute(target)
         else:
             print ("Set target exceeds device limits!")
 
     def _get (self, axis=0):
-        if axis=0:
+        if axis==0:
             pos = self._scannerX.get_position()
-        elif axis=1:
+        elif axis==1:
             pos = self._scannerY.get_position()
         return pos       
 

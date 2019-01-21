@@ -10,15 +10,20 @@ import time, sys
 from tools import data_object as DO
 import numpy as np
 import lmfit
-from measurements.libs.QPLMapper import ScanGUI as SG
-from PyQt5 import QtCore, QtGui, QtWidgets
-
+try:
+    from measurements.libs.QPLMapper import ScanGUI as SG
+    from PyQt5 import QtCore, QtGui, QtWidgets
+except:
+    print ("GUI not available!")
 #from measurements.libs.mapper_scanners import move_smooth
 
 if sys.version_info.major == 3:
     from importlib import reload
 reload (DO)
-reload (SG)
+try:
+    reload (SG)
+except:
+    pass
 
 
 try: 
