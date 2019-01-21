@@ -45,15 +45,18 @@ class trigReceiver(daq.Task):
 
 
 class voltOut(daq.Task):
-    def __init__(self, channel):
+    def __init__(self, channel, min_limit=0., max_limit=5.):
         daq.Task.__init__(self)
-        self.CreateAOVoltageChan(channel, "ao0", 0., 5., daq.DAQmx_Val_Volts,
+        self.CreateAOVoltageChan(channel, "ao0", min_limit, max_limit, daq.DAQmx_Val_Volts,
                                  None)
         self.WriteAnalogScalarF64(1, 10., 0., None)
         
     def write(self, voltage):
         self.WriteAnalogScalarF64(1, 10., voltage, None)
         
+    def set_limits (self, min_limit=0., max_limit=5.):
+        self._min_lim = min_limit
+        self._max_lim = max_limit        
    
 if __name__ == "__main__":
        

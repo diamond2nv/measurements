@@ -4,21 +4,28 @@ import pylab as np
 import time
 import sys
 import visa
-
-from measurements.libs import mapper_general as mgen
-
-from measurements.instruments.LockIn7265 import LockIn7265
-from measurements.instruments import NIBox
-from measurements.instruments import AttocubeANCV1 as attoANC
-from measurements.instruments.pylonWeetabixTrigger import voltOut
-from measurements.instruments import KeithleyPSU2220
-from measurements.instruments import solstis
+import struct as struct
 
 if sys.version_info.major == 3:
     from importlib import reload
 
-reload(NIBox)
+from measurements.libs.QPLMapper import mapper_general as mgen
 reload(mgen)
+
+try:
+    from measurements.instruments.LockIn7265 import LockIn7265
+    from measurements.instruments import NIBox
+    from measurements.instruments import AttocubeANCV1 as attoANC
+    from measurements.instruments.pylonWeetabixTrigger import voltOut
+    from measurements.instruments import KeithleyPSU2220
+    from measurements.instruments import solstis
+    from measurements.instruments import u3 
+    reload(NIBox)
+except Exception as e:
+    print("Error: ", e)
+    print ("Instruments not loaded. entering simulation mode.")
+
+
 
 ########################################################################
 #                      DEFAULT SCANNERS CLASSES                        #
@@ -41,7 +48,7 @@ class ScannerCtrl (mgen.DeviceCtrl):
         the device. Used in error messages.
     """
     
-    def __init__(self, channels=[]):
+    def __init__(self, channels=[], ids = None):
         """Initializes all scanner attributes with default values. In
         particular, it calculates the number of axes based on the number
         of channels and defines self.number_of_axes in function.
@@ -60,6 +67,11 @@ class ScannerCtrl (mgen.DeviceCtrl):
                 self.number_of_axes = len(channels)
             except TypeError:
                 self.number_of_axes = len(list(channels))
+
+        if ids is None:
+            ids = [str(i) for i in channels]         
+            
+        self._ids = ids
 
         try:
             channels = list(channels)
@@ -366,6 +378,19 @@ def move_smooth_simple(scanner_axis, target):
         time.sleep(smooth_delay)
 
 
+
+class MultiScanner ():
+
+    def __init__ (self):
+        pass
+
+    def add (self, scanner):
+        pass
+
+
+
+
+
 ########################################################################
 # / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / / /#
 ########################################################################
@@ -401,21 +426,23 @@ class TestScanner (ScannerCtrl):
         print('Closing test device')
 
 
-# Test class for Galvo mirrors: Daniel White 03/05/2018
-
 class GalvoNI (ScannerCtrl):
-    def __init__(self, chX='/Dev1/ao0', chY='/Dev1/ao1', start_pos=[0,0], conversion_factor=1/15.):
-        super().__init__(channels=[chX, chY])
+    def __init__(self, chX='/Dev1/ao0', chY='/Dev1/ao1', start_pos=[0,0], 
+                     conversion_factor=1., min_limit= 0., max_limit= 5., ids = None):
+        super().__init__(channels=[chX, chY], ids=ids)
         self.string_id = 'Galvo scanners controlled by NI box AO'
         self.conversion_factor = conversion_factor
 
         self.smooth_step = 1
         self.smooth_delay = 0.05
+        
+        self._min_limit = min_limit
+        self._max_limit = max_limit
 
         self._curr_pos = [pos for channel, pos in zip(self._channels, start_pos)]
 
     def _initialize(self):
-        self.scanners_volt_drives = [voltOut(channel) for channel in self._channels]
+        self.scanners_volt_drives = [voltOut(channel=channel, min_limit=self._min_limit, max_limit=self._max_limit) for channel in self._channels]
 
     def _move(self, target, axis=0):
         self.scanners_volt_drives[axis].write(self.conversion_factor * target)
@@ -423,6 +450,10 @@ class GalvoNI (ScannerCtrl):
 
     def _get(self, axis=0):
         return self._curr_pos[axis]
+         
+    def set_range (self, min_limit, max_limit):
+        self._min_limit = min_limit
+        self._max_limit = max_limit
 
     def _close(self):
         for scanner in self.scanners_volt_drives:
@@ -664,8 +695,186 @@ class SolstisLaserScanner(ScannerCtrl):
     def _close(self):
         self._laser_handle.close()
 
+class LabJack_U3_HV(ScannerCtrl):
+    #no initialize and close functions as this is not an option for the LabJack.
+    #it will connect automatically. Also note that this is for the labjack with no tick attached
+    
+    def __init__(self, channels = [0,0]):
+        self.smooth_step = 1.
+        self.smooth_delay = 0.05
+        self.number_of_axes = 2
+        self.string_id = 'Labjack_U3_HV'
+        
+    def _initialize(self):
+        self.objU3 = u3.U3()
+        
+    def _move(self, voltageX, voltageY):
+        if voltageX>5 or voltageX<0 or voltageY>5 or voltageY<0:
+            print ("You must set a voltage between 0V and 5V")
+        else:
+            #same as set, called once to change axis to the target in some way
+            self.voltageX = voltageX
+            self.voltageY = voltageY
+            #voltage converted to bits, 16bit input
+            self.bitsx = self.objU3.voltageToDACBits(volts = voltageX, dacNumber = 0, is16Bits = True)
+            self.bitsy = self.objU3.voltageToDACBits(volts = voltageY, dacNumber = 1, is16Bits = True)
+
+            #Sets displacement in x
+            self.Sx = u3.DAC16(0, self.bitsx)
+            
+            #Sets displacement in y
+            self.Sy = u3.DAC16(1, self.bitsy)
+            
+            self.channels = [self.Sx, self.Sy]
+            
+            u3.U3().getFeedback(self.channels[0], self.bitsx)
+            u3.U3().getFeedback(self.channels[1], self.bitsy)
+            
+    def _get(self, axis=0):
+        #output the current set voltage
+        if axis==0:
+            return self.voltageX
+        elif axis==1:
+            return self.voltageY        
+
+class LJTickDAC(ScannerCtrl):
+    """Sets voltages at DACA and DACB for a LJTick-DAC"""
+    EEPROM_ADDRESS = 0x50
+    DAC_ADDRESS = 0x12
+
+    def __init__(self, channels = [0,0], ids = ['x', 'y']):
+        
+        #Remember to plug the LJTick into FI04 and F105
+        # The pin numbers
+        super().__init__(channels=[channels[0], channels[1]], ids=ids)
+        
+        self.sclPin = 4
+        self.sdaPin = self.sclPin + 1
+        
+        self.smooth_step = 1.
+        self.smooth_delay = 0.05
+        self.number_of_axes = 2
+        self.string_id = 'LJTickDAC'
+        self.dacA="undefined"
+        self.dacB="undefined"
+        
+    def _initialize(self):
+        self.objU3 = u3.U3()
+
+        data = self.objU3.i2c(Address=LJTickDAC.EEPROM_ADDRESS,
+                         I2CBytes = [64],
+                               NumI2CBytesToReceive=36,
+                               SDAPinNum=self.sdaPin,
+                               SCLPinNum=self.sclPin)
+        
+        response = data['I2CBytes']
+        self.slopeA = self.toDouble(response[0:8])
+        self.offsetA = self.toDouble(response[8:16])
+        self.slopeB = self.toDouble(response[16:24])
+        self.offsetB = self.toDouble(response[24:32])
 
 
+
+    def toDouble(self, buff):
+        """Converts the 8 byte array into a floating point number.
+        buff: An array with 8 bytes.
+
+        """
+        struct.unpack
+        right, left = struct.unpack("<Ii", struct.pack("B" * 8, *buff[0:8]))
+        return float(left) + float(right)/(2**32)
+
+        
+    def _move(self, target, axis=0):
+        """Updates the voltages on the LJTick-DAC.
+        dacA: The DACA voltage to set.
+        dacB: The DACB voltage to set.
+
+        """
+        data = self.objU3.i2c(Address=LJTickDAC.EEPROM_ADDRESS,
+                         I2CBytes = [64],
+                               NumI2CBytesToReceive=36,
+                               SDAPinNum=5,
+                               SCLPinNum=4)
+        
+        if axis==0:
+            #self.dacA=volts
+            binaryA= int(target*self.slopeA + self.offsetA)
+            self.objU3.i2c(LJTickDAC.DAC_ADDRESS,
+                        [48, binaryA // 256, binaryA % 256],
+                        SDAPinNum=self.sdaPin, SCLPinNum=self.sclPin)
+        
+        elif axis==1:
+            #self.dacB=volts
+            binaryB = int(target*self.slopeB + self.offsetB)
+
+            self.objU3.i2c(LJTickDAC.DAC_ADDRESS,
+                        [49, binaryB // 256, binaryB % 256],
+                        SDAPinNum=self.sdaPin, SCLPinNum=self.sclPin)
+
+
+    def _get(self, axis=0):
+        if axis==0:
+            #return self.dacA
+            return self.objU3.getFIOState(4)
+        elif axis==1:
+            #return self.dacB 
+            return self.objU3.getFIOState(5)
+            
+    def _close(self):
+        # Close the device
+        #dev.close()
+        self.objU3.close()
+
+class PI_E709(ScannerCtrl):
+    def __init__(self, VISA_address, channels=[0]):
+        
+        
+        self.smooth_step = 1.
+        self.smooth_delay = 0.05
+        self.string_id = 'PI_E709'
+        self._channels = channels
+        self.number_of_axes = 1
+        self._dev_initialised = False
+        
+        #establishes a connection with the deviced
+        rm = visa.ResourceManager()
+        self._instr = rm.open_resource(VISA_address)
+        self._instr.baud_rate = 57600
+        self._instr.data_bits = 8
+        self._instr.parity = visa.constants.Parity.none
+
+    def _initialize(self):
+        """Must call this before move function will work
+        """
+        print(self._instr.query("*IDN?\n"))
+        
+        #stores the maximum and minimum displacement values
+        self.min_position=float(self._instr.query("TMN?\n")[2:])
+        self.max_position=float(self._instr.query("TMX?\n")[2:])
+        
+        # for move function to work, the servo state must be closed loop (1)
+        print(self._instr.query("SVO?\n"))
+        self._instr.write("SVO 1 1\n")
+        print(self._instr.query("SVO?\n"))
+
+    def __len__(self):
+        """ Returns the number of axes on this scanner."""
+        return 1
+    
+    def _get(self, axis=1):
+        """current position"""
+        current_position=float(self._instr.query("MOV?\n")[2:])
+        return current_position
+
+    def _move(self, target, axis=1):
+        """ moves only when initialize has been called """
+        
+        mov_command = "MOV 1 %f\n"%target
+        self._instr.write(mov_command) 
+        
+    def _close(self):
+        self._instr.close() 
 
 if __name__ == '__main__':
     toto = TestScanner(address='totoLand', channels=[3,5])

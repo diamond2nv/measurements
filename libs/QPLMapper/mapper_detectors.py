@@ -5,16 +5,19 @@ import sys
 import visa
 import numpy as np
 
-from measurements.libs import mapper_general as mgen
-
-from measurements.instruments import NIBox
-from measurements.instruments.LockIn7265 import LockIn7265
-from measurements.instruments.pylonWeetabixTrigger import trigSender, trigReceiver
-from measurements.instruments.KeithleyMultimeter import KeithleyMultimeter
+from measurements.libs.QPLMapper import mapper_general as mgen
 if sys.version_info.major == 3:
     from importlib import reload
+try:
+    from measurements.instruments import NIBox
+    from measurements.instruments.LockIn7265 import LockIn7265
+    from measurements.instruments.pylonWeetabixTrigger import trigSender, trigReceiver
+    from measurements.instruments.KeithleyMultimeter import KeithleyMultimeter
+    from measurements.instruments import u3
+    reload (NIBox)
+except:
+    print ("Enter simulation mode.")
 
-reload(NIBox)
 reload(mgen)
 
 
@@ -26,6 +29,8 @@ class DetectorCtrl (mgen.DeviceCtrl):
 
     def __init__(self, work_folder=None):
         self._wfolder = work_folder
+        self._is_changed = False
+        self.readout_values = None
 
     def initialize(self):
         pass
@@ -39,6 +44,9 @@ class DetectorCtrl (mgen.DeviceCtrl):
     def first_point(self):
         return True
 
+    def _is_changed (self):
+        pass
+
     def _close(self):
         pass
 
@@ -49,6 +57,7 @@ class DetectorCtrl (mgen.DeviceCtrl):
 class PylonNICtrl (DetectorCtrl):
 
     def __init__(self, sender_port="/Weetabix/port1/line3", receiver_port="/Weetabix/port1/line2", work_folder=None):
+        DetectorCtrl.__init__ (self, work_folder = work_folder)
         self.string_id = 'Pylon (new spectro) camera - NI box control'
         self._wfolder = work_folder
         self._sender_port = sender_port
@@ -79,6 +88,7 @@ class PylonNICtrl (DetectorCtrl):
 class ActonNICtrl (DetectorCtrl):
 
     def __init__(self, sender_port, receiver_port, work_folder=None):
+        DetectorCtrl.__init__ (self, work_folder = work_folder)
         self.string_id = 'Acton (old spectro) camera - NI box control'
         self._sender_port = sender_port
         self._receiver_port = receiver_port
@@ -126,6 +136,7 @@ class ActonNICtrl (DetectorCtrl):
 class ActonLockinCtrl (DetectorCtrl):
 
     def __init__(self, lockinVisaAddress, work_folder=None):
+        DetectorCtrl.__init__ (self, work_folder = work_folder)
         self.string_id = 'Acton (old spectro) camera - Lockin control'
         self._wfolder = work_folder
         self._lockin = LockIn7265(lockinVisaAddress)
@@ -162,7 +173,8 @@ class ActonLockinCtrl (DetectorCtrl):
 class APDCounterCtrl (DetectorCtrl):
 
     def __init__(self, ctr_port, debug=False, work_folder=None):
-        self.string_id = 'APD NI box counter'
+        DetectorCtrl.__init__ (self, work_folder = work_folder)
+        self.string_id = 'APD-NIbox'
         self._wfolder = work_folder
         self._ctr_port = ctr_port
         self.delay_after_readout = 0.
@@ -195,7 +207,8 @@ class APDCounterCtrl (DetectorCtrl):
 class dummyAPD (DetectorCtrl):
 
     def __init__(self, work_folder, random_counts = True, debug = False):
-        self.string_id = 'dummy APD counter'
+        DetectorCtrl.__init__ (self, work_folder = work_folder)
+        self.string_id = 'dummyAPD'
         self._wfolder = work_folder
         self.delay_after_readout = 0.
         self._debug = debug
@@ -227,6 +240,7 @@ class dummyAPD (DetectorCtrl):
 class MultimeterCtrl (DetectorCtrl):
 
     def __init__(self, VISA_address, mode='voltage', work_folder=None):
+        DetectorCtrl.__init__ (self, work_folder = work_folder)
         self.string_id = 'Keithley multimeter'
         self._VISA_address = VISA_address
         self.delay_after_readout = 0.
@@ -244,3 +258,38 @@ class MultimeterCtrl (DetectorCtrl):
 
     def _close(self):
         self._multimeter.close()
+        
+class Pylon_LabjackCtrl (DetectorCtrl):
+
+    def __init__(self, TriggerIn = 6, TTLOut = 7):
+        """Inputs are the labjack FIO pins connected to spectrometer Trigger in and TTL out"""
+        self.string_id = 'Pylon Spectro - Labjack U3 Ctrl'
+        self.TriggerIn = TriggerIn
+        self.TTLOut = TTLOut
+
+    def initialize(self):
+        self.dev = u3.U3()#opens first found U3
+
+    def readout(self):
+        """sends a pulse to trigger the spectrometer,
+        spectrometer should take a reading"""
+        self.dev.configIO(FIOAnalog=0x0F)
+        self.pulseduration = 254 #units are unknown, you have take a reading to know how wide this pulse is
+        
+        """sets the state and direction (to output) of corrresponding FIO pin """
+        self.dev.setDOState(ioNum=self.TriggerIn, state=0) #set state to zero
+        self.dev.getFeedback(u3.WaitLong(30))#give it some time at zero before sending the pulse 
+        self.dev.setDOState(ioNum=self.TriggerIn, state=1) #set state to one
+        self.dev.getFeedback(u3.WaitShort(self.pulseduration)) # wait pulse duration
+        self.dev.setDOState(ioNum=self.TriggerIn, state=0)#set state back to zero
+
+    def is_ready(self):
+        """Looks for a pulse from the spectrometer"""
+        return self.dev.getDIState(ioNum = self.TTLOut) # checkes state and changes direction to input
+
+    def first_point(self):
+        return self.dev.getDIState(ioNum = self.TTLOut)
+
+    def _close(self):
+        pass
+
