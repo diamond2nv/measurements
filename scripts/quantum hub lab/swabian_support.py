@@ -6,7 +6,7 @@ Created on Wed Jan 23 10:47:23 2019
 """
 import time
 import pylab as pl
-from TimeTagger import createTimeTagger, Counter, Countrate
+from measurements.instruments.TimeTagger import createTimeTagger, Counter, Countrate
 class SW():
     def __init__(self):
         self.dt = 0.1 # in s
