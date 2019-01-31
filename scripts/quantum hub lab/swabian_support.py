@@ -6,11 +6,15 @@ Created on Wed Jan 23 10:47:23 2019
 """
 import time
 import pylab as pl
-from measurements.instruments.TimeTagger import createTimeTagger, Counter, Countrate
+
+import sys
+sys.path.insert(0, "C:/Program Files (x86)/Swabian Instruments/Time Tagger/API/Python3.6/x64")
+from measurements.instruments.TimeTagger import createTimeTagger, Counter
 class SW():
     def __init__(self):
         self.dt = 0.1 # in s
         self.detID = 0
+        self.running = True
     def SW_run(self):
         """Runs in own thread - reads data via Swabian box"""
         self.measure_data = pl.zeros((50,))
@@ -37,5 +41,8 @@ class SW():
             self.ctr.stop()
             self.tag.reset()
             self.running = False
-            self.btn.setEnabled(True)
-        
+
+
+if __name__=='__main__':
+    lugia = SW()
+    lugia.SW_run()
