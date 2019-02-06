@@ -330,12 +330,12 @@ class Pylon_LabjackCtrl (DetectorCtrl):
     def _close(self):
         pass
     
-class Swabian_Ctrl ():
+class Swabian_Ctrl (DetectorCtrl):
 
     def __init__(self):
         self.dt=100 # in milliseconds
         self.string_id = 'Swabian Timtagger'
-        self.data=False
+        self.gotdata=False
         
     def initialize(self):
         """Creates instance of class"""
@@ -349,18 +349,19 @@ class Swabian_Ctrl ():
         time.sleep(self.dt/1000.)
         rates = self.ctr.getData()
         newCount = (pl.mean(rates[0]) + pl.mean(rates[1]))*1000
-        print(newCount)
         self.gotdata = True
-
+        return newCount
+    
     def is_ready(self):
         """check to see if ready for a reading"""
-        if self.data:
-            self.data=False
+        if self.gotdata:
+            self.gotdata=False
             return True
         else:
             return False
 
     def first_point(self):
+        return True
         pass
     
     def _close(self):
