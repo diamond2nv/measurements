@@ -5,7 +5,6 @@ import sys
 import visa
 import numpy as np
 import pylab as pl
-from TimeTagger import createTimeTagger, Counter
 
 from measurements.libs.QPLMapper import mapper_general as mgen
 if sys.version_info.major == 3:
@@ -16,6 +15,7 @@ try:
     from measurements.instruments.pylonWeetabixTrigger import trigSender, trigReceiver
     from measurements.instruments.KeithleyMultimeter import KeithleyMultimeter
     from measurements.instruments import u3
+    from TimeTagger import createTimeTagger, Counter
 
     reload (NIBox)
 except:
