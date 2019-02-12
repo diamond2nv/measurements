@@ -12,6 +12,11 @@ if sys.version_info.major == 3:
 from measurements.libs.QPLMapper import mapper_general as mgen
 reload(mgen)
 
+try :
+	from measurements.instruments.NewportDL325 import DelayStage
+except:
+	pass
+
 try:
     from measurements.instruments.LockIn7265 import LockIn7265
     from measurements.instruments import NIBox
@@ -500,7 +505,44 @@ class ConexCC_2D (ScannerCtrl):
         self._scannerY.close()
 
 
+class NewportDelayStage(ScannerCtrl):
 
+    def __init__ (self, chX = 'ASRL3::INSTR', chY='', min_limit = 0., start_pos=[0,0],
+                    max_limit = 315, ids = None):
+        super().__init__(channels=[chX], ids=ids)
+        self.string_id = 'Newport DL325'
+        self.conversion_factor = 1
+
+        self.smooth_step = 1
+        self.smooth_delay = 0.05
+        
+        self._min_limit = min_limit
+        self._max_limit = max_limit
+
+        self._scannerX = DelayStage(chX)
+        self._scannerY = None        
+
+        self._curr_pos = [pos for channel, pos in zip(self._channels, start_pos)]
+
+    def _initialize ():
+        self._scannerX.move_absolute(0)
+
+    def _move (self, target, axis=0):
+
+        if ((target > self._min_limit) and (target < self._max_limit)):
+        	self._scannerX.move_absolute(target)
+
+        else:
+            print ("Set target exceeds device limits!")
+
+    def _get (self, axis=0):
+    	pos = self._scannerX.get_position()
+       
+        return pos       
+
+    def _close (self):
+        self._scannerX.close()
+        
 
 
 
