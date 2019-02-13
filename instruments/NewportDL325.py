@@ -39,7 +39,17 @@ class DelayStage:
         I=self.scanner.query('TP')
         Pos=float(I[2:])
         return Pos
-    
+    def get_travel_time(self,rel_dis):
+        '''
+        This function is useful to determine the required amount of time interval 
+        between movements.
+        '''
+        traveltime = self.scanner.query('PTT'+str(rel_dis)) #  return the travel time in seconds
+        return float(traveltime[3:])
+
+    def stop(self):
+        self.scanner.write('ST')
+
     def getaccel(self):
         acceleration = self.scanner.query('AC?')
         return float(acceleration[2:])
