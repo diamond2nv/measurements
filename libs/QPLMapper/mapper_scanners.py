@@ -16,7 +16,10 @@ try :
 	from measurements.instruments.NewportDL325 import DelayStage
 except:
 	pass
-
+try :
+    from measurements.instruments.AttoMagnet import mag4g
+except:
+    pass
 try:
     from measurements.instruments.LockIn7265 import LockIn7265
     from measurements.instruments import NIBox
@@ -945,6 +948,40 @@ class LJTickDAC(ScannerCtrl):
         # Close the device
         #dev.close()
         self.objU3.close()
+
+class magnetic_sweep(ScannerCtrl):
+    def __init__ (self, chX = 'ASRL8::INSTR', chY='', min_limit = -9., start_pos=[0,0],
+                    max_limit = 9., ids = None):
+        super().__init__(channels=[chX, chY], ids=ids)
+        self.string_id = '9T magnet sweep'
+        self.conversion_factor = 1
+
+        self.smooth_step = 5
+        self.smooth_delay = 1
+        
+        self._min_limit = min_limit
+        self._max_limit = max_limit
+
+        self._scannerX = mag4g(address = chX)
+        self._curr_pos = [pos for channel, pos in zip(self._channels, start_pos)]
+
+    def _initialize ():
+        pass
+
+    def _move (self, target, axis=0):
+
+        if ((target > self._min_limit) and (target < self._max_limit)):
+            self._scannerX.move_to(target)
+
+        else:
+            print ("Set target exceeds device limits!")
+
+    def _get (self, axis=0):
+        pos = self._scannerX.get_field()[0] #  the field should be in Tesla, only one of the output is needed    
+        return pos       
+
+    def _close (self):
+        self._scannerX.close()
 
 class PI_E709(ScannerCtrl):
     def __init__(self, VISA_address, channels=[0]):
