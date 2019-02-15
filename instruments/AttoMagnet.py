@@ -13,6 +13,8 @@ class mag4g:
         rm = pyvisa.ResourceManager()
         self.dev = rm.open_resource(address, write_termination='\r', read_termination='\r\n')
 
+        self._verbose = False
+
         for a in range(5):
             self.dev.write('REMOTE')
             a = self.dev.read()
@@ -24,7 +26,11 @@ class mag4g:
         if self.dev.read() != 'T':
             self.dev.write('UNITS T')
             self.dev.read()
-        
+
+    
+    def set_verbose (self, a):
+        self._verbose = a    
+
     def close(self):
         self.dev.write('LOCAL')
         self.dev.read()
@@ -108,15 +114,16 @@ class mag4g:
         if actualB == B:
 #                    time.sleep(10)
             self.sweep_pause()
-            print ("Sweeep paused: B = {:.3f} T".format(actualB))
+            if self._verbose:
+                print ("Sweeep paused: B = {:.3f} T".format(actualB))
             ok = True
         else:
-            print ("Sweeping to target: B = {:.3f} T".format(actualB))
+            if self._verbose:
+                print ("Sweeping to target: B = {:.3f} T".format(actualB))
             ok = False
             time.sleep(10)
         actualB, unit = self.get_field()
         within_tol = (abs(actualB-B)<tolerance)            
-        print ("Tolerance check: ", B, actualB, within_tol)
         return ok, within_tol
             
     def move_to(self, B, tolerance = 0.001, nr_tolerance_reps = 5):

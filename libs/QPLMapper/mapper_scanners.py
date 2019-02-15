@@ -15,7 +15,13 @@ reload(mgen)
 try :
 	from measurements.instruments.NewportDL325 import DelayStage
 except:
-	pass
+	print ("Newport DelayStage not found.")
+
+try:
+    from measurements.instruments import AttoMagnet as AMagnet
+    reload (AMagnet)
+except:
+    pass
 
 try:
     from measurements.instruments.LockIn7265 import LockIn7265
@@ -767,6 +773,39 @@ class Keithley2220_negpos(ScannerCtrl):
         self.keithley._close()
 
 
+
+class MagnetAttocube(ScannerCtrl): 
+    def __init__(self, address, tolerance=0.001, nr_tolerance_reps=5):
+        super().__init__(channels=[0])
+
+        self.string_id = 'Attocube Magnet'
+        self._address = address
+        self._tol = tolerance
+        self._tol_reps = nr_tolerance_reps
+        self.smooth_step = 0.5
+        self.smooth_delay = 0.05
+
+    def _initialize(self, switch_on_output=False):
+        self.magnet = AMagnet.mag4g(address=self._address)
+        self.magnet.sweep_to_zero()
+        time.sleep (10)
+        self.magnet.set_lowLim (0)
+
+    def _move(self, target, axis=0):
+        self.magnet.move_to (B=target, tolerance = self._tol, nr_tolerance_reps = self._tol_reps)
+
+    def _get(self, axis=0):
+        B, unit = self.magnet.get_field()
+        return B
+
+    def _close(self):
+        self.magnet.sweep_to_zero()
+        time.sleep(10)
+        self.magnet.close()
+        print ("Magnet device closed.")
+
+
+
 class SolstisLaserScanner(ScannerCtrl):
     def __init__(self, laser_ip_address, pc_ip_address, port_number, timeout=40, 
                  finish_range_radius=0.01, max_nb_of_fails=10):
@@ -1008,3 +1047,5 @@ if __name__ == '__main__':
 
     for titi in toto:
         titi.move(10)
+
+
