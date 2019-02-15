@@ -23,10 +23,10 @@ reload(mdet)
 #     Parameters      #
 
 delayBetweenPoints = 1.5
-delayBetweenRows = 1.5
+delayBetweenRows = 0.
 
-xLims = (-5, 5)  # (0, 5)
-xStep = 0.5
+xLims = (0, 30)  # (0, 5)
+xStep = 0.2
 
 voltsDirectory = r'C:\Users\QPL\Desktop\temp_measurements'
 
@@ -36,8 +36,8 @@ voltsDirectory = r'C:\Users\QPL\Desktop\temp_measurements'
 #psuCtrl = mscan.Keithley2220(VISA_address=r'GPIB0::10::INSTR', channels=[1])
 
 
-psuCtrl = mscan.Keithley2220_neg_pos(VISA_address=r'GPIB0::10::INSTR', ch_neg=1, ch_pos=2)
-##psuCtrl = mscan.Keithley2220_negpos(VISA_address=r'GPIB0::10::INSTR', ch_neg=1, ch_pos=2)
+##psuCtrl = mscan.Keithley2220_neg_pos(VISA_address=r'GPIB0::10::INSTR', ch_neg=1, ch_pos=2)
+psuCtrl = mscan.Keithley2220_negpos(VISA_address=r'GPIB0::10::INSTR', ch_neg=1, ch_pos=2)
 psuCtrl.set_smooth_delay(0.5)
 
 spectroCtrl = mdet.ActonNICtrl(sender_port="/Weetabix/port2/line0",
@@ -45,14 +45,16 @@ spectroCtrl = mdet.ActonNICtrl(sender_port="/Weetabix/port2/line0",
 multimeterCtrl = mdet.MultimeterCtrl(VISA_address=r'GPIB0::13::INSTR')
 
 d = datetime.datetime.now()
-voltsFilePath = os.path.join(voltsDirectory, 'powerInVolts_{:%Y-%m-%d_%H-%M-%S}.txt'.format(d))
+voltsFilePath = os.path.join(voltsDirectory, 'LED4_botGND_topGreenWhite_amp6_{:%Y-%m-%d_%H-%M-%S}.txt'.format(d))
 
 # Scanning program
+#volts_scan = mapper.XYScan(scanner_axes=[psuCtrl[0]], detectors=[spectroCtrl, multimeterCtrl])
+
 volts_scan = mapper.XYScan(scanner_axes=[psuCtrl[0]], detectors=[multimeterCtrl])
-#volts_scan = mapper.XYScan(scanner_axes=[psuCtrl[0]], detectors=[spectroCtrl])
+
 volts_scan.set_range(xLims=xLims, xStep=xStep)
 volts_scan.set_delays(between_points=delayBetweenPoints, between_rows=delayBetweenRows)
-volts_scan.set_back_to_zero()
+#volts_scan.set_back_to_zero()
 
 volts_scan.run_scan()
 

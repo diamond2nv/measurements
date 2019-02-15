@@ -9,9 +9,9 @@ map script designed to use a NI box for triggering the old acton spectro + ANC30
 
 import datetime
 import os.path
-from measurements.libs import mapper 
+from measurements.libs.QPLMapper import mapper 
 import sys
-from measurements.libs import mapper_scanners as mscan, mapper_detectors as mdet
+from measurements.libs.QPLMapper import mapper_scanners as mscan, mapper_detectors as mdet
 if sys.version_info.major == 3:
     from importlib import reload
 
@@ -25,30 +25,31 @@ reload(mdet)
 delayBetweenPoints = 0.5
 delayBetweenRows = 0.5
 
-xLims = (0, 1)  # (10, 100)
-xStep = 0.2
+xLims = (40, 121)  # (10, 100)
+xStep = 1.5
 
-yLims = (0, 1)  # (10, 140)
-yStep = 0.2
+yLims = (10, 82)  # (10, 140)
+yStep = 1.5
 
-voltsDirectory = r'C:\Users\QPL\Desktop\temp_measurements'
+voltsDirectory = r'C:\Users\QPL\Deskto4p\temp_measurements'
 
 #######################
 # instruments
-attoCtrl = mscan.AttocubeVISA(VISA_address=r'ASRL13::INSTR', chX=1, chY=2)
+attoCtrl = mscan.AttocubeVISA(VISA_address=r'ASRL10::INSTR', chX=1, chY=2)
 spectroCtrl = mdet.ActonNICtrl(sender_port="/Weetabix/port2/line0",
                                receiver_port="/Weetabix/port2/line4")
-multimeterCtrl = mdet.MultimeterCtrl(VISA_address=r'GPIB0::13::INSTR')
+
+#multimeterCtrl = mdet.MultimeterCtrl(VISA_address=r'GPIB0::13::INSTR')
 
 d = datetime.datetime.now()
 voltsFilePath = os.path.join(voltsDirectory, 'powerInVolts_{:%Y-%m-%d_%H-%M-%S}.txt'.format(d))
 
 # Scanning program
-XYscan = mapper.XYScan(scanner_axes=attoCtrl, detectors=[spectroCtrl, multimeterCtrl])
+XYscan = mapper.XYScan(scanner_axes=attoCtrl, detectors=[spectroCtrl])
 XYscan.set_range(xLims=xLims, xStep=xStep, yLims=yLims, yStep=yStep)
 XYscan.set_delays(between_points=delayBetweenPoints, between_rows=delayBetweenRows)
-#XYscan.set_back_to_zero()
+XYscan.set_back_to_zero()
 XYscan.run_scan()
 
-XYscan.save_to_txt(voltsFilePath, array=XYscan.counts[1], flatten=True)
+#.XYscan.save_to_txt(voltsFilePath, array=XYscan.counts[1], flatten=True)
 

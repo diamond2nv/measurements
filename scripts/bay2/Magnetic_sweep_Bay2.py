@@ -1,5 +1,12 @@
 # -*- coding: utf-8 -*-
 """
+Created on Tue Feb 12 15:11:00 2019
+
+@author: QPL
+"""
+
+# -*- coding: utf-8 -*-
+"""
 Created on Tue Jun 21 09:23:52 2016
 
 @author: raphael proux, cristian bonato
@@ -12,6 +19,7 @@ import os.path
 from measurements.libs import mapper 
 import sys
 from measurements.libs import mapper_scanners as mscan, mapper_detectors as mdet
+from measurements.instruments import AttoMagnet as magscan
 if sys.version_info.major == 3:
     from importlib import reload
 
@@ -23,10 +31,10 @@ reload(mdet)
 #     Parameters      #
 
 delayBetweenPoints = 1.5
-delayBetweenRows = 1.5
+delayBetweenRows = 0.
 
-xLims = (-5, 5)  # (0, 5)
-xStep = 0.5
+xLims = (0, 3)  # (0, 5)
+xStep = 0.02
 
 voltsDirectory = r'C:\Users\QPL\Desktop\temp_measurements'
 
@@ -36,25 +44,32 @@ voltsDirectory = r'C:\Users\QPL\Desktop\temp_measurements'
 #psuCtrl = mscan.Keithley2220(VISA_address=r'GPIB0::10::INSTR', channels=[1])
 
 
-psuCtrl = mscan.Keithley2220_neg_pos(VISA_address=r'GPIB0::10::INSTR', ch_neg=1, ch_pos=2)
-##psuCtrl = mscan.Keithley2220_negpos(VISA_address=r'GPIB0::10::INSTR', ch_neg=1, ch_pos=2)
-psuCtrl.set_smooth_delay(0.5)
+##psuCtrl = mscan.Keithley2220_neg_pos(VISA_address=r'GPIB0::10::INSTR', ch_neg=1, ch_pos=2)
+#psuCtrl = mscan.Keithley2220_negpos(VISA_address=r'GPIB0::10::INSTR', ch_neg=1, ch_pos=2)
+#psuCtrl.set_smooth_delay(0.5)
+
+#connecting magnetic field
+
 
 spectroCtrl = mdet.ActonNICtrl(sender_port="/Weetabix/port2/line0",
                                receiver_port="/Weetabix/port2/line4")
-multimeterCtrl = mdet.MultimeterCtrl(VISA_address=r'GPIB0::13::INSTR')
+#multimeterCtrl = mdet.MultimeterCtrl(VISA_address=r'GPIB0::13::INSTR')
+
+magnetCtrl = mscan.MagnetAttocube(address=r'ASRL22::INSTR')
 
 d = datetime.datetime.now()
-voltsFilePath = os.path.join(voltsDirectory, 'powerInVolts_{:%Y-%m-%d_%H-%M-%S}.txt'.format(d))
+voltsFilePath = os.path.join(voltsDirectory, 'LED4_botGND_topGreenWhite_amp6_{:%Y-%m-%d_%H-%M-%S}.txt'.format(d))
 
 # Scanning program
-volts_scan = mapper.XYScan(scanner_axes=[psuCtrl[0]], detectors=[multimeterCtrl])
-#volts_scan = mapper.XYScan(scanner_axes=[psuCtrl[0]], detectors=[spectroCtrl])
+#volts_scan = mapper.XYScan(scanner_axes=[psuCtrl[0]], detectors=[spectroCtrl, multimeterCtrl])
+
+volts_scan = mapper.XYScan(scanner_axes=magnetCtrl, detectors=[spectroCtrl])
+
 volts_scan.set_range(xLims=xLims, xStep=xStep)
 volts_scan.set_delays(between_points=delayBetweenPoints, between_rows=delayBetweenRows)
-volts_scan.set_back_to_zero()
+#volts_scan.set_back_to_zero()
 
-volts_scan.run_scan()
+volts_scan.run_scan(silence_errors = False)
 
 volts_scan.save_to_txt(voltsFilePath, array=volts_scan.counts)
 

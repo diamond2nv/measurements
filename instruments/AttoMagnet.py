@@ -12,11 +12,17 @@ class mag4g:
     def __init__(self, address):
         rm = pyvisa.ResourceManager()
         self.dev = rm.open_resource(address, write_termination='\r', read_termination='\r\n')
-        self.dev.write('REMOTE')
-        self.dev.read()
+
+        for a in range(5):
+            self.dev.write('REMOTE')
+            a = self.dev.read()
+            if (a[:6]=='REMOTE'):
+                print ("Device initialization succeeded.")
+                break
+            print ("Device not initialized to REMOTE. Trying again.")
         self.dev.query('UNITS?')
         if self.dev.read() != 'T':
-            self.dev.write('UNITS G')
+            self.dev.write('UNITS T')
             self.dev.read()
         
     def close(self):
@@ -48,12 +54,16 @@ class mag4g:
         """ in Tesla"""
         low *= 10
         self.dev.write('LLIM {:.3f}'.format(low))
+        a = self.dev.read()
+        print ("Low limit set to: ", a)
 
     def set_highLim(self, high):
         """ in Tesla"""
         high *= 10
         self.dev.write('ULIM {:.3f}'.format(high))
-
+        a = self.dev.read()
+        print ("High limit set to: ", a)
+        
     def get_heater(self):
         self.dev.query('PSHTR?')
         return self.dev.read()
@@ -81,63 +91,68 @@ class mag4g:
     
     def sweep_to_zero(self):
         self.dev.write('SWEEP ZERO FAST')
+        self.dev.read()
     
     def get_field(self):
         self.dev.query('IOUT?')
         x = self.dev.read()
         unit = x[-2:]
+        self.field = round(float(x[:-2]),4)
         if unit == "kG":
             self.field /= 10
             unit = "T"
-        self.field = round(float(x[:-2]),4)
         return self.field, unit
     
-    def move_to(self, B):
+    def _check_if_ready (self, B, tolerance):
+        actualB, unit = self.get_field()
+        if actualB == B:
+#                    time.sleep(10)
+            self.sweep_pause()
+            print ("Sweeep paused: B = {:.3f} T".format(actualB))
+            ok = True
+        else:
+            print ("Sweeping to target: B = {:.3f} T".format(actualB))
+            ok = False
+            time.sleep(10)
+        actualB, unit = self.get_field()
+        within_tol = (abs(actualB-B)<tolerance)            
+        print ("Tolerance check: ", B, actualB, within_tol)
+        return ok, within_tol
+            
+    def move_to(self, B, tolerance = 0.001, nr_tolerance_reps = 5):
         self.set_heater(True)
         is_heater = self.get_heater()
         if not is_heater:
             raise "Heater is off"
         low_lim, _ = self.get_lowLim()
         high_lim, _ = self.get_highLim()
+        nr_repeats = 0
         if B == 0:
             self.sweep_to_zero()
             ok = False
             while not ok:
-                actualB, unit = self.get_field()
-                if actualB == B:
-#                    time.sleep(10)
-                    print "B = {:.3f} T\nSweep to zero is finished".format(actualB)
-                    ok = True
-                else:
-                    print "Sweeping up: B = {:.3f} T".format(actualB)
-                    time.sleep(10)
+                ok, within_tol = self._check_if_ready (B=0, tolerance = 0)                    
         elif abs(B-high_lim) <= abs(B-low_lim):
             self.set_highLim(B)
             self.sweep_up()
             ok = False
             while not ok:
-                actualB, unit = self.get_field()
-                if actualB == B:
-#                    time.sleep(10)
-                    self.sweep_pause()
-                    print "Sweeep paused: B = {:.3f} T".format(actualB)
+                ok, within_tol = self._check_if_ready (B=B, tolerance=tolerance)
+                if within_tol:
+                    nr_repeats += 1
+                if nr_repeats >= nr_tolerance_reps:
                     ok = True
-                else:
-                    print "Sweeping up: B = {:.3f} T".format(actualB)
-                    time.sleep(10)
         else: # abs(B-high_lim) > abs(B-low_lim)
             self.set_lowLim(B)
             self.sweep_down()
             ok = False
             while not ok:
-                actualB, unit = self.get_field()
-                if actualB == B:
-                    self.sweep_pause()
-                    print "Sweeep paused: B = {:.3f} T".format(actualB)
+                ok, within_tol = self._check_if_ready (B=B, tolerance=tolerance)
+                if within_tol:
+                    nr_repeats += 1
+                if nr_repeats >= nr_tolerance_reps:
                     ok = True
-                else:
-                    print "Sweeping down: B = {:.3f} T".format(actualB)
-                    time.sleep(10)
+
         self.set_heater(False)
 
 if __name__=='__main__':
