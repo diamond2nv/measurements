@@ -4,6 +4,7 @@ import time
 import sys
 import visa
 import numpy as np
+import pylab as pl
 
 from measurements.libs.QPLMapper import mapper_general as mgen
 if sys.version_info.major == 3:
@@ -14,6 +15,8 @@ try:
     from measurements.instruments.pylonWeetabixTrigger import trigSender, trigReceiver
     from measurements.instruments.KeithleyMultimeter import KeithleyMultimeter
     from measurements.instruments import u3
+    from TimeTagger import createTimeTagger, Counter
+
     reload (NIBox)
 except:
     print ("Enter simulation mode.")
@@ -293,3 +296,74 @@ class Pylon_LabjackCtrl (DetectorCtrl):
     def _close(self):
         pass
 
+class Pylon_LabjackCtrl (DetectorCtrl):
+
+    def __init__(self, TriggerIn = 6, TTLOut = 7):
+        """Inputs are the labjack FIO pins connected to spectrometer Trigger in and TTL out"""
+        self.string_id = 'Pylon Spectro - Labjack U3 Ctrl'
+        self.TriggerIn = TriggerIn
+        self.TTLOut = TTLOut
+
+    def initialize(self):
+        self.dev = u3.U3()#opens first found U3
+
+    def readout(self):
+        """sends a pulse to trigger the spectrometer,
+        spectrometer should take a reading"""
+        self.dev.configIO(FIOAnalog=0x0F)
+        self.pulseduration = 254 #units are unknown, you have take a reading to know how wide this pulse is
+        
+        """sets the state and direction (to output) of corrresponding FIO pin """
+        self.dev.setDOState(ioNum=self.TriggerIn, state=0) #set state to zero
+        self.dev.getFeedback(u3.WaitLong(30))#give it some time at zero before sending the pulse 
+        self.dev.setDOState(ioNum=self.TriggerIn, state=1) #set state to one
+        self.dev.getFeedback(u3.WaitShort(self.pulseduration)) # wait pulse duration
+        self.dev.setDOState(ioNum=self.TriggerIn, state=0)#set state back to zero
+
+    def is_ready(self):
+        """Looks for a pulse from the spectrometer"""
+        return self.dev.getDIState(ioNum = self.TTLOut) # checkes state and changes direction to input
+
+    def first_point(self):
+        return self.dev.getDIState(ioNum = self.TTLOut)
+
+    def _close(self):
+        pass
+    
+class Swabian_Ctrl (DetectorCtrl):
+
+    def __init__(self):
+        self.dt=100 # in milliseconds
+        self.string_id = 'Swabian Timtagger'
+        self.gotdata=False
+        
+    def initialize(self):
+        """Creates instance of class"""
+        self.tag = createTimeTagger()
+        self.tag.setTriggerLevel(0, 0.15)
+        self.tag.setTriggerLevel(1, 0.15)
+
+    def readout(self):
+        """Takes a single reading of counts"""
+        self.ctr = Counter(self.tag, [0,1], int(1e9), int(self.dt))
+        time.sleep(self.dt/1000.)
+        rates = self.ctr.getData()
+        newCount = (pl.mean(rates[0]) + pl.mean(rates[1]))*1000
+        self.gotdata = True
+        return newCount
+    
+    def is_ready(self):
+        """check to see if ready for a reading"""
+        if self.gotdata:
+            self.gotdata=False
+            return True
+        else:
+            return False
+
+    def first_point(self):
+        return True
+        pass
+    
+    def _close(self):
+        self.ctr.stop()
+        pass

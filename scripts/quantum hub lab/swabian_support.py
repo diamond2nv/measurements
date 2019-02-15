@@ -24,7 +24,7 @@ class SW():
             self.tag.setTriggerLevel(1, 0.15)
             self.ctr = Counter(self.tag, [0,1], int(1e9), int(self.dt))
             while self.running:
-                time.sleep(self.dt/1000.)
+                time.sleep(self.dt/500.)
                 rates = self.ctr.getData()
                 if self.detID == 0:
                     newCount = pl.mean(rates[0])*1000
