@@ -524,7 +524,7 @@ class NewportDelayStage(ScannerCtrl):
 
         self._curr_pos = [pos for channel, pos in zip(self._channels, start_pos)]
 
-    def _initialize ():
+    def _initialize (self):
         self._scannerX.move_absolute(0)
 
     def _move (self, target, axis=0):
@@ -536,8 +536,7 @@ class NewportDelayStage(ScannerCtrl):
             print ("Set target exceeds device limits!")
 
     def _get (self, axis=0):
-    	pos = self._scannerX.get_position()
-       
+        pos = self._scannerX.get_position()
         return pos       
 
     def _close (self):
