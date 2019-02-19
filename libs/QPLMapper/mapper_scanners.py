@@ -775,13 +775,14 @@ class Keithley2220_negpos(ScannerCtrl):
 
 
 class MagnetAttocube(ScannerCtrl): 
-    def __init__(self, address, tolerance=0.001, nr_tolerance_reps=5):
+    def __init__(self, address, tolerance=0.001, nr_tolerance_reps=5, sweep_to_zero_at_end = True):
         super().__init__(channels=[0])
 
         self.string_id = 'Attocube Magnet'
         self._address = address
         self._tol = tolerance
         self._tol_reps = nr_tolerance_reps
+        self._sweep_to_zero = sweep_to_zero_at_end
         self.smooth_step = 0.5
         self.smooth_delay = 0.05
 
@@ -799,11 +800,8 @@ class MagnetAttocube(ScannerCtrl):
         return B
 
     def _close(self):
-        self.magnet.sweep_to_zero()
-        time.sleep(10)
-        self.magnet.close()
+        self.magnet.close(sweep_to_zero = self._sweep_to_zero)
         print ("Magnet device closed.")
-
 
 
 class SolstisLaserScanner(ScannerCtrl):

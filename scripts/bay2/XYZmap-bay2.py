@@ -9,10 +9,10 @@ XYZ map script
 
 import datetime
 import os.path
-from measurements.libs import mapper 
+from measurements.libs.QPLMapper import mapper 
 import sys
 import numpy as np
-from measurements.libs import mapper_scanners as mscan, mapper_detectors as mdet
+from measurements.libs.QPLMapper import mapper_scanners as mscan, mapper_detectors as mdet
 if sys.version_info.major == 3:
     from importlib import reload
 

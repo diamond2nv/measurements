@@ -161,9 +161,6 @@ class XYScan (XYMapper):
             print('\nScanners are at start position. Waiting for acquisition.\n')
             print('step \tx (V)\ty (V)')
 
-            print ("yPos: ", self.yPositions)
-            print ("xPos: ", self.xPositions)
-
             for id_y, y in enumerate(self.yPositions):
                 firstInRow = True
                 
@@ -231,6 +228,7 @@ class XYScan (XYMapper):
                 raise
         finally:
             if close_instruments:
+                print ("Closing all instruments.")
                 self.close_instruments()
 
 

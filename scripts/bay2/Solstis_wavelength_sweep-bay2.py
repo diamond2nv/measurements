@@ -9,8 +9,8 @@ Solstis laser sweep in wavelength while measuring spectra with the Acton spectro
 
 import datetime
 import os.path
-from measurements.libs import mapper 
-from measurements.libs import mapper_scanners as mscan, mapper_detectors as mdet
+from measurements.libs.QPLMapper import mapper 
+from measurements.libs.QPLMapper import mapper_scanners as mscan, mapper_detectors as mdet
 
 from importlib import reload
 reload(mapper)

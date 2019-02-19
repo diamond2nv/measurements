@@ -23,7 +23,8 @@ class DeviceCtrl():
     def close(self):
         try:
             self._close()
-        except:
+        except Exception as e:
+            print (e)
             self.close_error_handling()
 
     def close_error_handling(self):

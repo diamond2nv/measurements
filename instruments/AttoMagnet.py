@@ -2,7 +2,7 @@
 """
 Created on Mon Nov 26 18:56:04 2018
 
-@author: Ted Santana
+@author: Ted Santana, C Bonato, M Brotons
 """
 
 import pyvisa
@@ -31,7 +31,10 @@ class mag4g:
     def set_verbose (self, a):
         self._verbose = a    
 
-    def close(self):
+    def close(self, sweep_to_zero = True):
+        print ("Closing magnet instrument...")
+        if sweep_to_zero:
+            self.move_to(0)
         self.dev.write('LOCAL')
         self.dev.read()
         self.dev.close()

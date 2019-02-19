@@ -32,8 +32,8 @@ reload(mdet)
 delayBetweenPoints = 1.5
 delayBetweenRows = 0.
 
-xLims = (0, 3)  # (0, 5)
-xStep = 0.05
+xLims = (0, 9)  # (0, 5)
+xStep = 0.1
 
 voltsDirectory = r'C:\Users\QPL\Desktop\temp_measurements'
 
@@ -42,7 +42,8 @@ spectroCtrl = mdet.ActonNICtrl(sender_port="/Weetabix/port2/line0",
                                receiver_port="/Weetabix/port2/line4")
 #multimeterCtrl = mdet.MultimeterCtrl(VISA_address=r'GPIB0::13::INSTR')
 
-magnetCtrl = mscan.MagnetAttocube(address=r'ASRL22::INSTR', tolerance = 0.001, nr_tolerance_reps = 5)
+magnetCtrl = mscan.MagnetAttocube(address=r'ASRL22::INSTR', tolerance = 0.001, nr_tolerance_reps = 5,
+                                   sweep_to_zero_at_end = True)
 
 d = datetime.datetime.now()
 voltsFilePath = os.path.join(voltsDirectory, 'LED4_botGND_topGreenWhite_amp6_{:%Y-%m-%d_%H-%M-%S}.txt'.format(d))
