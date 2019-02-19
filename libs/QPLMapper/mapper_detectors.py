@@ -10,10 +10,15 @@ from measurements.libs.QPLMapper import mapper_general as mgen
 if sys.version_info.major == 3:
     from importlib import reload
 try:
+    from measurements.instruments.HF import WavelengthMeter
+except:
+    print ('Wavemeter not found')
+try:
     from measurements.instruments import NIBox
     from measurements.instruments.LockIn7265 import LockIn7265
     from measurements.instruments.pylonWeetabixTrigger import trigSender, trigReceiver
     from measurements.instruments.KeithleyMultimeter import KeithleyMultimeter
+    from measurements.instruments.AgilentMultimeter import AgilentMultimeter
     from measurements.instruments import u3
     from TimeTagger import createTimeTagger, Counter
 
@@ -242,9 +247,13 @@ class dummyAPD (DetectorCtrl):
 
 class MultimeterCtrl (DetectorCtrl):
 
-    def __init__(self, VISA_address, mode='voltage', work_folder=None):
+    def __init__(self, VISA_address, mode='voltage', agilent=False, work_folder=None):
         DetectorCtrl.__init__ (self, work_folder = work_folder)
-        self.string_id = 'Keithley multimeter'
+        self.agilent = agilent
+        if not agilent:
+            self.string_id = 'Keithley multimeter'
+        else:
+            self.string_id = 'Agilent multimeter'
         self._VISA_address = VISA_address
         self.delay_after_readout = 0.
         self._wfolder = work_folder
@@ -252,7 +261,10 @@ class MultimeterCtrl (DetectorCtrl):
 
     def initialize(self):
         try:
-            self._multimeter = KeithleyMultimeter(self._VISA_address, meas_mode=self.mode)
+            if not self.agilent:
+                self._multimeter = KeithleyMultimeter(self._VISA_address, meas_mode=self.mode)
+            else:
+                self._multimeter = AgilentMultimeter(self._VISA_address, meas_mode=self.mode)
         except visa.VisaIOError as err:
             self.visa_error_handling(err)
 
@@ -366,4 +378,40 @@ class Swabian_Ctrl (DetectorCtrl):
     
     def _close(self):
         self.ctr.stop()
+        pass
+
+class HighFinese(DetectorCtrl):
+    def __init__(self,channel):
+        self.string_id = 'High Finese Wavemeter'
+        self.gotData = False
+        self.channel = channel
+
+    def initialize(self):
+        self.wlm = WavelengthMeter(dllpath="C:\Windows\System32\wlmData.dll", debug=False)
+    def readout(self,channel=None,wavelength=True,power=False):
+        """Return wavelength in nm/ freq in THz/ power in a.u."""
+        if channel is None:
+            channel = self.channel
+        outputs = self.wlm.GetAll(channel)
+        self.gotdata = True
+        if wavelength and not power:
+            return outputs['wavelength']
+        elif not wavelength and not power:
+            return outputs['frequency']
+        else:
+            return outputs['power']
+        
+    def is_ready(self):
+        if self.gotdata:
+            self.gotdata=False
+            return True
+        else:
+            return False
+    
+
+    def first_point(self):
+        return True
+        pass
+
+    def _close(self):
         pass

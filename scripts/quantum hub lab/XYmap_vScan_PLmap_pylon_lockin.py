@@ -25,31 +25,41 @@ reload(mdet)
 delayBetweenPoints = 0.1
 delayBetweenRows = 0.1
 
-xLims = (0, 1)  # (10, 100)
-xStep = 0.2
+xLims = (0.5, 0)  # (10, 100)
+xStep = 0.1
 
 
 voltsDirectory = r'C:\Users\QPL\Desktop\temporary_meas'
 
 #######################
 # instruments
-#attoCtrl = mscan.AttocubeVISA(VISA_address=r'ASRL6::INSTR', chX=1, chY=2)
+attoScannerCtrl = mscan.AttocubeVISA(VISA_address=r'ASRL6::INSTR', chX=1, chY=2)
+#attoPiezoCtrl = mscan.AttocubeVISAstepper(VISA_address=r'ASRL6::INSTR',channels=[4],nb_of_clicks_per_deg=928./5)
+attoMagnetCtrl = mscan.MagnetAttocube( tolerance=0.001, nr_tolerance_reps=5)
 #spectroCtrl = mdet.ActonLockinCtrl(lockinVisaAddress=r"GPIB0::14::INSTR")
 lockinCtrl = mscan.LockInDAC (visa_address = r'GPIB0::12::INSTR', channels = [1])
 spectroCtrl2 = mdet.PylonNICtrl(sender_port="/Weetabix/port1/line4", receiver_port="/Weetabix/port1/line7")
 
-#voltmeterCtrl = mdet.MultimeterCtrl(VISA_address=r'GPIB0::22::INSTR')
-
+voltmeterCtrl = mdet.MultimeterCtrl(VISA_address=r'GPIB0::23::INSTR', mode='voltage', agilent=True, work_folder=None)
+highfinese = mdet.HighFinese(channel=2)
 #d = datetime.datetime.now()
 #voltsFilePath = os.path.join(voltsDirectory, 'powerInVolts_{:%Y-%m-%d_%H-%M-%S}.txt'.format(d))
 
 # Scanning program
-XYscan = mapper.XYScan(scanner_axes=lockinCtrl, detectors=[spectroCtrl2])
+XYscan = mapper.XYScan(scanner_axes=lockinCtrl, detectors=[voltmeterCtrl,highfinese])
 XYscan.set_range(xLims=xLims, xStep=xStep)
 XYscan.set_delays(between_points=delayBetweenPoints, between_rows=delayBetweenRows)
+XYscan.init_detectors(XYscan._detectors)
 #XYscan.set_back_to_zero()
 XYscan.run_scan()
 
+## Print output
+#
+print ('Output :',XYscan.detector_readout_0.flatten())
+try:
+    print ('Output :',XYscan.detector_readout_1.flatten())
+except:
+    print ('No device # 2 found')
 #XYscan.save_to_txt(voltsFilePath, array=XYscan.counts[1], flatten=True)
-
-# it kind of works but there's still something strange going on
+#
+## it kind of works but there's still something strange going on
