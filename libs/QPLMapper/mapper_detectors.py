@@ -14,6 +14,11 @@ try:
 except:
     print ('Wavemeter not found')
 try:
+    from measurements.instruments import Lakeshore335 as LS335
+    reload (LS335)
+except:
+    print ('LakeShore not found')
+try:
     from measurements.instruments import NIBox
     from measurements.instruments.LockIn7265 import LockIn7265
     from measurements.instruments.pylonWeetabixTrigger import trigSender, trigReceiver
@@ -415,3 +420,41 @@ class HighFinese(DetectorCtrl):
 
     def _close(self):
         pass
+    
+class LakeShore(DetectorCtrl):
+
+    def __init__(self,address='COM5',channel='A'):
+        self.string_id = 'Lake Shore 335'
+        self.gotData = False
+        self.channel = channel
+        self.address = address
+
+    def initialize(self):
+        self.tCtrl = LS335.Lakeshore335(self.address)
+        self.tCtrl.id()
+
+    def readout(self,channel=None,wavelength=True,power=False):
+        """Return wavelength in nm/ freq in THz/ power in a.u."""
+        if channel is None:
+            channel = self.channel
+        temp = []
+        for j in channel:
+            temp.append(self.tCtrl.get_kelvin (channel))
+        self.gotdata = True
+        return np.array(temp)
+
+        
+    def is_ready(self):
+        if self.gotdata:
+            self.gotdata=False
+            return True
+        else:
+            return False
+    
+
+    def first_point(self):
+        return True
+        pass
+
+    def _close(self):
+        self.tCtrl.close()

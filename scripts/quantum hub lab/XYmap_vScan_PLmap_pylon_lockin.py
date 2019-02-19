@@ -35,18 +35,23 @@ voltsDirectory = r'C:\Users\QPL\Desktop\temporary_meas'
 # instruments
 attoScannerCtrl = mscan.AttocubeVISA(VISA_address=r'ASRL6::INSTR', chX=1, chY=2)
 #attoPiezoCtrl = mscan.AttocubeVISAstepper(VISA_address=r'ASRL6::INSTR',channels=[4],nb_of_clicks_per_deg=928./5)
-attoMagnetCtrl = mscan.MagnetAttocube( tolerance=0.001, nr_tolerance_reps=5)
+#attoMagnetCtrl = mscan.MagnetAttocube( tolerance=0.001, nr_tolerance_reps=5)
 #spectroCtrl = mdet.ActonLockinCtrl(lockinVisaAddress=r"GPIB0::14::INSTR")
 lockinCtrl = mscan.LockInDAC (visa_address = r'GPIB0::12::INSTR', channels = [1])
 spectroCtrl2 = mdet.PylonNICtrl(sender_port="/Weetabix/port1/line4", receiver_port="/Weetabix/port1/line7")
 
 voltmeterCtrl = mdet.MultimeterCtrl(VISA_address=r'GPIB0::23::INSTR', mode='voltage', agilent=True, work_folder=None)
+
 highfinese = mdet.HighFinese(channel=2)
+
+tempCtrl =  mdet.LakeShore(address='COM5',channel='A')
+
+
 #d = datetime.datetime.now()
 #voltsFilePath = os.path.join(voltsDirectory, 'powerInVolts_{:%Y-%m-%d_%H-%M-%S}.txt'.format(d))
 
 # Scanning program
-XYscan = mapper.XYScan(scanner_axes=lockinCtrl, detectors=[voltmeterCtrl,highfinese])
+XYscan = mapper.XYScan(scanner_axes=lockinCtrl, detectors=[voltmeterCtrl,highfinese,tempCtrl])
 XYscan.set_range(xLims=xLims, xStep=xStep)
 XYscan.set_delays(between_points=delayBetweenPoints, between_rows=delayBetweenRows)
 XYscan.init_detectors(XYscan._detectors)
@@ -60,6 +65,10 @@ try:
     print ('Output :',XYscan.detector_readout_1.flatten())
 except:
     print ('No device # 2 found')
+try:
+    print ('Output :',XYscan.detector_readout_2.flatten())
+except:
+    print ('No device # 3 found')
 #XYscan.save_to_txt(voltsFilePath, array=XYscan.counts[1], flatten=True)
 #
 ## it kind of works but there's still something strange going on
