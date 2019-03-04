@@ -433,8 +433,8 @@ class LakeShore(DetectorCtrl):
         self.tCtrl = LS335.Lakeshore335(self.address)
         self.tCtrl.id()
 
-    def readout(self,channel=None,wavelength=True,power=False):
-        """Return wavelength in nm/ freq in THz/ power in a.u."""
+    def readout(self,channel=None):
+        """Return Temperature in kelvin"""
         if channel is None:
             channel = self.channel
         temp = []

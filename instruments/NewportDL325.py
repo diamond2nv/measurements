@@ -64,6 +64,10 @@ class DelayStage:
         self.scanner.close()
 
 if __name__=='__main__':
-    scanner = DelayStage(u'ASRL3::INSTR')
+    scanner = DelayStage(u'ASRL23::INSTR')
+    scanner.move_absolute(100)
+    print (scanner.get_position())
+    time.sleep(10)
     scanner.move_absolute(0)
+    print (scanner.get_position())
     scanner.close()
