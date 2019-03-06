@@ -452,7 +452,7 @@ class LockInDAC (ScannerCtrl):
 
     def _initialize(self):
         self._lockin = LockIn7265 (self._visa_addr)
-        print('Device initialized')
+        print('LockIn - Device initialized')
 
     def _move(self, target, axis=0):
         self._curr_pos[axis] = target
@@ -514,18 +514,18 @@ class ConexCC_2D (ScannerCtrl):
 class NewportDelayStage(ScannerCtrl):
 
     def __init__ (self, chX = 'ASRL3::INSTR', chY='', min_limit = 0., start_pos=[0,0],
-                    max_limit = 315, ids = None):
+                    max_limit = 315, ids = None,accel=50,vel=300):
         super().__init__(channels=[chX], ids=ids)
         self.string_id = 'Newport DL325'
         self.conversion_factor = 1
 
         self.smooth_step = 1
-        self.smooth_delay = 0.05
+        self.smooth_delay = 0.1
         
         self._min_limit = min_limit
         self._max_limit = max_limit
 
-        self._scannerX = DelayStage(chX)
+        self._scannerX = DelayStage(address=chX,accel=accel,vel=vel)
         self._scannerY = None        
 
         self._curr_pos = [pos for channel, pos in zip(self._channels, start_pos)]
