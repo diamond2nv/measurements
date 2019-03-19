@@ -33,6 +33,12 @@ class Stream ():
         self.logger.setLevel (logging_level)
 
         self.ext_plot_settings = False
+        
+    def set_plot (self, channels, labels, colors, xaxis = None):
+        pass
+    
+    def plot_channels (self):
+        pass
 
     def concatenate (self, stream):
         """
@@ -85,6 +91,69 @@ class Stream ():
 
             self.dig_outputs['D'+str(dch)] = curr_ch
 
+
+
+    def _update_timers (self):
+
+        '''
+        Goes through all the (digital and analog) channels and calculates the total durations
+        '''
+
+        for i in np.arange(8):
+            plist = self.dig_outputs ['D'+str(i)]
+            self.dig_timers[i] = sum([pair[1] for pair in plist])
+        for i in np.arange(2):
+            plist = self.anlg_outputs ['A'+str(i)]
+            self.anlg_timers[i] = sum([pair[1] for pair in plist])
+
+    def fill_wait_time (self, channels = 'used'):
+        '''
+        fills all channels with zeros up to the length of the longest channel
+        '''
+
+        self._update_timers()
+        max_t = self.get_max_time()
+
+        if (channels == 'all'):
+            dch = np.arange(8)
+            ach = np.arange(2)
+        else:
+            dch = np.nonzero(self.dig_timers)[0]
+            ach = np.nonzero(self.anlg_timers)[0]
+        for i in dch:
+            self.add_wait_pulse (duration=max_t-self.dig_timers[i], channel = 'D'+str(i))
+        for i in ach:
+            self.add_analog (duration=max_t-self.anlg_timers[i], channel = 'A'+str(i), amplitude = 0)
+
+
+    def get_max_time (self):
+        return max([max(self.dig_timers), max(self.anlg_timers)])
+
+    def clean_stream (self):
+
+        """
+        In each channel, merges consecutive elements with the same amplitude.
+        For example [0, 200], [0, 100] is replace by [0, 300]       
+        """
+
+        for dch in np.arange(8):
+            curr_ch = self.dig_outputs['D'+str(dch)]
+            N = len(curr_ch)-1
+            i = 0
+            new_ch = []
+            while (i<N):
+                if (curr_ch[i][0] == curr_ch[i+1][0]):
+                    new_dur = curr_ch[i][1] + curr_ch[i+1][1]
+                    new_ampl = curr_ch[i][0]
+                    del curr_ch[i]
+                    del curr_ch[i]
+                    curr_ch.insert (i, [new_ampl, new_dur])
+                    N = len(curr_ch)-1
+                else:
+                    i += 1
+
+            self.dig_outputs['D'+str(dch)] = curr_ch
+
     def add_dig_pulse (self, duration, channel):
         '''
         adds a pulse on one of the 8 digital channels (0..7)
@@ -104,7 +173,7 @@ class Stream ():
 
             if go_on:
                 if ((ch>=0)&(ch<=7)):
-                    self.dig_outputs['D'+str(ch)].append ([1, duration])
+                    self.dig_outputs['D'+str(ch)].append ([duration, 1])
                 else:
                     self.logger.warning ('Specified channel does not exist!')
 
@@ -130,7 +199,7 @@ class Stream ():
 
             if go_on:
                 if ((ch>=0)&(ch<=7)):
-                    self.dig_outputs['D'+str(ch)].append ([0, duration])
+                    self.dig_outputs['D'+str(ch)].append ([duration, 0])
                 else:
                     self.logger.warning ('Specified channel does not exist!')
 
@@ -156,7 +225,7 @@ class Stream ():
                 go_on = False
 
             if ((ch>=0)&(ch<=1)):
-                self.anlg_outputs['A'+str(ch)].append ([amplitude, duration])
+                self.anlg_outputs['A'+str(ch)].append ([duration, amplitude])
             else:
                 self.logger.warning ('Specified channel does not exist!')
 
@@ -228,43 +297,6 @@ class Stream ():
         else:
             self.logger.warning ('Specified channel does not exist!')
 
-
-    def _update_timers (self):
-
-        '''
-        Goes through all the (digital and analog) channels and calculates the total durations
-        '''
-
-        for i in np.arange(8):
-            plist = self.dig_outputs ['D'+str(i)]
-            self.dig_timers[i] = sum([pair[1] for pair in plist])
-        for i in np.arange(2):
-            plist = self.anlg_outputs ['A'+str(i)]
-            self.anlg_timers[i] = sum([pair[1] for pair in plist])
-
-    def fill_wait_time (self, channels = 'used'):
-        '''
-        fills all channels with zeros up to the length of the longest channel
-        '''
-
-        self._update_timers()
-        max_t = self.get_max_time()
-
-        if (channels == 'all'):
-            dch = np.arange(8)
-            ach = np.arange(2)
-        else:
-            dch = np.nonzero(self.dig_timers)[0]
-            ach = np.nonzero(self.anlg_timers)[0]
-        for i in dch:
-            self.add_wait_pulse (duration=max_t-self.dig_timers[i], channel = 'D'+str(i))
-        for i in ach:
-            self.add_analog (duration=max_t-self.anlg_timers[i], channel = 'A'+str(i), amplitude = 0)
-
-
-    def get_max_time (self):
-        return max([max(self.dig_timers), max(self.anlg_timers)])
-
     def get_active_channels (self):
         '''
         Returns channel with active pulses
@@ -285,95 +317,6 @@ class Stream ():
                 anlg.append(i)
         return dig, anlg
 
-    def __select_active_channels (self):
-        '''
-        checks which channels have non-zero pulses 
-        and fills with wait time to get equal channel length
-        '''
-
-        self._update_timers()
-        max_t_dig = max(self.dig_timers)
-        max_t_anlg = max(self.anlg_timers)
-        max_t = max(max_t_anlg, max_t_dig)
-        self.active_ch_dig, self.acgtive_ch_anlg = self.get_active_channels()
-
-        self.seq_active_ch = {}
-        for i in self.active_ch_dig:
-            if self.dig_timers[i]<max_t:
-                self.add_wait_pulse (duration=max_t-self.dig_timers[i], channel = i)
-            self.seq_active_ch ['D'+str(i)] = self.dig_outputs ['D'+str(i)]
-
-        self.seq_active_anlg_ch = {}
-        for i in self.active_ch_anlg:
-            if self.anlg_timers[i]<max_t:
-                self.add_analog (amplitude = 0, duration=max_t-self.dig_timers[i], channel = i)
-            self.seq_active_ch ['A'+str(i)] = self.anlg_outputs ['A'+str(i)]
-        
-        self.active_channels = self.seq_active_ch
-        self.nr_active_chans = len (self.active_ch_dig) + len (self.active_ch_anlg)
-        self.total_duration = max_t
-        self.logger.debug ('SELECT ACTIVE CHANNELS')
-        self.logger.debug ('Active chanels: '+str(self.active_ch))
-        self.logger.debug ('Total durations: '+str(self.total_duration))
-
-    def __pop_out (self):
-
-        next_durations = np.zeros(self.nr_active_chans)
-        next_values = np.zeros(self.nr_active_chans)
-        ch_keys = []
-
-        i = 0
-        for k in self.active_channels.keys():
-            next_durations[i] = self.active_channels[k][0][1]
-            next_values[i] = self.active_channels[k][0][0]
-            ch_keys.append(k)
-            i += 1
-
-        min_dur = min(next_durations)
-        min_ch_key = ch_keys[np.argmin(next_durations)]
-
-        self.logger.debug('POP-OUT --- Minimum duration: '+str(min_dur)+' at channel: '+min_ch_key)
-
-        v = 0
-        i = 0
-        for k in self.active_channels.keys():
-            d = next_durations[i]
-            ch = int(k[1])
-            v = v+(2**ch)*next_values[i]
-            if (k[0]=='D'):
-                if ((d-min_dur)>0):
-                    self.dig_outputs ['D'+str(ch)][0][1] = self.dig_outputs ['D'+str(ch)][0][1] - min_dur
-                else:
-                    self.dig_outputs ['D'+str(ch)] = self.dig_outputs ['D'+str(ch)][1:]
-            elif (k[0]=='A'):
-                if ((d-min_dur)>0):
-                    self.anlg_outputs ['A'+str(ch)][0][1] = self.anlg_outputs ['A'+str(ch)][0][1] - min_dur
-                else:
-                    self.anlg_outputs ['A'+str(ch)] = self.anlg_outputs ['A'+str(ch)][1:]
-
-            i += 1
-
-
-        self.total_duration = self.total_duration - min_dur
-        self.logger.debug ('Pop-out value: '+str(v))
-        return min_dur, int(v)
-
-    def generate_stream (self):
-        """
-        Converts the pulses in the library to a stream for the pulse streamer
-        """
-        
-        self._update_timers()       
-        self.__select_active_channels()
-        self.pulse_stream = []
-        old_outs = self.dig_outputs.copy()
-        while (self.total_duration>0):
-            t, value = self.__pop_out()
-            self.pulse_stream.append([t, value, 0, 0])
-
-        self.dig_outputs = old_outs.copy()
-
-        return self.pulse_stream
 
     def print_channels (self, channel = 'all'):
         """
@@ -404,187 +347,6 @@ class Stream ():
         else:
             print('Channel should be a list or dig/anlg/all')
 
-    def set_plot (self, channels, labels, colors, xaxis = None):
-        self.ext_plot_settings = True
-        self.ch_list = channels
-        self.labels_list = labels
-        self.color_list = colors
-        self.xaxis = xaxis
-
-    def get_plot_dict (self):
-        self._update_timers()
-        act_dig_ch, act_anlg_ch = self.get_active_channels()
-
-        if not(self.ext_plot_settings):
-            self.ch_list = []
-            colormap = plt.get_cmap('YlGnBu')
-            color_list_D = [colormap(k) for k in np.linspace(0.4, 1, len(act_dig_ch))]
-            for i in act_dig_ch:
-                self.ch_list.append ('D'+str(i))
-            colormap = plt.get_cmap('YlOrRd')
-            color_list_A = [colormap(k) for k in np.linspace(0.6, 0.8, len(act_anlg_ch))]
-            for i in act_anlg_ch:
-                self.ch_list.append ('A'+str(i))
-            self.labels_list = self.ch_list
-            self.color_list = color_list_D + color_list_A           
-
-        d = int(self.get_max_time())
-        
-        plot_dict = {}
-
-        for idx, ch in enumerate(self.ch_list):
-            plot_dict[ch] = {}
-            y = np.zeros(d)
-            plot_dict [ch]['time'] = 1e-3*np.arange (d)
-
-            i = 0
-            if (ch[0] == 'D'):
-                for j in self.dig_outputs[ch]:
-                    y[i:i+int(j[1])] = 0.5*int(j[0])*np.ones(int(j[1]))
-                    i = i + int(j[1])
-            elif (ch[0] == 'A'):
-                for j in self.anlg_outputs[ch]:
-                    y[i:i+int(j[1])] = j[0]*np.ones(int(j[1]))
-                    i = i + int(j[1])
-            plot_dict [ch]['y'] = y
-            plot_dict [ch]['color'] = self.color_list [idx]
-
-        return plot_dict
-
-    def plot_channels (self):
-
-        """
-        Plots waveforms loaded on digital/analog channels
-        """
-
-        # SOMETHING WEIRD HAPPENS WHEN PLOTTING ANALOG CHANNELS !!!!
-
-        pdict = self.get_plot_dict()
-        curr_offset = 0
-        tick_pos = []
-        offset = 2
-
-        fig = plt.figure(figsize = (20, 8))
-        ax = plt.subplot (1,1,1)
-
-        for ch in self.ch_list:
-
-            t = pdict[ch]['time']
-            y = pdict[ch]['y']
-            c = pdict[ch]['color']
-
-            if (ch[0] == 'D'):
-                plt.plot (t, y+curr_offset*np.ones(len(y)), linewidth = 5, color = c)
-                plt.fill_between (t, curr_offset, y+curr_offset*np.ones(len(y)), color = c, alpha=0.2)
-                tick_pos.append (curr_offset)
-                plt.plot (t, curr_offset*np.ones(len(y)), '--', linewidth = 2, color = 'gray')
-                plt.plot (t, (0.5+curr_offset)*np.ones(len(y)), ':', linewidth = 1, color = 'gray')
-                curr_offset += 0.5*offset
-            elif (ch[0] == 'A'):
-                curr_offset += 0.25*offset
-                plt.plot (t, 0.75*y+curr_offset*np.ones(len(y)), linewidth = 5, color = c)
-                plt.plot (t, curr_offset*np.ones(len(y)), '--', linewidth = 2, color = 'gray')
-                tick_pos.append (curr_offset)
-                plt.plot (t, (-0.75+curr_offset)*np.ones(len(y)), ':', linewidth = 1, color = 'r')
-                plt.plot (t, (0.75+curr_offset)*np.ones(len(y)), ':', linewidth = 1, color = 'r')
-
-                curr_offset += 0.5*offset
-
-        ax.yaxis.set_ticks([0, len(self.labels_list)]) 
-        ax.yaxis.set(ticks=tick_pos, ticklabels=self.labels_list)
-
-        for label in (ax.get_xticklabels() + ax.get_yticklabels()):
-            #label.set_fontname('Arial')
-            label.set_fontsize(20)
-        try:
-            if self.xaxis:
-                plt.xlim ([1e-3*self.xaxis[0], 1e-3*self.xaxis[1]])
-                plt.xlabel ('time (us)', fontsize = 20)
-        except:
-            pass
-        plt.ion()
-        plt.show()
-
-
-    def plot_channels_old (self):
-
-        """
-        Plots waveforms loaded on digital/analog channels
-        """
-
-        self._update_timers()
-        act_dig_ch, act_anlg_ch = self.get_active_channels()
-
-        if not(self.ext_plot_settings):
-            self.ch_list = []
-            colormap = plt.get_cmap('YlGnBu')
-            color_list_D = [colormap(k) for k in np.linspace(0.4, 1, len(act_dig_ch))]
-            for i in act_dig_ch:
-                self.ch_list.append ('D'+str(i))
-            colormap = plt.get_cmap('YlOrRd')
-            color_list_A = [colormap(k) for k in np.linspace(0.6, 0.8, len(act_anlg_ch))]
-            for i in act_anlg_ch:
-                self.ch_list.append ('A'+str(i))
-            self.labels_list = self.ch_list
-            self.color_list = color_list_D + color_list_A
-
-        d = int(self.get_max_time())
-        offset = 2
-
-        fig = plt.figure(figsize = (20, 8))
-        ax = plt.subplot (1,1,1)
-        c = 0
-        
-        curr_offset = 0
-        tick_pos = []
-
-        for ch in self.ch_list:
-            y = np.zeros(d)
-            i = 0
-            if (ch[0] == 'D'):
-                for j in self.dig_outputs[ch]:
-                    y[i:i+int(j[1])] = 0.5*int(j[0])*np.ones(int(j[1]))
-                    i = i + int(j[1])
-
-                plt.plot (1e-3*np.arange (d), y+curr_offset*np.ones(len(y)), linewidth = 5, color = self.color_list[c])
-                plt.fill_between (1e-3*np.arange (d), curr_offset, y+curr_offset*np.ones(len(y)), color = self.color_list[c], alpha=0.2)
-                tick_pos.append (curr_offset)
-                plt.plot (1e-3*np.arange (d), curr_offset*np.ones(len(y)), '--', linewidth = 2, color = 'gray')
-                plt.plot (1e-3*np.arange (d), (0.5+curr_offset)*np.ones(len(y)), ':', linewidth = 1, color = 'gray')
-                curr_offset += 0.5*offset
-
-            elif (ch[0] == 'A'):
-                for j in self.anlg_outputs[ch]:
-                    y[i:i+int(j[1])] = j[0]*np.ones(int(j[1]))
-                    i = i + int(j[1])
-                curr_offset += 0.25*offset
-                plt.plot (1e-3*np.arange (d), 0.75*y+curr_offset*np.ones(len(y)), linewidth = 5, color = self.color_list[c])
-                plt.plot (1e-3*np.arange (d), curr_offset*np.ones(len(y)), '--', linewidth = 2, color = 'gray')
-                tick_pos.append (curr_offset)
-                plt.plot (1e-3*np.arange (d), (-0.75+curr_offset)*np.ones(len(y)), ':', linewidth = 1, color = 'r')
-                plt.plot (1e-3*np.arange (d), (0.75+curr_offset)*np.ones(len(y)), ':', linewidth = 1, color = 'r')
-
-                curr_offset += 0.5*offset
-
-            c += 1
-
-        ax.yaxis.set_ticks([0, len(self.labels_list)]) 
-        ax.yaxis.set(ticks=tick_pos, ticklabels=self.labels_list)
-
-        for label in (ax.get_xticklabels() + ax.get_yticklabels()):
-            #label.set_fontname('Arial')
-            label.set_fontsize(20)
-        try:
-            if self.xaxis:
-                plt.xlim ([1e-3*self.xaxis[0], 1e-3*self.xaxis[1]])
-                plt.xlabel ('time (us)', fontsize = 20)
-        except:
-            pass
-        plt.ion()
-        plt.show()
-
-    def return_stream (self):
-        return self.pulse_streamer_seq
 
 
 class StreamSection ():
@@ -785,6 +547,9 @@ class StreamController ():
         if (streamer.__class__.__name__ == 'PulseStreamer'):        
             self.ps = streamer
             self._run_mode = True
+        elif (streamer.__class__.__name__ == 'PulseStreamer_simple'):
+            self.ps = streamer
+            self._run_mode = True
         else:
             print('Invalid streamer object! Entering simulation mode')
             self._run_mode = False
@@ -898,9 +663,10 @@ class StreamController ():
         else:
             print('Unknown trigger name. Please make sure a channel for '+trg_name+' is defined in config file.')
 
-
     def add_rf_sequence (self, sequence, section, delay = 0., pulse_mod = False):
-        if (sequence.__class__.__name__ == 'StreamerSequence'):     
+        
+        print ("Sequence type: ", type(sequence))
+        if (sequence.__class__.__name__ == 'SequenceIQ'):     
             self.rf_sequence = sequence
         else:
             print("Invalid streamer sequence!")
@@ -1021,6 +787,46 @@ class StreamController ():
 
             self._stream_dict ['rep_'+str(n)] = stream
             self._max_t.append(stream.get_max_time())
+            
+        self.ctrl_stream = self._concatenate_repetitions()
+        self.ps.upload_stream_dictionary (self.ctrl_stream)
+        
+        
+        # here we need some code to concatenate the streams for the repetitions
+        # and to convert them to what the PS understands (load_sequence)
+
+
+    def _concatenate_repetitions (self):
+        
+        print ('Concatenating reps...')
+        
+        ctrl_stream = {}
+        for i in range(8):
+            print (' --- channel D'+str(i))
+            d = []
+            for n in range(self._sweep_reps):
+                d = d + self._stream_dict['rep_'+str(n)].dig_outputs['D'+str(i)]+ [[1000, 0]]
+            print (d)
+            ctrl_stream ['D'+str(i)] = d
+
+        for i in range(2):
+            print (' --- channel A'+str(i))
+            d = []
+            for n in range(self._sweep_reps):
+                d = d + self._stream_dict['rep_'+str(n)].anlg_outputs['A'+str(i)]+ [[1000, 0]]
+            print (d)
+            ctrl_stream ['A'+str(i)] = d
+
+        
+        return ctrl_stream
+    
+    def plot_uploaded_stream (self):
+        self.ps.plot_blockchain()
+        
+        
+    
+            
+            
 
     def _plot_settings (self, repetitions):
 

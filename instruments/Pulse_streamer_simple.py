@@ -10,6 +10,7 @@ class PulseStreamer_simple():
         Following user manual:
             https://www.swabianinstruments.com/static/documentation/PulseStreamer/PulseStreamer_User_Manual.pdf
         Connects via the permanent static fallback ip address: 169.254.8.2  
+        Licence is
         """
         self.ip = address
         self.ps = PulseStreamer(self.ip)
@@ -23,11 +24,18 @@ class PulseStreamer_simple():
         self.block = block
         return block
         
-    def load_sequence(self, channel, block):
+    def load_digital (self, channel, block):
         """
         adds block to blockchain to a given channel
         """
         self.blockchain.setDigital(channel, block)
+
+    def load_analog (self, channel, block):
+        """
+        adds block to blockchain to a given channel
+        """
+        self.blockchain.setAnalog(channel, block)
+
         
     def stream(self, n_runs= PulseStreamer.REPEAT_INFINITELY):
         """
@@ -51,6 +59,15 @@ class PulseStreamer_simple():
             print('Yes')
         else:
             print('No') 
+            
+    def upload_stream_dictionary (self, stream_dict):
+        
+        for i in range (8):
+            self.load_digital (channel = i, block = stream_dict['D'+str(i)])
+        
+        for i in range (2):
+            self.load_analog (channel = i, block = stream_dict['A'+str(i)])
+
        
     def reset(self):
         """
@@ -75,7 +92,7 @@ if __name__ == "__main__":
     
     # Place sequences into channels
     rm.load_sequence(channel=0, block=P1+P3+P2)
-    rm.load_sequence(channel=6, block=P2+P3+P1)
+    rm.load_sequence(channel=6, block=P2+P3)
     
     # plot 
     rm.plot_blockchain()
@@ -83,14 +100,10 @@ if __name__ == "__main__":
     # stream blockchain
     rm.stream()
     rm.isrunning()
-    
+    rm.reset()
     
 """
 ToDo:
-
 Export/save blocks
-
 Repeat/concatenate blocks(?)
-
-
 """
