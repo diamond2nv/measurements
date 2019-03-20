@@ -101,10 +101,10 @@ class Stream ():
 
         for i in np.arange(8):
             plist = self.dig_outputs ['D'+str(i)]
-            self.dig_timers[i] = sum([pair[1] for pair in plist])
+            self.dig_timers[i] = sum([pair[0] for pair in plist])
         for i in np.arange(2):
             plist = self.anlg_outputs ['A'+str(i)]
-            self.anlg_timers[i] = sum([pair[1] for pair in plist])
+            self.anlg_timers[i] = sum([pair[0] for pair in plist])
 
     def fill_wait_time (self, channels = 'used'):
         '''
