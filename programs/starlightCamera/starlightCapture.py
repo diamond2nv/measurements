@@ -21,7 +21,7 @@ Last changes:
 
 from PyQt5.QtWidgets import QApplication, QWidget, QFileDialog, QShortcut, QMessageBox
 from PyQt5.QtGui import QKeySequence
-from PyQt5.QtMultimedia import QSound
+#from PyQt5.QtMultimedia import QSound
 from measurements.instruments.starlightRead import StarlightCCD
 from tools.arrayProcessing import histeq
 from measurements.programs.starlightCamera.UiStarlightCapture import Ui_starlightCapture
@@ -175,9 +175,9 @@ class StarlightCapture(QWidget):
         QShortcut(QKeySequence("Ctrl+Space"), self, self.acqShortcut)
         
         # sounds
-        self.captureStopSound = QSound("captureStopSound.wav")
-        self.captureStartSound = QSound("captureStartSound.wav")
-        self.cameraIdChanged(0)
+        #self.captureStopSound = QSound("captureStopSound.wav")
+        #self.captureStartSound = QSound("captureStartSound.wav")
+        #self.cameraIdChanged(0)
         
         
         maxPosPen = pg.mkPen({'width': 1, 'color': 'g'})
