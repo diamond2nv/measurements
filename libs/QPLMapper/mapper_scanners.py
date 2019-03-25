@@ -5,9 +5,6 @@ import time
 import sys
 import visa
 import struct as struct
-from ctypes import *
-import re
-
 
 if sys.version_info.major == 3:
     from importlib import reload
@@ -20,37 +17,30 @@ try :
 except:
 	print ("Newport DelayStage not found.")
 
-#try:
-#    from measurements.instruments import AttoMagnet as AMagnet
-#    reload (AMagnet)
-#except:
-#    pass
+try :
+	from measurements.instruments.pyximc import *
+except Exception as e:
+	print ("Standa library error: ", e)
 
-#try:
-#    from measurements.instruments import u3
-#except Exception as e:
-#    print("Cannot load LabJack: ", e)
-    
-#try:
-#    from measurements.instruments.pyximc import *
-#except Exception as e:
-#    print("Standa pyximc error: ", e)
-    
-#try:
-#    from measurements.instruments import NewportConexCC as conex
-#except Exception as e:
-#    print("Conex error: ", e)
-    
-from measurements.instruments.LockIn7265 import LockIn7265
-from measurements.instruments import NIBox
-from measurements.instruments import AttocubeANCV1 as attoANC
-from measurements.instruments.pylonWeetabixTrigger import voltOut
-from measurements.instruments import KeithleyPSU2220
-from measurements.instruments import solstis
-    
-#reload(NIBox)
-#except Exception as e:
-#    print("Error: ", e)
+try:
+    from measurements.instruments import AttoMagnet as AMagnet
+    reload (AMagnet)
+except:
+    pass
+
+try:
+    from measurements.instruments.LockIn7265 import LockIn7265
+    from measurements.instruments import NIBox
+    from measurements.instruments import AttocubeANCV1 as attoANC
+    from measurements.instruments.pylonWeetabixTrigger import voltOut
+    from measurements.instruments import KeithleyPSU2220
+    from measurements.instruments import solstis
+    from measurements.instruments import u3
+    #from measurements.instruments import NewportConexCC as conex
+    reload(NIBox)
+except Exception as e:
+    print("Error: ", e)
+    print ("Instruments not loaded. entering simulation mode.")
 
 
 
@@ -346,7 +336,6 @@ def move_smooth(scanner_axes, targets=[]):
         targets (list, optional): list of floats, respective target
             positions for the s-axes
     """
-    
     smooth_steps = [s_axis.scanner.smooth_step for s_axis in scanner_axes]
     smooth_delay = 0
     for s_axis in scanner_axes:
@@ -386,8 +375,6 @@ def move_smooth_simple(scanner_axis, target):
         scanner_axis (Saxis): s-axis to move
         target (float): target position for the s-axis
     """
-    
-    print ("Move smooth simple, axis: ", scanner_axis, " -- target: ", target)
     smooth_step = scanner_axis.scanner.smooth_step
     smooth_delay = scanner_axis.scanner.smooth_delay
 
@@ -470,7 +457,7 @@ class LockInDAC (ScannerCtrl):
 
     def _initialize(self):
         self._lockin = LockIn7265 (self._visa_addr)
-        print('Device initialized')
+        print('LockIn - Device initialized')
 
     def _move(self, target, axis=0):
         self._curr_pos[axis] = target
@@ -532,18 +519,18 @@ class ConexCC_2D (ScannerCtrl):
 class NewportDelayStage(ScannerCtrl):
 
     def __init__ (self, chX = 'ASRL3::INSTR', chY='', min_limit = 0., start_pos=[0,0],
-                    max_limit = 315, ids = None):
+                    max_limit = 315, ids = None,accel=50,vel=300):
         super().__init__(channels=[chX], ids=ids)
         self.string_id = 'Newport DL325'
         self.conversion_factor = 1
 
         self.smooth_step = 1
-        self.smooth_delay = 0.05
+        self.smooth_delay = 0.1
         
         self._min_limit = min_limit
         self._max_limit = max_limit
 
-        self._scannerX = DelayStage(chX)
+        self._scannerX = DelayStage(address=chX,accel=accel,vel=vel)
         self._scannerY = None        
 
         self._curr_pos = [pos for channel, pos in zip(self._channels, start_pos)]
@@ -732,9 +719,9 @@ class Keithley2220(ScannerCtrl):
         elif self._axes_modes[axis] == 'current':
             return self._Keithley_handle.read_current(channel=self._channels[axis])
 
-#    def channel_combine(self, combMode=KeithleyPSU2220.Keithley2220channelModes.OFF):
-#        # 'off', 'parallel' or 'series'
-#        self._Keithley_handle.channel_combine(combMode)
+    def channel_combine(self, combMode=KeithleyPSU2220.Keithley2220channelModes.OFF):
+        # 'off', 'parallel' or 'series'
+        self._Keithley_handle.channel_combine(combMode)
 
     def output_switch(self, on=True):
         self._Keithley_handle.output_on(state=on)
@@ -1050,111 +1037,110 @@ class PI_E709(ScannerCtrl):
     def _close(self):
         self._instr.close() 
 
-#class Standa(ScannerCtrl):     
-#    # Class is based around pyximc: https://doc.xisupport.com/en/index.html
-#    # Would be good to have:
-#        # microstep move modes
-#            # udistance fractional part of position in microsteps: 1,4,8,16,32,64,128,256
-#        # set speed
-#        # Device reset w/o having to pull plug
-#        # Access to console during _move (waited) command
-#        # Better way to select which axes are used
-#    # Move_smooth seems inappropriate
-#        
-#    def __init__(self,chX = b'xi-com:\\\\.\\COM15',chY = b'xi-com:\\\\.\\COM16',start_pos=[0,0], conversion_factor = 1000, wait_time = 100):
-#        super().__init__(channels=[chX, chY])
-#        self.string_id = 'Standa motor controller'
-#        self._curr_pos = [pos for channel, pos in zip(self._channels, start_pos)]
-#        # creates storage spaces for x,y and function to read from memory
-#        self.x_pos = get_position_t()
-#        self.y_pos = get_position_t()
-#        self.x_read = byref(self.x_pos)
-#        self.y_read = byref(self.y_pos)
-#        self.pos_storage = [self.x_pos, self.y_pos]
-#        self.pos_read = [self.x_read, self.y_read]
-#        self.udistance = 0
-#        self.conversion_factor = conversion_factor
-#        self.wait_time = wait_time    
-#        
-#    def _initialize(self):  
-#        self.devX = None
-#        self.devY = None
-#        self.devX = lib.open_device(self._channels[0]) 
-#        self.devY = lib.open_device(self._channels[1])
-#        self.devices = [self.devX, self.devY]
-#        print("devices opened:  ", self.devices)
-#        #print(" is lib opened?     ", lib)
-#        return self.devices
-#    
-#    def _get_set(self, axis=0):
-#        # Gets set position
-#        print('curr_pos:    ' , self._curr_pos)
-#        return self._curr_pos
-#
-#    def _get(self, axis=0):
-#        # Reads position from controller
-#        self._curr_pos[axis] = lib.get_position(self.devices[axis], self.pos_read[axis])
-#        return int( (self.pos_storage[axis].Position) / self.conversion_factor)
-#
-#    def _move_simple(self, target, axis=0):
-#        # Moves motors w/o waiting to be inposition
-#        target = int(target)
-#        lib.command_move(self.devices[axis], int(target*self.conversion_factor), self.udistance)
-#        self._curr_pos[axis] = target
-#        print('A: ', axis, '  T: ', target, '  P: ', self._curr_pos, '  GP: ', self._get(axis))
-#        
-#    def _move(self, target, axis=0):
-#        # waited move
-#            #Don't know if get and set position will always be equal, int() could mess this up.
-#            # Would be nice to have access to console during _move command, enabling multiple motor control
-#        lib.command_move(self.devices[axis], int(target*self.conversion_factor), self.udistance)
-#        while (self._get(axis)) != int(target):
-#            lib.command_wait_for_stop(self.devices[axis], self.wait_time)  
-#                # add timeout break here : could have if curr_pos[t=0] == curr_pos[t=1] then motors have stopped error message
-#        self._curr_pos[axis] = self.get(axis)
-#
-#    def _get_channel_names(self):
-#        try:
-##            cur_dir = os.path.abspath(os.path.dirname(__file__))
-##            ximc_dir = os.path.join(cur_dir, "..", "..", "ximc")
-##            ximc_package_dir = os.path.join(ximc_dir, "crossplatform", "wrappers", "python")
-##            sys.path.append(ximc_package_dir)  # add ximc.py wrapper to python path      
-##            lib.set_bindy_key(os.path.join(ximc_dir, "win32", "keyfile.sqlite").encode("utf-8"))
-#            # This is device search and enumeration with probing. It gives more information about devices.
-#            probe_flags = EnumerateFlags.ENUMERATE_PROBE + EnumerateFlags.ENUMERATE_NETWORK
-#            enum_hints = b"addr=192.168.0.1,172.16.2.3"
-#            # enum_hints = b"addr=" # Use this hint string for broadcast enumerate
-#            devenum = lib.enumerate_devices(probe_flags, enum_hints)
-#            controller_name = controller_name_t()
-#            for dev_ind in range(0, 2):
-#                enum_name = lib.get_device_name(devenum, dev_ind)
-#                result = lib.get_enumerate_device_controller_name(devenum, dev_ind, byref(controller_name))
-#            if result == Result.Ok:
-#                print("Enumerated device #{} name (port name): ".format(dev_ind) + repr(enum_name) + ". Friendly name: " + repr(controller_name.ControllerName) + ".")
-#            else:
-#                print("Failed to get channel names ")
-#        except Exception as e:
-#            print("\ncouldn't get channel names:  " + str(e))
-#        
-#    def _close(self):    
-#        self.close_x = lib.close_device(byref(cast(self.devX, POINTER(c_int))))
-#        self.close_y = lib.close_device(byref(cast(self.devY, POINTER(c_int))))
-#        self.closed_axes = [self.close_x, self.close_y]
-#        print("devices closed: ", self.closed_axes)
-#   
+class Standa(ScannerCtrl):     
+    # Class is based around pyximc: https://doc.xisupport.com/en/index.html
+    # Would be good to have:
+        # microstep move modes
+            # udistance fractional part of position in microsteps: 1,4,8,16,32,64,128,256
+        # set speed
+        # Device reset w/o having to pull plug
+        # Access to console during _move (waited) command
+        # Better way to select which axes are used
+    # Move_smooth seems inappropriate
+        
+    def __init__(self,chX = b'xi-com:\\\\.\\COM15',chY = b'xi-com:\\\\.\\COM14',start_pos=[0,0], conversion_factor = 1000, wait_time = 100):
+        super().__init__(channels=[chX, chY])
+        self.string_id = 'Standa motor controller'
+        self._curr_pos = [pos for channel, pos in zip(self._channels, start_pos)]
+        # creates storage spaces for x,y and function to read from memory
+        self.x_pos = get_position_t()
+        self.y_pos = get_position_t()
+        self.x_read = byref(self.x_pos)
+        self.y_read = byref(self.y_pos)
+        self.pos_storage = [self.x_pos, self.y_pos]
+        self.pos_read = [self.x_read, self.y_read]
+        self.udistance = 0
+        self.conversion_factor = conversion_factor
+        self.wait_time = wait_time    
+        
+    def _initialize(self):  
+        self.devX = None
+        self.devY = None
+        self.devX = lib.open_device(self._channels[0]) 
+        self.devY = lib.open_device(self._channels[1])
+        self.devices = [self.devX, self.devY]
+        print("devices opened:  ", self.devices)
+        #print(" is lib opened?     ", lib)
+        return self.devices
+    
+    def _get_set(self, axis=0):
+        # Gets set position
+        print('curr_pos:    ' , self._curr_pos)
+        return self._curr_pos
+
+    def _get(self, axis=0):
+        # Reads position from controller
+        self._curr_pos[axis] = lib.get_position(self.devices[axis], self.pos_read[axis])
+        return int( (self.pos_storage[axis].Position) / self.conversion_factor)
+
+    def _move_simple(self, target, axis=0):
+        # Moves motors w/o waiting to be inposition
+        target = int(target)
+        lib.command_move(self.devices[axis], int(target*self.conversion_factor), self.udistance)
+        self._curr_pos[axis] = target
+        print('A: ', axis, '  T: ', target, '  P: ', self._curr_pos, '  GP: ', self._get(axis))
+        
+    def _move(self, target, axis=0):
+        # waited move
+            #Don't know if get and set position will always be equal, int() could mess this up.
+            # Would be nice to have access to console during _move command, enabling multiple motor control
+        lib.command_move(self.devices[axis], int(target*self.conversion_factor), self.udistance)
+        while (self._get(axis)) != int(target):
+            lib.command_wait_for_stop(self.devices[axis], self.wait_time)  
+                # add timeout break here : could have if curr_pos[t=0] == curr_pos[t=1] then motors have stopped error message
+        self._curr_pos[axis] = self.get(axis)
+
+    def _get_channel_names(self):
+        try:
+#            cur_dir = os.path.abspath(os.path.dirname(__file__))
+#            ximc_dir = os.path.join(cur_dir, "..", "..", "ximc")
+#            ximc_package_dir = os.path.join(ximc_dir, "crossplatform", "wrappers", "python")
+#            sys.path.append(ximc_package_dir)  # add ximc.py wrapper to python path      
+#            lib.set_bindy_key(os.path.join(ximc_dir, "win32", "keyfile.sqlite").encode("utf-8"))
+            # This is device search and enumeration with probing. It gives more information about devices.
+            probe_flags = EnumerateFlags.ENUMERATE_PROBE + EnumerateFlags.ENUMERATE_NETWORK
+            enum_hints = b"addr=192.168.0.1,172.16.2.3"
+            # enum_hints = b"addr=" # Use this hint string for broadcast enumerate
+            devenum = lib.enumerate_devices(probe_flags, enum_hints)
+            controller_name = controller_name_t()
+            for dev_ind in range(0, 2):
+                enum_name = lib.get_device_name(devenum, dev_ind)
+                result = lib.get_enumerate_device_controller_name(devenum, dev_ind, byref(controller_name))
+            if result == Result.Ok:
+                print("Enumerated device #{} name (port name): ".format(dev_ind) + repr(enum_name) + ". Friendly name: " + repr(controller_name.ControllerName) + ".")
+            else:
+                print("Failed to get channel names ")
+        except Exception as e:
+            print("\ncouldn't get channel names:  " + str(e))
+        
+    def _close(self):    
+        self.close_x = lib.close_device(byref(cast(self.devX, POINTER(c_int))))
+        self.close_y = lib.close_device(byref(cast(self.devY, POINTER(c_int))))
+        self.closed_axes = [self.close_x, self.close_y]
+        print("devices closed: ", self.closed_axes)
+
+if __name__ == '__main__':
+    toto = TestScanner(address='totoLand', channels=[3,5])
+    toto.initialize()
+    print(toto[0].get())
+    print(toto[1].get())
+    toto[0].move(2)
+    toto[1].move(4)
+    # toto[0].move_smooth(3)
+
+    move_smooth(toto, [3,4])
+
+    for titi in toto:
+        titi.move(10)
 
 
-     
-#if __name__ == '__main__':
-#    toto = TestScanner(address='totoLand', channels=[3,5])
-#    toto.initialize()
-#    print(toto[0].get())
-#    print(toto[1].get())
-#    toto[0].move(2)
-#    toto[1].move(4)
-#    # toto[0].move_smooth(3)
-#
-#    move_smooth(toto, [3,4])
-#
-#    for titi in toto:
-#        titi.move(10)

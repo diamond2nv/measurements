@@ -175,9 +175,9 @@ class StarlightCapture(QWidget):
         QShortcut(QKeySequence("Ctrl+Space"), self, self.acqShortcut)
         
         # sounds
-      #  self.captureStopSound = QSound("captureStopSound.wav")
-      #  self.captureStartSound = QSound("captureStartSound.wav")
-      #  self.cameraIdChanged(0)
+        #self.captureStopSound = QSound("captureStopSound.wav")
+        #self.captureStartSound = QSound("captureStartSound.wav")
+        #self.cameraIdChanged(0)
         
         
         maxPosPen = pg.mkPen({'width': 1, 'color': 'g'})

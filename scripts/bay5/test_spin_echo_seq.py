@@ -1,4 +1,3 @@
-
 from measurements.instruments import PulseStreamer82 as psLib
 from measurements.instruments import RS_SMBV100A as rfLib
 from measurements.libs.QPLser import ODMR_streamer as streamer_odmr
@@ -8,12 +7,13 @@ import logging
 from importlib import reload
 import numpy as np
 
+from measurements.instruments.Pulse_streamer_simple import PulseStreamer_simple as pss
+
 reload(streamer_odmr)
 reload(psLib)
 reload (rfLib)
 reload (seq)
 reload (SM)
-
 
 def spin_echo_sequence (time, verbose = False):
 
@@ -34,26 +34,26 @@ def spin_echo_sequence (time, verbose = False):
 	s.calculateIQ()
 	return s
 
-
 def test_odmr(sequence):
-	strCtrl = SM.StreamController ()
-	strCtrl.add_sections (['init', 'rf', 'readout'])
-	strCtrl.print_sections()
-	strCtrl.add_laser ('res_laser')
-	strCtrl.add_laser_pulse (section='init',laser='res_laser', duration = 200, 
-	                                             power = 0.5, delay = 0, name = 'inP')
-	strCtrl.add_rf_sequence (section = 'rf', sequence=sequence)
-	strCtrl.add_laser_pulse (section='readout',laser='res_laser', duration = 500, 
-	                                             power = 0.5, delay = 0)
+    ps = PulseStreamer_simple()
+    strCtrl = SM.StreamController(streamer = ps)
+    strCtrl.add_sections (['init', 'rf', 'readout'])
+    strCtrl.print_sections()
+    strCtrl.add_laser ('res_laser')
+    strCtrl.add_laser_pulse (section='init',laser='res_laser', duration = 200, 
+                                                 power = 0.5, delay = 0, name = 'inP')
+    strCtrl.add_laser_pulse (section='readout',laser='res_laser', duration = 500, 
+                                                 power = 0.5, delay = 0)
+    
+    
+    strCtrl.add_rf_sequence (section = 'rf', sequence=sequence)
+    
+    strCtrl.generate_ctrl_stream()
+    #strCtrl.view_stream()
+    return strCtrl
 
-	strCtrl.generate_ctrl_stream()
-	#strCtrl.view_stream()
-
-	return strCtrl
-	
-#test_repeated_sweep()
-s = spin_echo_sequence(time = 1500, verbose = True)
-#print "I calculated the sequence!!!"
-strCtrl = test_odmr (sequence = s)
-#strCtrl.view_stream_inline()
-strCtrl.view()
+if __name__ == "__main__":
+    s = spin_echo_sequence(time = 1500, verbose = True)
+    strCtrl = test_odmr(sequence = s)
+    #strCtrl.view_stream_inline()
+    #strCtrl.view()   

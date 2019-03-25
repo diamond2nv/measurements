@@ -3,7 +3,15 @@ import os
 import platform
 
 # Load library
+
+# use cdecl on unix and stdcall on windows
+def ximc_shared_lib():
+    return WinDLL("measurements\instruments\dll\standa\libximc.dll")
+
+lib = ximc_shared_lib()
+
 lib = WinDLL("libximc.dll")
+
 # Common declarations
 
 class Result:

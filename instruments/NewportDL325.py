@@ -18,6 +18,9 @@ class DelayStage:
         self.scanner.stop_bits = visa.constants.StopBits.one
         self.setaccel(accel) # set it to 50 mm/s^2
         self.setvelocity(vel) # set the velocity to be 300 mm/s
+    
+    def _initialize(self):
+        print('Device initialized')
         
     def setaccel(self,accel):
         self.scanner.write('AC'+str(accel))
@@ -64,6 +67,10 @@ class DelayStage:
         self.scanner.close()
 
 if __name__=='__main__':
-    scanner = DelayStage(u'ASRL3::INSTR')
-    scanner.move_absolute(0)
+    scanner = DelayStage(u'ASRL23::INSTR')
+    scanner.move_absolute(137)
+#    print (scanner.get_position())
+    time.sleep(3)
+#    scanner.move_absolute(0)
+    print (scanner.get_position())
     scanner.close()
