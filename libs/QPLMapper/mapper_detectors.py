@@ -20,16 +20,40 @@ except:
     print ('LakeShore not found')
 try:
     from measurements.instruments import NIBox
-    from measurements.instruments.LockIn7265 import LockIn7265
-    from measurements.instruments.pylonWeetabixTrigger import trigSender, trigReceiver
-    from measurements.instruments.KeithleyMultimeter import KeithleyMultimeter
-    from measurements.instruments.AgilentMultimeter import AgilentMultimeter
-    from measurements.instruments import u3
-    from TimeTagger import createTimeTagger, Counter
-
     reload (NIBox)
 except:
-    print ("Enter simulation mode.")
+    print ("Mapper-detectors: NIbox library not found.")
+
+try:    
+    from measurements.instruments.LockIn7265 import LockIn7265
+except:
+    print ("Mapper-detectors: LockIn library not found.")
+
+try:
+    from measurements.instruments.pylonWeetabixTrigger import trigSender, trigReceiver
+except:
+    print ("Mapper-detectors: Weetabix device library not found.")
+
+try:
+    from measurements.instruments.KeithleyMultimeter import KeithleyMultimeter
+except:
+    print ("Mapper-detectors: Keythley device library not found.")
+
+try:
+    from measurements.instruments.AgilentMultimeter import AgilentMultimeter
+except:
+    print ("Mapper-detectors: Agilent Multimeter device library not found.")
+
+try:        
+    from measurements.instruments import u3
+except:
+    print ("Mapper-detectors: U3 device library not found.")
+        
+try:
+    from TimeTagger import createTimeTagger, Counter
+except:
+    print ("Mapper-detectors: TimeTagger device library not found.")
+
 
 reload(mgen)
 
