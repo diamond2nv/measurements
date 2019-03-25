@@ -17,7 +17,7 @@ from measurements.instruments.AgilentMultimeter import AgilentMultimeter
 import pylab as py
 import threading
 import time
-from measurements.programs.multimeterOscillo.UiMultimeterOscillo import Ui_multimeterOscillo
+from UiMultimeterOscillo import Ui_multimeterOscillo
 
 # For working with python, pythonw and ipython
 import sys, os
@@ -290,10 +290,11 @@ def multimeter_oscillo_run(config):
         window.close_instruments()
 
 if __name__ == "__main__":
-    config = {"multimeterVisaId": "ASRL12::INSTR", "meas_mode":"voltage"}
+    config = {"multimeterVisaId": "ASRL13::INSTR", "meas_mode":"voltage"}
     app = QApplication(sys.argv)
     app.aboutToQuit.connect(app.deleteLater)
     
     window = VoltmeterRead(app, config)
 #    multimeter_oscillo_run(config)
     window.show()
+    app.exec_()

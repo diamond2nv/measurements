@@ -35,7 +35,7 @@ voltsDirectory = r'C:\Users\QPL\Desktop\temporary_meas'
 
 #######################
 # instruments
-attoCtrl = mscan.AttocubeVISA(VISA_address=r'ASRL6::INSTR', chX=5, chY=4)
+attoCtrl = mscan.AttocubeVISA(VISA_address=r'ASRL6::INSTR', chX=2, chY=1)
 spectroCtrl = mdet.ActonLockinCtrl(lockinVisaAddress=r"GPIB0::14::INSTR")
 spectroCtrl2 = mdet.PylonNICtrl(sender_port="/Weetabix/port1/line3", receiver_port="/Weetabix/port1/line2")
 
