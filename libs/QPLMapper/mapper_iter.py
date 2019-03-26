@@ -230,7 +230,7 @@ class Mapper2D_3axes (mapper.XYMapper):
             getattr (obj, 'setWindowTitle')('QPL-detector_'+str(idx))
             getattr (obj, 'show')()
 
-        #sys.exit(qApp.exec_())
+        sys.exit(qApp.exec_())
 
     def close_scan(self):
         # go smoothly to start position

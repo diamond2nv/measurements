@@ -5,7 +5,7 @@ import time
 import sys
 import visa
 
-from measurements.libs import mapper_general as mgen
+from measurements.libs.QPLMapper import mapper_general as mgen
 
 if sys.version_info.major == 3:
     from importlib import reload

@@ -37,7 +37,7 @@ except:
 
     print ("Simulation mode. Pay attention that the move_smooth function is not implemented!")
 
-class XYMapper ():
+class XYZMapper ():
     def __init__(self, scanner_axes=None, detectors=None):
         self._scanner_axes = scanner_axes
         self._detectors = detectors
@@ -57,11 +57,12 @@ class XYMapper ():
         self.delayBetweenPoints = between_points
         self.delayBetweenRows = between_rows
 
-    def _set_range(self, xLims, xStep, yLims=None, yStep=None):
+    def _set_range(self, xLims, xStep, yLims=None, yStep=None,  zLims=None, zStep=None,):
 
         self.xNbOfSteps = int(abs(pl.floor((float(xLims[1]) - float(xLims[0])) / float(xStep))) + 1)
         self.xPositions = pl.linspace(xLims[0], xLims[1], self.xNbOfSteps)
         self.xStep = xStep
+
         if yLims is not None or yStep is not None:
             self.yNbOfSteps = int(abs(pl.floor((float(yLims[1]) - float(yLims[0])) / float(yStep))) + 1)
             self.yPositions = pl.linspace(yLims[0], yLims[1], self.yNbOfSteps)
@@ -70,6 +71,17 @@ class XYMapper ():
             self.yNbOfSteps = 1
             self.yPositions = pl.array([0])
             self.yStep = 0
+
+        if zLims is not None or zStep is not None:
+            self.zNbOfSteps = int(abs(pl.floor((float(zLims[1]) - float(zLims[0])) / float(zStep))) + 1)
+            self.zPositions = pl.linspace(zLims[0], zLims[1], self.zNbOfSteps)
+            self.zStep = zStep
+        else:
+            self.zNbOfSteps = 1
+            self.zPositions = pl.array([0])
+            self.zStep = 0
+
+
         self.totalNbOfSteps = self.xNbOfSteps * self.yNbOfSteps
 
     def seconds_in_HMS(self, nbOfSeconds):
@@ -114,14 +126,14 @@ class XYMapper ():
             while not all([detector.is_ready() for detector in detectors]):
                 time.sleep(self.max_delay_state_check)
 
-class XYScan (XYMapper):
+class XYZScan (XYZMapper):
     def __init__(self, scanner_axes=None, detectors=None):
         
         self.trigger_active = True
         self.feedback_active = True
         self._back_to_zero = False
 
-        XYMapper.__init__ (self, scanner_axes = scanner_axes, detectors = detectors)
+        XYZMapper.__init__ (self, scanner_axes = scanner_axes, detectors = detectors)
 
     def set_back_to_zero(self):
         # to go back to 0 V at the end of a scan
@@ -131,8 +143,8 @@ class XYScan (XYMapper):
         self.trigger_active = trigger
         self.feedback_active = feedback
 
-    def set_range(self, xLims, xStep, yLims=None, yStep=None):
-        self._set_range (xLims=xLims, xStep=xStep, yLims=yLims, yStep=yStep)
+    def set_range(self, xLims, xStep, yLims=None, yStep=None, zLims=None, zStep=None):
+        self._set_range (xLims=xLims, xStep=xStep, yLims=yLims, yStep=yStep, zLims=zLims, zStep=zStep)
         
         if self._detectors is None:
             self.counts = None
@@ -149,7 +161,8 @@ class XYScan (XYMapper):
 
             print('Total number of steps: {}\n'.format(self.totalNbOfSteps) +
                   'X number of steps:     {}\n'.format(self.xNbOfSteps) +
-                  'Y number of steps:     {}'.format(self.yNbOfSteps))
+                  'Y number of steps:     {}\n'.format(self.yNbOfSteps) +
+                  'Z number of steps:     {}'.format(self.zNbOfSteps))
 
             start_time = 0
             first_point = True
@@ -407,31 +420,39 @@ class XYScanIterative (XYMapper):
         print("File saved")
 
 
-class XYOptimizer (XYMapper):
+class MultiAxisOptimizer ():
 
-    def _optimize (self, axis_id, scan_array):
-        # here code to optimize one axis
+    def __init__ (self, scanner_axes, detectors):
+        self._scanner_axes = scanner_axes
+        self._detectors = detectors
+        self._nr_axes = len (scanner_axes)
+
+        self._scan_range = []
+        self._scan_step = 1
+
+        self._fit_points = 1000
+
+    def _optimize (self, axis_id):
+        # code to optimize one axis
         time.sleep(self.delayBetweenRows)
-        counts = np.zeros (len(scan_array))
+        counts = np.zeros (self._scan_steps)
 
-        for id_x, x in enumerate(scan_array):
+        for id_x, x in enumerate(self._scan_positions[axis_id,:]):
             
             self._scanner_axes[axis_id].move(x)
             time.sleep(self.delayBetweenPoints)
 
-            # trigger exposure / detector measurement
-            counts[id_x] = self._detectors[0].readout()   # removed some generality in here
+            counts[id_x] = self._detectors[0].readout()
 
-            time.sleep(self.max_delay_after_readout)  # some old devices will not react immediately to say they are integrating
-
-            # wait for detector to say it finished
+            time.sleep(self.max_delay_after_readout)
             self.wait_for_ready(self._detectors)
+            
+        fit_result, fit_plot_x, fit_plot_y = self._fit_gaussian (scan_array=self._scan_positions[axis_id,:], counts=counts)
 
-        fit_params, result = self._fit_gaussian (scan_array=scan_array, counts=counts)
-        return counts, fit_params
+        return counts, fit_result, fit_plot_x, fit_plot_y
     
     def _fit_gaussian (self, scan_array, counts, do_fit = True, 
-                       do_plot=True, do_print_fit_report= False):
+                       do_print_fit_report= False):
         p = counts/np.sum(counts)
         x0 = np.sum (p*scan_array)
         v0 = np.sum (p*(scan_array**2)) - x0**2
@@ -455,83 +476,79 @@ class XYOptimizer (XYMapper):
             sigma = result.params['sigma'].value
             fit_params = [A0, A, x0, sigma]
             
-            x_fit = np.linspace (x[0], x[-1], 1000)
+            x_fit = np.linspace (x[0], x[-1], self._fit_points)
             y_fit = _gaussian (x=x_fit, A0=A0, A=A, x0=x0, sigma=sigma )
 
             if do_print_fit_report:
                 print(result.fit_report())
-
-            if do_plot:
-                pl.plot(x, y, 'o', color='royalblue')
-                pl.plot(x_fit, y_fit, color = 'crimson')
-                pl.show()
         
-        return fit_params, result
+        return result, x_fit, y_fit
     
-    def set_scan_range (self, scan_range=10, scan_step=1):
+    def set_scan_range (self, scan_range=[], scan_steps=1):
         self._scan_range = scan_range
-        self._scan_step = scan_step
+        self._scan_steps = scan_steps
         
-    def initialize(self, x0, y0):
+    def initialize(self, x0):
         self._x_init = x0
-        self._y_init = y0
-        xLims = [x0-0.5*self._scan_range, x0+0.5*self._scan_range]
-        yLims = [y0-0.5*self._scan_range, y0+0.5*self._scan_range]
-        xStep = self._scan_step
-        yStep = self._scan_step
+        self._scan_positions  = np.zeros([self._nr_axes, self._scan_steps])
+        for i in range(self._nr_axes):
+            self._scan_positions [i, :] = np.linspace(x0[i]-0.5*self._scan_range[i], x0[i]+0.5*self._scan_range[i], self._scan_steps)
         
-        self._set_range (xLims=xLims, xStep=xStep, yLims=yLims, yStep=yStep)
-        
-        
-    def _plot_optimization (self, x_pars, y_pars):
-               
-        def _gaussian(x, A0, A, x0, sigma):
-            return np.abs(A0) + np.abs(A)*np.exp(-(x-x0)**2 / (2*sigma**2))
-        
-        print ('Optimization result: x0 = ', self._xm, ' y0 = ', self._ym)
-     
-        Vx = np.linspace (self.xPositions[0], self.xPositions[-1], 1000)
-        x_fit = _gaussian (x=Vx, A0=x_pars[0], A=x_pars[1], x0=x_pars[2], sigma=x_pars[3] )
-        Vy = np.linspace (self.yPositions[0], self.yPositions[-1], 1000)
-        y_fit = _gaussian (x=Vy, A0=y_pars[0], A=y_pars[1], x0=y_pars[2], sigma=y_pars[3] )
-            
-        pl.figure (figsize = (8,5))
-        pl.subplot(121)
-        pl.plot (self.xPositions, self._xCounts, color='RoyalBlue', marker='o')
-        pl.plot (Vx, x_fit, color='crimson')
-        pl.vlines (self._xm, 0.9*min (self._xCounts), 1.1*max(self._xCounts), color='crimson', linewidth=2, linestyles='--')
-        pl.xlabel ('voltage (V)', fontsize= 15)       
-        pl.ylabel ('counts', fontsize=15)
-        pl.subplot(122)
-        pl.plot (self.yPositions, self._yCounts, color='RoyalBlue', marker='o')
-        pl.plot (Vy, y_fit, color='crimson')
-        pl.vlines (self._ym, 0.9*min (self._xCounts), 1.1*max(self._xCounts), color='crimson', linewidth=2, linestyles='--')
-        pl.xlabel ('voltage (V)', fontsize= 15)       
-        pl.show()
+    def _plot_optimization (self, plot_matrix):
+        n= self._nr_axes
 
+        pl.figure (figsize = (8,5))
+        for i in arange(n):
+            pl.subplot(100+n*10+i)
+            x = self._scan_positions
+            Vx = np.linspace (x[0], x[-1], self._fit_points)
+            pl.plot (self.xPositions, self._xCounts, color='RoyalBlue', marker='o')
+            pl.plot (Vx, x_fit, color='crimson')
+            pl.vlines (self._xm, 0.9*min (self._xCounts), 1.1*max(self._xCounts), color='crimson', linewidth=2, linestyles='--')
+            pl.xlabel ('voltage (V)', fontsize= 15)       
+            pl.ylabel ('counts', fontsize=15)
+            pl.show()
+
+                          
     def run_optimizer (self, close_instruments=True, silence_errors=True):
         try:
             print ('Running position optimizer...')
-            print ('Current position: ', self._x_init, self._y_init)
-            self.init_detectors(self._detectors)
-            self.init_scanners(self._scanner_axes)
+            print ('Current position: ', self._x_init)
+            #self.init_detectors(self._detectors)
+            #self.init_scanners(self._scanner_axes)
 
-            self._scanner_axes[0].move_smooth([self._x_init])
-            self._scanner_axes[1].move_smooth([self._y_init])
+            opt_posit = np.zeros (self._nr_axes)
+            sigmas = np.zeros(self._nr_axes)
 
-            self._xCounts, [A0x, Ax, x0, sigma_x] = self._xm, self._sx = self._optimize (axis_id = 0, scan_array = self.xPositions)
-            self._xm = x0
-            self._scanner_axes[0].move_smooth(self._xm)
-            self._yCounts, [A0y, Ay, y0, sigma_y] = self._optimize (axis_id = 1, scan_array = self.yPositions)
-            self._ym = y0
-            self._scanner_axes[1].move_smooth(self._ym)
+            if do_plot:
+                pl.figure (figsize = (8,5))
 
-            self._plot_optimization (x_pars = [A0x, Ax, x0, sigma_x], y_pars = [A0y, Ay, y0, sigma_y])
-            self.initialize (x0 = self._xm, y0 = self._ym)
-            print ('New position: ', self._x_init, self._y_init)
+            for i in arange(self._nr_axes):
+                self._scanner_axes[i].move_smooth(self._x_init[i])
 
-            # move to the centre of the gaussian
-            # here we need to redefine the scan interval
+            for i in arange (self._nr_axes):
+                counts, fit_result, fit_plot_x, fit_plot_y = self._optimize (axis_id = i, scan_array = self._scan_positions[i, :])
+                x_opt = fit_result.params['x0'].value
+                self._scanner_axes[i].move_smooth(x_opt)
+                s = fit_result.params['sigma'].value
+                opt_posit [i] = x_opt
+                sigmas [i] = s
+
+                if do_plot:
+                    pl.subplot(100+self._nr_axes*10+i)
+                    pl.plot (self._scan_positions [i, :], counts, color='RoyalBlue', marker='o')
+                    pl.plot (fit_plot_x, fit_plot_y, color='crimson')
+                    pl.ylabel ('counts', fontsize=15)
+
+            if do_plot:
+                pl.show()
+
+            self.set_scan_range (scan_range = 4*sigmas, scan_steps = self._scan_steps)
+            self.initialize (x0 = opt_posit)
+            print ('New position: ', self._x_init)
+
+            for i in arange(self._nr_axes):
+                self.scanner_axes[i].move_smooth(opt_posit[i])
 
         except KeyboardInterrupt:
             print('\n####  Program interrupted by user.  ####')
