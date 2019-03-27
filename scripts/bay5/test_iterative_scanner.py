@@ -1,9 +1,9 @@
 
 import datetime
 import sys
-from measurements.libs import mapper_scanners as mscan, mapper_detectors as mdet
-from measurements.libs import dummy_scanners as mscan_dummy
-from  measurements.libs import mapper_iter as mapper
+from measurements.libs.QPLMapper import mapper_scanners as mscan, mapper_detectors as mdet
+from measurements.libs.QPLMapper import dummy_scanners as mscan_dummy
+from  measurements.libs.QPLMapper import mapper_iter as mapper
 if sys.version_info.major == 3:
     from importlib import reload
 

@@ -31,14 +31,14 @@ except:
 
     print ("Simulation mode. Pay attention that the move_smooth function is not implemented!")
 
-class Mapper2D_3axes (mapper.XYMapper):
+class Mapper2D_3axes (mapper.OptimizeableMapper):
     def __init__(self, scanner_axes=None, detectors=None):
         
         self.trigger_active = True
         self.feedback_active = True
         self._back_to_zero = False
 
-        mapper.XYMapper.__init__ (self, scanner_axes = scanner_axes, detectors = detectors)
+        super().__init__ (self, scanner_axes = scanner_axes, detectors = detectors)
         self._iterative = True
 
         # create a unique ID for each detector, sets additional parameters 
@@ -87,7 +87,21 @@ class Mapper2D_3axes (mapper.XYMapper):
     def set_range(self, xLims, xStep, yLims=None, yStep=None):
 
         # sets the scanning range
-        self._set_range (xLims=xLims, xStep=xStep, yLims=yLims, yStep=yStep)
+        p = self._calculate_range (lims=xLims, step=xStep)
+        self.xPositions = p
+        self.xNbOfSteps = len(p)
+        self.xStep = xStep
+
+        if yLims is not None or yStep is not None:
+            p = self._calculate_range (lims=xLims, step=xStep)
+            self.xPositions = p
+            self.xNbOfSteps = len(p)
+            self.xStep = xStep
+       else:
+            self.yNbOfSteps = 1
+            self.yPositions = pl.array([0])
+            self.yStep = 0
+        self.totalNbOfSteps = self.xNbOfSteps * self.yNbOfSteps
         
         # creates, for each detectors, variable for X, Y, roeadout
         if self._detectors is None:
