@@ -107,3 +107,4 @@ if __name__ == "__main__":
     print((endTime - startTime) / numberOfTries, 's')
     print('mean value: {}'.format(value))
     
+    

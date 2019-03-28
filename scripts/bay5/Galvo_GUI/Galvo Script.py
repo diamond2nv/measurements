@@ -14,13 +14,13 @@ reload(mscan)
 reload(mdet)
 
 
-a = 3.3145
-b = -0.1985
-d = 0.005
+a = 3.3148
+b = -0.294
+d = 0.00
 xStep = 0.0001
 
-delayBetweenPoints = 0.05
-delayBetweenRows = 0.05
+delayBetweenPoints = 0.02
+delayBetweenRows = 0.02
 
 xLims = (a-d,a+d)
 yLims = (b-d,b+d)
