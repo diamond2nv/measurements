@@ -20,10 +20,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 if sys.version_info.major == 3:
     from importlib import reload
 reload (DO)
-try:
-    reload (SG)
-except:
-    pass
+reload (SG)
 
 
 try: 

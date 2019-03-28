@@ -476,13 +476,17 @@ class OptimizerGUI(QtWidgets.QMainWindow):
         self.ui.cB_X.setCurrentIndex(0)         
         self.ui.cB_Y.setCurrentIndex(0)         
         self.ui.cB_Z.setCurrentIndex(0)        
-        self._opt_axis_X = 0
-        self._opt_axis_Y = 0
-        self._opt_axis_Z = 0
+        self._opt_axis_X = None
+        self._opt_axis_Y = None
+        self._opt_axis_Z = None
         self._x0 = [0,0,0]
         self._opt_range = [0,0,0]
         self._opt_steps = [1,1,1]
         self._detector_id = 0
+
+        self.ui.viewX.set_tick_fontsize(10)
+        self.ui.viewY.set_tick_fontsize(10)
+        self.ui.viewZ.set_tick_fontsize(10)
 
     def _select_detector (self, value):
         self._detector_id = value
@@ -515,6 +519,7 @@ class OptimizerGUI(QtWidgets.QMainWindow):
         self._opt_range[2] = value
 
     def _set_Xsteps (self, value):
+        print ("Modified nr points - axis X")
         self._opt_steps[0] = value
 
     def _set_Ysteps (self, value):
@@ -543,12 +548,23 @@ class OptimizerGUI(QtWidgets.QMainWindow):
         # and this program deals with the interplay between axes
         # i.e. first set to (X0, Y0, Z0) and then scan each axis on its own, updating the plot
 
-    def _start_optimization (self):
-        ids = self._get_active_axes()
-        for i in ids:
-            print ("Optimizing axis ", i)
-            fit_dict = self._scanner.optimize_single_axis (axis=i, x0=self._x0[i], 
-                    range=self._opt_range[i], nr_points=self._opt_steps[i], detector_id = 0)
-            print (fit_dict)
+    def _plot_fit (self, axis, fit_dict):
+        axis_id = fit_dict['axis_id']
+        scan_array = fit_dict['x']
+        counts = fit_dict['y']
+        fit_x = fit_dict['x_fit']
+        fit_y = fit_dict['y_fit']
 
+        plot_ax = [self.ui.viewX, self.ui.viewY, self.ui.viewZ]
+        plot_ax[axis].axes.plot (scan_array, counts, 'o', color='RoyalBlue')
+        plot_ax[axis].axes.plot (fit_x, fit_y, color='crimson', linewidth = 2)
+        plot_ax[axis].draw()
+
+    def _start_optimization (self):
+        ids = np.array([self._opt_axis_X, self._opt_axis_Y, self._opt_axis_Z])
+        for i, axis in enumerate(ids):
+            if (axis != None):
+                fit_dict = self._scanner.optimize_single_axis (axis=i, x0=self._x0[i], 
+                        range=self._opt_range[i], nr_points=self._opt_steps[i], detector_id = 0)
+                self._plot_fit (axis = i, fit_dict = fit_dict)
 

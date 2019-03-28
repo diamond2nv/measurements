@@ -7,6 +7,7 @@
 # WARNING! All changes made in this file will be lost!
 
 from PyQt5 import QtCore, QtGui, QtWidgets
+from tools import QPLCanvas as qplCanvas
 
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
@@ -20,10 +21,7 @@ class Ui_MainWindow(object):
         font = QtGui.QFont()
         font.setPointSize(9)
         MainWindow.setFont(font)
-        self.centralwidget = QtWidgets.QWidget(MainWindow)
-        self.centralwidget.setMinimumSize(QtCore.QSize(1003, 0))
-        self.centralwidget.setObjectName("centralwidget")
-        self.widget = QtWidgets.QWidget(self.centralwidget)
+        self.widget = QtWidgets.QWidget(MainWindow)#self.centralwidget)
         self.widget.setGeometry(QtCore.QRect(11, 11, 892, 462))
         self.widget.setObjectName("widget")
         self.verticalLayout_5 = QtWidgets.QVBoxLayout(self.widget)
@@ -81,8 +79,10 @@ class Ui_MainWindow(object):
         self.gridLayout.addWidget(self.sB_Xsteps, 2, 1, 1, 1)
         self.verticalLayout.addLayout(self.gridLayout)
         self.verticalLayout_2.addLayout(self.verticalLayout)
-        self.viewX = QtWidgets.QGraphicsView(self.widget)
-        self.viewX.setObjectName("viewX")
+        #self.viewX = QtWidgets.QGraphicsView(self.widget)
+        #self.viewX.setObjectName("viewX")
+        self.viewX = qplCanvas.MplCanvas(self.widget)
+        self.viewX.setObjectName("viewX")        
         self.verticalLayout_2.addWidget(self.viewX)
         self.horizontalLayout.addLayout(self.verticalLayout_2)
         spacerItem1 = QtWidgets.QSpacerItem(18, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
@@ -122,8 +122,8 @@ class Ui_MainWindow(object):
         self.sB_Ysteps.setObjectName("sB_Ysteps")
         self.gridLayout_2.addWidget(self.sB_Ysteps, 2, 1, 1, 1)
         self.verticalLayout_3.addLayout(self.gridLayout_2)
-        self.viewY = QtWidgets.QGraphicsView(self.widget)
-        self.viewY.setObjectName("viewY")
+        self.viewY = qplCanvas.MplCanvas(self.widget)
+        self.viewY.setObjectName("viewX")        
         self.verticalLayout_3.addWidget(self.viewY)
         self.horizontalLayout.addLayout(self.verticalLayout_3)
         spacerItem2 = QtWidgets.QSpacerItem(18, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
@@ -163,8 +163,8 @@ class Ui_MainWindow(object):
         self.sB_Zsteps.setObjectName("sB_Zsteps")
         self.gridLayout_3.addWidget(self.sB_Zsteps, 2, 1, 1, 1)
         self.verticalLayout_4.addLayout(self.gridLayout_3)
-        self.viewZ = QtWidgets.QGraphicsView(self.widget)
-        self.viewZ.setObjectName("viewZ")
+        self.viewZ = qplCanvas.MplCanvas(self.widget)
+        self.viewZ.setObjectName("viewZ")        
         self.verticalLayout_4.addWidget(self.viewZ)
         self.horizontalLayout.addLayout(self.verticalLayout_4)
         spacerItem3 = QtWidgets.QSpacerItem(18, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
@@ -207,7 +207,7 @@ class Ui_MainWindow(object):
         self.verticalLayout_5.addWidget(self.splitter)
         spacerItem5 = QtWidgets.QSpacerItem(20, 18, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
         self.verticalLayout_5.addItem(spacerItem5)
-        MainWindow.setCentralWidget(self.centralwidget)
+        MainWindow.setCentralWidget(self.widget)#self.centralwidget)
         self.statusBar = QtWidgets.QStatusBar(MainWindow)
         self.statusBar.setObjectName("statusBar")
         MainWindow.setStatusBar(self.statusBar)
