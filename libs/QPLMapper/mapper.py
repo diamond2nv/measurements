@@ -254,13 +254,10 @@ class OptimizeableMapper (MultiAxisMapper):
                     self.fit_dict [str(i)] ['y'] = counts
                     self.fit_dict [str(i)] ['x_fit'] = fit_plot_x
                     self.fit_dict [str(i)] ['y_fit'] = fit_plot_y
+                    self.fit_dict [str(i)] ['x_opt'] = x_opt
+                    self.fit_dict [str(i)] ['sigma'] = s
 
-                #self.set_scan_range (scan_ids = ids, scan_range = 4*sigmas, scan_steps = self._scan_steps)
-                #self.initialize (x0 = opt_x)
-                print ('New position: ', self._x_init)
-
-                #for i in arange(self._nr_axes):
-                #    self.scanner_axes[i].move_smooth(opt_posit[i])
+                #self.scanner_axes[i].move_smooth(x_opt)
 
             except KeyboardInterrupt:
                 print('\n####  Program interrupted by user.  ####')

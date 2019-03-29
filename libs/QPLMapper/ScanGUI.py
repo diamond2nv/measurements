@@ -487,6 +487,12 @@ class OptimizerGUI(QtWidgets.QMainWindow):
         self.ui.viewX.set_tick_fontsize(10)
         self.ui.viewY.set_tick_fontsize(10)
         self.ui.viewZ.set_tick_fontsize(10)
+        self.ui.dsB_X0.setMaximum (99)
+        self.ui.dsB_X0.setMinimum (-99)
+        self.ui.dsB_Y0.setMaximum (99)
+        self.ui.dsB_Y0.setMinimum (-99)
+        self.ui.dsB_Z0.setMaximum (99)
+        self.ui.dsB_Z0.setMinimum (-99)
 
     def _select_detector (self, value):
         self._detector_id = value
@@ -519,7 +525,6 @@ class OptimizerGUI(QtWidgets.QMainWindow):
         self._opt_range[2] = value
 
     def _set_Xsteps (self, value):
-        print ("Modified nr points - axis X")
         self._opt_steps[0] = value
 
     def _set_Ysteps (self, value):
@@ -556,15 +561,49 @@ class OptimizerGUI(QtWidgets.QMainWindow):
         fit_y = fit_dict['y_fit']
 
         plot_ax = [self.ui.viewX, self.ui.viewY, self.ui.viewZ]
+        plot_ax[axis].axes.cla()
         plot_ax[axis].axes.plot (scan_array, counts, 'o', color='RoyalBlue')
         plot_ax[axis].axes.plot (fit_x, fit_y, color='crimson', linewidth = 2)
         plot_ax[axis].draw()
 
+    def _set_new_position (self, axis, value):
+
+        if (axis==0):
+            self.ui.dsB_X0.setValue (value)
+            self._x0[0] = value
+        elif (axis==1):
+            self.ui.dsB_Y0.setValue (value)
+            self._x0[1] = value
+        elif (axis==2):
+            self.ui.dsB_Z0.setValue (value)
+            self._x0[2] = value
+
+    def _set_new_range (self, axis, value):
+
+        if (axis==0):
+            self.ui.dsB_Xrange.setValue (value)
+            self._opt_range [0] = value
+        elif (axis==1):
+            self.ui.dsB_Yrange.setValue (value)
+            self._opt_range [1] = value
+        elif (axis==2):
+            self.ui.dsB_Zrange.setValue (value)
+            self._opt_range [2] = value
+
     def _start_optimization (self):
         ids = np.array([self._opt_axis_X, self._opt_axis_Y, self._opt_axis_Z])
+        # move to current optimal position
+
+        # REMOVE FOR LOOP - gets everything stuck
         for i, axis in enumerate(ids):
             if (axis != None):
                 fit_dict = self._scanner.optimize_single_axis (axis=i, x0=self._x0[i], 
                         range=self._opt_range[i], nr_points=self._opt_steps[i], detector_id = 0)
                 self._plot_fit (axis = i, fit_dict = fit_dict)
+                x_opt = fit_dict['x_opt']
+                print ("Optimal position: axis=",i," -- x_opt=", x_opt)
+                sigma = abs(fit_dict ['sigma'])
+                self._set_new_position (axis=i, value=x_opt)
+                self._set_new_range (axis=i, value = 4*sigma)
+
 
