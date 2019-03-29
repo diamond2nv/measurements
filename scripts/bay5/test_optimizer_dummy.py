@@ -3,7 +3,7 @@ import datetime
 import sys
 from measurements.libs.QPLMapper import  mapper_detectors as mdet
 from measurements.libs.QPLMapper import dummy_scanners as mscan_dummy
-from measurements.libs.QPLMapper import mapper 
+from  measurements.libs.QPLMapper import mapper_iter as mapper
 if sys.version_info.major == 3:
     from importlib import reload
 
@@ -34,13 +34,18 @@ ctr_port = 'pfi0'
 dummyA = mscan_dummy.ScannerCtrl(channels = [2])
 dummyB = mscan_dummy.GalvoDummy (chX = '/Dev1/ao1', chY = '/Dev1/ao0', ids = ['galvo-x', 'galvo-y']) 
 
+# voltmeterCtrl = mdet.MultimeterCtrl(VISA_address=r'ASRL5::INSTR')
+# voltmeterCtrl._ctr_time_ms = 0
+
 apd0 = mdet.dummyAPD(work_folder = 'C:/')
 apd0.set_integration_time_ms(ctr_time_ms)
 # #apd1 = mdet.dummyAPD(work_folder = 'C:/')
 # #apd1.set_integration_time_ms(ctr_time_ms)
 
+# d = datetime.datetime.now()
 
-XYscan = mapper.Mapper2D_XYZ (scanner_axes = [dummyA, dummyB], detectors = [apd0])
+XYscan = mapper.Mapper2D_3axes (scanner_axes = [dummyA, dummyB], detectors = [apd0])
+# XYscan.set_work_folder (r'C:\Users\Daniel\Desktop\Voltmeter')
 XYscan.set_work_folder ('C:/Users/cristian/Research/Work-Data/')
 # XYscan.set_delays (between_points = delayBetweenPoints, between_rows = delayBetweenRows)
 XYscan.set_back_to_zero()
