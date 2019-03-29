@@ -114,9 +114,14 @@ class ScanGUI(QtWidgets.QMainWindow):
             self._autosave = False
 
     def _set_view_detector (self, value):
-        a = int(self._scanner._detectors[value]._ctr_time_ms)
+        try:
+            a = int(self._scanner._detectors[value]._ctr_time_ms)
+            self.ui.sB_APD.setValue(a)
+        except:
+            print ("No APD found")
         self._curr_APD = value
-        self.ui.sB_APD.setValue(a)
+
+
 
     def _set_APD_time (self, value):
         self._scanner._detectors[self._curr_APD]._ctr_time_ms = value
