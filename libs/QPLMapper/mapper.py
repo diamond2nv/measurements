@@ -323,10 +323,10 @@ class XYScan (OptimizeableMapper):
         self.xStep = xStep
 
         if yLims is not None or yStep is not None:
-            p = self._calculate_range (lims=xLims, step=xStep)
-            self.xPositions = p
-            self.xNbOfSteps = len(p)
-            self.xStep = xStep
+            p = self._calculate_range (lims=yLims, step=yStep)
+            self.yPositions = p
+            self.yNbOfSteps = len(p)
+            self.yStep = xStep
         else:
             self.yNbOfSteps = 1
             self.yPositions = pl.array([0])
