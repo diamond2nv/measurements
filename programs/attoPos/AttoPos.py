@@ -986,7 +986,8 @@ def attopos_run(config):
 if __name__ == "__main__":
     
 
-    config = {"attoAxes": {"Px": 4, "Py": 5, "Pz": 6, "Sx": 0, "Sy": 0, "Sz": 0}, 
+    config = {"attoAxes": {"Px": 4, "Py": 5, "Pz": 6, "Sx": 0
+                           , "Sy": 0, "Sz": 3}, 
               "attoVisaScannersId": "ASRL4::INSTR", 
               "attoVisaPositionersId": "ASRL4::INSTR", 
               "reversedMotion": {"Sx": 0, "Sy": 0, "Sz": 0, "Px": 0, "Py": 0, "Pz": 0}}

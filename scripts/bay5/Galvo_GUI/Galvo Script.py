@@ -14,13 +14,13 @@ reload(mscan)
 reload(mdet)
 
 
-a = 3.3148
-b = -0.294
-d = 0.00
+a = 3.3165
+b = -0.2915
+d = 0.002
 xStep = 0.0001
 
-delayBetweenPoints = 0.02
-delayBetweenRows = 0.02
+delayBetweenPoints = 0.08
+delayBetweenRows = 0.08
 
 xLims = (a-d,a+d)
 yLims = (b-d,b+d)
@@ -33,6 +33,7 @@ voltmeterCtrl = mdet.MultimeterCtrl(VISA_address=r'ASRL13::INSTR')
 dummyAPD = mdet.dummyAPD(voltsDirectory)
 
 XYscan = mapper.XYScan(scanner_axes = GalvoCtrl, detectors= [voltmeterCtrl])
+#XYscan = mapper.XYScan(scanner_axes = GalvoCtrl, detectors= [dummyAPD])
 XYscan.set_range (xLims=xLims, xStep=xStep, yLims=yLims, yStep=yStep)
 XYscan.set_delays (between_points = delayBetweenPoints, between_rows = delayBetweenRows)
 
